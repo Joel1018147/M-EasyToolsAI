@@ -24,7 +24,8 @@ const JWT_SECRET    = process.env.JWT_SECRET || 'measytools-ai-dev-secret';
 const GROQ_KEY      = process.env.GROQ_API_KEY;
 const GOOGLE_ID     = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const APP_URL       = process.env.APP_URL || `http://localhost:${PORT}`;
+const APP_URL_RAW   = process.env.APP_URL || `http://localhost:${PORT}`;
+const APP_URL       = APP_URL_RAW.startsWith('http') ? APP_URL_RAW : `https://${APP_URL_RAW}`;
 
 // ════════════════════════════════════════════════════
 //  POSTGRESQL
