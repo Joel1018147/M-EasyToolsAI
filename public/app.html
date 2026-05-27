@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" data-lang="en">
+<html lang="ms" data-theme="light" data-lang="bm">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -912,8 +912,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);display:flex;f
       <div class="cred-dot"></div>
       <span id="cred-count">Loading...</span>
     </div>
-    <button class="btn btn-outline btn-sm" onclick="goTo('settings')" style="gap:5px">⚙ <span data-i18n="nav_settings">Settings</span></button>
-    <button class="btn btn-primary btn-sm" onclick="goTo('tools')"><span data-i18n="btn_new_content">＋ New Content</span></button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('settings')" style="gap:5px">⚙ <span data-i18n="nav_settings">Tetapan</span></button>
+    <button class="btn btn-primary btn-sm" onclick="goTo('tools')"><span data-i18n="btn_new_content">＋ Kandungan Baru</span></button>
   </div>
 
   <!-- ══ DASHBOARD PAGE ══ -->
@@ -1219,16 +1219,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);display:flex;f
     <div class="settings-layout">
       <div class="settings-nav">
         <div class="sn-section">Account</div>
-        <div class="sn-item active" onclick="showSetting('general',this)">⚙️ General</div>
-        <div class="sn-item" onclick="showSetting('api',this)">🔑 API Key</div>
-        <div class="sn-item" onclick="showSetting('password',this)">🔒 Password</div>
+        <div class="sn-item active" onclick="showSetting('general',this)" data-i18n="sn_general">⚙️ Umum</div>
+        <div class="sn-item" onclick="showSetting('api',this)" data-i18n="sn_api">🔑 Kunci API</div>
+        <div class="sn-item" onclick="showSetting('password',this)" data-i18n="sn_password">🔒 Kata Laluan</div>
         <div class="sn-section">Content</div>
-        <div class="sn-item" onclick="showSetting('brand',this)">🎨 Brand Voice</div>
-        <div class="sn-item" onclick="showSetting('team',this)">👥 Team</div>
+        <div class="sn-item" onclick="showSetting('brand',this)" data-i18n="sn_brand">🎨 Suara Jenama</div>
+        <div class="sn-item" onclick="showSetting('team',this)" data-i18n="sn_team">👥 Pasukan</div>
         <div class="sn-section">Integrations</div>
-        <div class="sn-item" onclick="showSetting('wordpress',this)">🔌 WordPress</div>
-        <div class="sn-item" onclick="showSetting('shopify',this)">🛍️ Shopify</div>
-        <div class="sn-item" onclick="showSetting('developer',this)">👨‍💻 Developer API</div>
+        <div class="sn-item" onclick="showSetting('wordpress',this)" data-i18n="sn_wordpress">🔌 WordPress</div>
+        <div class="sn-item" onclick="showSetting('shopify',this)" data-i18n="sn_shopify">🛍️ Shopify</div>
+        <div class="sn-item" onclick="showSetting('developer',this)" data-i18n="sn_developer">👨‍💻 API Pembangun</div>
         <div class="sn-section">Preferences</div>
         <div class="sn-item" onclick="showSetting('notif',this)">🔔 Notifications</div>
       </div>
@@ -1530,7 +1530,11 @@ function applyUser(u) {
   const p = document.querySelector('.u-plan');
   const a = document.querySelector('.u-avatar');
   if (n) n.textContent = u.name;
-  if (p) p.textContent = `${(u.plan||'free').charAt(0).toUpperCase()+(u.plan||'free').slice(1)} Plan · ${(u.credits||0).toLocaleString()} credits`;
+  // Use translated plan text
+  const planName = (u.plan||'free').charAt(0).toUpperCase()+(u.plan||'free').slice(1);
+  const planLabel = currentLang === 'bm' ? 'Pelan' : 'Plan';
+  const creditsLabel = currentLang === 'bm' ? 'kredit' : 'credits';
+  if (p) p.textContent = `${planName} ${planLabel} · ${(u.credits||0).toLocaleString()} ${creditsLabel}`;
   if (a) {
     if (u.avatar) a.innerHTML = `<img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
     else a.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
@@ -1542,10 +1546,13 @@ function applyUser(u) {
   if (pmEmail) pmEmail.textContent = u.email;
 
   const c = document.getElementById('cred-count');
-  if (c) c.textContent = (u.credits||0).toLocaleString()+' credits';
+  if (c) c.textContent = (u.credits||0).toLocaleString()+' '+creditsLabel;
   credits = u.credits || 0;
+  // Banner title uses current language
   const g = document.querySelector('.banner-title');
   if (g) g.textContent = `${t('dash_welcome')}, ${u.name.split(' ')[0]}`;
+  // Re-apply all translations after user loaded (ensures correct language everywhere)
+  setTimeout(() => applyTranslations(), 50);
 }
 
 // ── Profile Menu ─────────────────────────────────────────
@@ -1605,10 +1612,10 @@ async function loadStats() {
     if (vals[2]) vals[2].textContent = (s.creditsUsed||0).toLocaleString();
     if (vals[3]) { vals[3].textContent = s.topTool||'-'; vals[3].style.fontSize='16px'; }
     const deltas = document.querySelectorAll('.m-card-delta');
-    if (deltas[0]) deltas[0].innerHTML = `↑ 23% <span data-i18n="dash_this_month">${t('dash_this_month')}</span>`;
-    if (deltas[1]) deltas[1].innerHTML = `+${s.docsThisWeek||0} <span data-i18n="dash_this_week">${t('dash_this_week')}</span>`;
-    if (deltas[2]) deltas[2].innerHTML = `${(s.creditsRemaining||0).toLocaleString()} <span data-i18n="dash_remaining">${t('dash_remaining')}</span>`;
-    if (deltas[3]) deltas[3].innerHTML = `${s.topTool&&s.topTool!=='-'?'47':0} <span data-i18n="dash_uses">${t('dash_uses')}</span>`;
+    if (deltas[0]) deltas[0].innerHTML = `↑ 23% <span>${t('dash_this_month')}</span>`;
+    if (deltas[1]) deltas[1].innerHTML = `+${s.docsThisWeek||0} <span>${t('dash_this_week')}</span>`;
+    if (deltas[2]) deltas[2].innerHTML = `${(s.creditsRemaining||0).toLocaleString()} <span>${t('dash_remaining')}</span>`;
+    if (deltas[3]) deltas[3].innerHTML = `${s.topTool&&s.topTool!=='-'?'47':0} <span>${t('dash_uses')}</span>`;
 
     // Credit progress bar
     const pct = s.creditsMax>0?Math.round(((s.creditsUsed||0)/s.creditsMax)*100):0;
@@ -1617,7 +1624,7 @@ async function loadStats() {
     const note = document.getElementById('credit-note');
     if (fill) fill.style.width=pct+'%';
     if (pctEl) pctEl.textContent=pct+'%';
-    if (note) note.textContent=`${(s.creditsUsed||0).toLocaleString()} ${t('dash_this_month')} · ${(s.creditsRemaining||0).toLocaleString()} ${t('dash_remaining')}`;
+    if (note) note.textContent=`${(s.creditsUsed||0).toLocaleString()} ${currentLang==='bm'?'digunakan':'used'} · ${(s.creditsRemaining||0).toLocaleString()} ${t('dash_remaining')}`;
 
     // Recent documents panel
     const panel = document.getElementById('recent-docs-panel');
@@ -1639,7 +1646,7 @@ function renderRecentDocsTo(panel, docs) {
     const bg=bgs[d.tool_name]||'var(--cream2)';
     const tc=tcs[d.tool_name]||'var(--slate)';
     const date=new Date(d.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-    return `<div class="recent-row"><div class="rr-ico" style="background:${bg}">${icon}</div><div class="rr-info"><div class="rr-name">${d.title}</div><div class="rr-meta">${d.tool_name||'Content'} · ${date} · ${(d.word_count||0).toLocaleString()} ${t('metric_words').toLowerCase()}</div></div><span class="rr-badge" style="background:${bg};color:${tc}">${(d.tool_name||'Doc').split(' ')[0]}</span></div>`;
+    const wordsLbl = currentLang==='bm' ? 'patah perkataan' : 'words'; return `<div class="recent-row"><div class="rr-ico" style="background:${bg}">${icon}</div><div class="rr-info"><div class="rr-name">${d.title}</div><div class="rr-meta">${d.tool_name||'Content'} · ${date} · ${(d.word_count||0).toLocaleString()} ${wordsLbl}</div></div><span class="rr-badge" style="background:${bg};color:${tc}">${(d.tool_name||'Doc').split(' ')[0]}</span></div>`;
   }).join('');
 }
 
@@ -2732,7 +2739,12 @@ const TRANSLATIONS = {
   }
 };
 
-let currentLang = localStorage.getItem('msm_lang') || 'bm';
+// Initialize language IMMEDIATELY so applyUser uses correct lang
+let currentLang = (function() {
+  try { return localStorage.getItem('msm_lang') || 'bm'; } catch(e) { return 'bm'; }
+})();
+// Apply lang to html element right away
+document.documentElement.setAttribute('data-lang', currentLang);
 
 function t(key, vars = {}) {
   const lang = currentLang;
@@ -2805,7 +2817,11 @@ function updatePageTexts() {
   const bannerHello = document.querySelector('.banner-hello');
   if (bannerHello) bannerHello.textContent = t('dash_hello');
   const bannerSub = document.querySelector('.banner-sub');
-  if (bannerSub) bannerSub.textContent = t('dash_sub');
+  if (bannerSub) {
+    const docCount = document.querySelector('.m-card-val') ? 
+      (document.querySelectorAll('.m-card-val')[1]?.textContent || '0') : '0';
+    const docVal = document.querySelectorAll('.m-card-val')[1]?.textContent?.trim() || '0'; bannerSub.textContent = t('dash_sub').replace('{n}', docVal);
+  }
 
   // Quick Create tiles
   const qtiles = document.querySelectorAll('.qt-nm');
@@ -2857,10 +2873,9 @@ function updatePageTexts() {
 }
 
 function updateSettingsNav() {
-  const navItems = document.querySelectorAll('.sn-item');
-  const navKeys = ['sn_general', 'sn_api', 'sn_password', 'sn_brand', 'sn_team', 'sn_wordpress', 'sn_shopify', 'sn_developer', 'sn_notif'];
-  navItems.forEach((el, i) => {
-    if (navKeys[i]) el.textContent = t(navKeys[i]);
+  // Use data-i18n attribute for reliable translation
+  document.querySelectorAll('.sn-item[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
   });
 }
 
@@ -2868,7 +2883,10 @@ function updateCategoryPills() {
   const pills = document.querySelectorAll('.cat-pill');
   const pillKeys = ['cat_all', 'cat_blog', 'cat_social', 'cat_email', 'cat_ads', 'cat_ecom', 'cat_sales', 'cat_rewrite', 'cat_seo'];
   pills.forEach((el, i) => {
-    if (pillKeys[i]) el.textContent = t(pillKeys[i]);
+    if (pillKeys[i]) {
+      el.setAttribute('data-i18n', pillKeys[i]);
+      el.textContent = t(pillKeys[i]);
+    }
   });
 }
 
@@ -2904,7 +2922,13 @@ function initLang() {
 renderTools(TOOLS);
 initTheme();
 initLang();
-initApp();
+initApp().then(() => {
+  // Re-apply translations after user data loads to fix any mixed language
+  setTimeout(() => {
+    applyTranslations();
+    updateProfileMenuLabels();
+  }, 200);
+});
 </script>
 </body>
 </html>
