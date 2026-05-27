@@ -202,7 +202,58 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
 .loading-dots span:nth-child(3){animation-delay:.3s}
 @keyframes ld{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1.2)}}
 
-/* ── SCHEMA GENERATOR ── */
+/* ── TABS ── */
+.gao-tab{
+  padding:14px 18px;background:none;border:none;
+  font-size:13px;font-weight:500;color:var(--text2);
+  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  white-space:nowrap;transition:all .15s;
+}
+.gao-tab:hover{color:var(--text)}
+.gao-tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:700}
+
+/* Tab panels */
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* Entity extractor */
+.entity-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.entity-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.entity-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;min-height:60px}
+.entity-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.et-person{background:rgba(59,130,246,0.12);color:#3B82F6;border:1px solid rgba(59,130,246,0.25)}
+.et-brand{background:rgba(232,98,42,0.12);color:var(--orange);border:1px solid rgba(232,98,42,0.25)}
+.et-topic{background:rgba(14,207,176,0.12);color:var(--teal);border:1px solid rgba(14,207,176,0.25)}
+.et-place{background:rgba(155,127,238,0.12);color:var(--violet);border:1px solid rgba(155,127,238,0.25)}
+.et-product{background:rgba(244,196,48,0.12);color:var(--gold);border:1px solid rgba(244,196,48,0.25)}
+.et-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:rgba(255,255,255,0.1)}
+
+/* Link suggester */
+.link-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.link-row:last-child{border-bottom:none}
+.link-phrase{font-size:13px;font-weight:600;color:var(--text);flex:1}
+.link-url{font-size:11px;color:var(--teal);font-family:'JetBrains Mono',monospace;margin-top:3px}
+.link-reason{font-size:11px;color:var(--text2);margin-top:3px}
+.link-copy{padding:4px 10px;border-radius:6px;background:var(--teal3);color:var(--teal);border:1px solid rgba(14,207,176,0.2);font-size:11px;font-weight:600;cursor:pointer}
+
+/* Enricher */
+.enricher-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ec-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ec-head{padding:12px 16px;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.ec-body{padding:14px;font-size:13px;color:var(--text2);line-height:1.8;min-height:200px;white-space:pre-wrap}
+
+/* History chart */
+.history-chart{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px}
+.hc-bars{display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:16px}
+.hc-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.hc-bar{width:100%;border-radius:4px 4px 0 0;transition:height .5s ease;min-width:20px}
+.hc-label{font-size:10px;color:var(--text3);white-space:nowrap}
+.hc-val{font-size:10px;font-weight:700;color:var(--text2)}
+
+/* Schema tabs */
+.schema-type-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stt{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;background:none}
+.stt.active,.stt:hover{background:var(--teal3);color:var(--teal);border-color:rgba(14,207,176,0.3)}
 .schema-output{background:#0A0F1A;border:1px solid var(--border);border-radius:var(--r);padding:16px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:#a8d8a8;max-height:240px;overflow-y:auto;display:none}
 .schema-output.show{display:block}
 
@@ -243,9 +294,19 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
     <button class="btn btn-outline" onclick="exportReport()">📥 Export Report</button>
   </div>
 
-  <div class="page-body">
+  <!-- TAB NAV -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg2);padding:0 24px;overflow-x:auto;flex-shrink:0">
+    <button class="gao-tab active" onclick="switchTab('overview')" id="tab-overview">📊 GAO Overview</button>
+    <button class="gao-tab" onclick="switchTab('entity')" id="tab-entity">🏷️ Entity Extractor</button>
+    <button class="gao-tab" onclick="switchTab('links')" id="tab-links">🔗 Internal Link Suggester</button>
+    <button class="gao-tab" onclick="switchTab('schema')" id="tab-schema">📋 Schema Builder</button>
+    <button class="gao-tab" onclick="switchTab('enrich')" id="tab-enrich">✨ Content Enricher</button>
+    <button class="gao-tab" onclick="switchTab('history')" id="tab-history">📈 Visibility History</button>
+  </div>
 
-    <!-- HERO -->
+  <div class="page-body">
+  <!-- ══ TAB: OVERVIEW ══ -->
+  <div class="tab-panel active" id="panel-overview">
     <div class="gao-hero">
       <div class="gao-hero-badge">
         <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 2s infinite"></span>
@@ -404,6 +465,253 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
         </div>
       </div>
     </div>
+
+  </div><!-- end panel-overview -->
+
+  <!-- ══ TAB: ENTITY EXTRACTOR ══ -->
+  <div class="tab-panel" id="panel-entity">
+    <div style="padding:24px">
+      <div class="section-hdr" style="margin-bottom:16px">
+        <div class="section-title">🏷️ Entity Extractor</div>
+        <div class="section-sub">Identify key entities in your content — people, brands, places, topics, products</div>
+      </div>
+      <div class="input-panel" style="margin-bottom:20px">
+        <div class="ip-title">📝 Paste Your Content</div>
+        <textarea class="ip-textarea" id="entity-input" style="min-height:140px" placeholder="Paste any content here — blog post, product description, landing page copy, article...&#10;&#10;The AI will extract all key entities and classify them by type."></textarea>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-primary" onclick="runEntityExtractor()">🏷️ Extract Entities</button>
+          <button class="btn btn-teal" onclick="runEntityGAO()">🧠 Analyze for GAO</button>
+          <button class="btn btn-outline" onclick="copyEntities()">📋 Copy All Entities</button>
+        </div>
+      </div>
+
+      <div class="entity-grid">
+        <div class="entity-card">
+          <div class="ip-label" style="margin-bottom:4px">Extracted Entities</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Click any entity to analyze its AI visibility</div>
+          <div class="entity-list" id="entity-list">
+            <div style="color:var(--text3);font-size:13px;padding:10px 0">Paste content above and click Extract Entities</div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="ip-label" style="margin-bottom:4px">Entity Analysis</div>
+          <div class="gao-result show" id="entity-result" style="margin-bottom:0">
+            <div class="gr-header"><div class="gr-title">Entity Analysis</div></div>
+            <div class="gr-body" id="entity-result-body" style="min-height:120px;color:var(--text3);font-size:13px">Select an entity to see its GAO analysis</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Entity Summary -->
+      <div class="full-result" id="entity-summary" style="display:none">
+        <div class="gao-result show">
+          <div class="gr-header"><div class="gr-title" id="entity-summary-title">🏷️ Full Entity Report</div><button class="btn btn-outline" style="padding:5px 12px;font-size:11px" onclick="copyEntityReport()">📋 Copy</button></div>
+          <div class="gr-body" id="entity-summary-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: INTERNAL LINK SUGGESTER ══ -->
+  <div class="tab-panel" id="panel-links">
+    <div style="padding:24px">
+      <div class="section-hdr" style="margin-bottom:16px">
+        <div class="section-title">🔗 Internal Link Suggester</div>
+        <div class="section-sub">AI recommends which pages to link to — improve SEO, reduce bounce rate and help AI crawlers map your site</div>
+      </div>
+      <div class="input-panel" style="margin-bottom:20px">
+        <div class="ip-title">📝 Content to Analyze for Internal Links</div>
+        <div class="ip-grid" style="margin-bottom:12px">
+          <div class="ip-field">
+            <div class="ip-label">Current Page URL</div>
+            <input class="ip-input" id="link-current-url" placeholder="https://yoursite.com/blog/crm-guide">
+          </div>
+          <div class="ip-field">
+            <div class="ip-label">Website Domain</div>
+            <input class="ip-input" id="link-domain" placeholder="yoursite.com">
+          </div>
+          <div class="ip-field">
+            <div class="ip-label">Industry / Niche</div>
+            <input class="ip-input" id="link-industry" placeholder="CRM Software, Malaysia">
+          </div>
+        </div>
+        <textarea class="ip-textarea" id="link-input" style="min-height:120px" placeholder="Paste your page content here..."></textarea>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-primary" onclick="runLinkSuggester()">🔗 Suggest Internal Links</button>
+          <button class="btn btn-teal" onclick="runSitemapLinks()">🗺️ Build Link Strategy</button>
+        </div>
+      </div>
+
+      <div class="gao-result" id="link-result">
+        <div class="gr-header"><div class="gr-title" id="link-title">🔗 Internal Link Suggestions</div><button class="btn btn-outline" style="padding:5px 12px;font-size:11px" onclick="copyLinkResult()">📋 Copy</button></div>
+        <div class="gr-body" id="link-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: SCHEMA BUILDER ══ -->
+  <div class="tab-panel" id="panel-schema">
+    <div style="padding:24px">
+      <div class="section-hdr" style="margin-bottom:16px">
+        <div class="section-title">📋 Schema Markup Builder</div>
+        <div class="section-sub">Generate JSON-LD schema optimized for GPTBot, ClaudeBot, GeminiBot and Google rich snippets</div>
+      </div>
+      <div class="input-panel" style="margin-bottom:20px">
+        <div class="ip-title">⚙️ Configure Schema</div>
+        <div class="ip-grid" style="margin-bottom:12px">
+          <div class="ip-field">
+            <div class="ip-label">Brand / Company Name</div>
+            <input class="ip-input" id="schema-brand" placeholder="M-EasyDo">
+          </div>
+          <div class="ip-field">
+            <div class="ip-label">Website URL</div>
+            <input class="ip-input" id="schema-url" placeholder="https://yoursite.com">
+          </div>
+          <div class="ip-field">
+            <div class="ip-label">Industry</div>
+            <input class="ip-input" id="schema-industry" placeholder="CRM Software, Malaysia">
+          </div>
+        </div>
+        <div class="ip-label" style="margin-bottom:8px">Schema Type</div>
+        <div class="schema-type-tabs">
+          <button class="stt active" onclick="selectSchemaType(this,'organization')">🏢 Organization</button>
+          <button class="stt" onclick="selectSchemaType(this,'software')">💻 Software App</button>
+          <button class="stt" onclick="selectSchemaType(this,'faq')">❓ FAQ Page</button>
+          <button class="stt" onclick="selectSchemaType(this,'product')">🛍️ Product</button>
+          <button class="stt" onclick="selectSchemaType(this,'article')">📝 Article</button>
+          <button class="stt" onclick="selectSchemaType(this,'local')">📍 Local Business</button>
+          <button class="stt" onclick="selectSchemaType(this,'complete')">✨ Complete Suite</button>
+        </div>
+        <textarea class="ip-textarea" id="schema-extra" style="min-height:80px;margin-top:10px" placeholder="Optional: paste your page content or describe what you want in the schema..."></textarea>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-primary" onclick="runSchemaBuilder()">📋 Generate Schema</button>
+          <button class="btn btn-teal" onclick="validateSchema()">✅ Validate Schema</button>
+          <button class="btn btn-outline" onclick="copySchema()">📋 Copy JSON-LD</button>
+        </div>
+      </div>
+      <div class="schema-output show" id="schema-builder-output" style="min-height:200px">// Your schema markup will appear here...</div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: CONTENT ENRICHER ══ -->
+  <div class="tab-panel" id="panel-enrich">
+    <div style="padding:24px">
+      <div class="section-hdr" style="margin-bottom:16px">
+        <div class="section-title">✨ Content Enricher</div>
+        <div class="section-sub">Make your content more AI-readable — add semantic context, entities, structured data signals and citation-worthy facts</div>
+      </div>
+      <div class="input-panel" style="margin-bottom:20px">
+        <div class="ip-title">📝 Content to Enrich</div>
+        <div class="ip-grid" style="margin-bottom:12px">
+          <div class="ip-field">
+            <div class="ip-label">Target LLM</div>
+            <select class="ip-select" id="enrich-llm">
+              <option>All LLMs (general)</option>
+              <option>ChatGPT / OpenAI</option>
+              <option>Claude / Anthropic</option>
+              <option>Gemini / Google</option>
+              <option>Perplexity</option>
+              <option>DeepSeek</option>
+            </select>
+          </div>
+          <div class="ip-field">
+            <div class="ip-label">Enrichment Goal</div>
+            <select class="ip-select" id="enrich-goal">
+              <option>Get cited in AI answers</option>
+              <option>Improve AI visibility score</option>
+              <option>Add semantic entities</option>
+              <option>Add citation-worthy statistics</option>
+              <option>Improve readability for AI</option>
+            </select>
+          </div>
+          <div class="ip-field">
+            <div class="ip-label">Industry / Topic</div>
+            <input class="ip-input" id="enrich-industry" placeholder="e.g. CRM Software, Malaysia">
+          </div>
+        </div>
+        <textarea class="ip-textarea" id="enrich-input" style="min-height:140px" placeholder="Paste your existing content here — blog post, product page, about page, landing page...&#10;&#10;The AI will enrich it with semantic entities, structured data signals, and citation-worthy context to improve AI visibility."></textarea>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-primary" onclick="runContentEnricher()">✨ Enrich Content</button>
+          <button class="btn btn-teal" onclick="runGAOScore()">📊 GAO Content Score</button>
+          <button class="btn btn-outline" onclick="copyEnriched()">📋 Copy Enriched</button>
+        </div>
+      </div>
+      <div class="enricher-compare" id="enricher-compare" style="display:none">
+        <div class="ec-panel">
+          <div class="ec-head">📄 Original Content</div>
+          <div class="ec-body" id="enrich-original"></div>
+        </div>
+        <div class="ec-panel">
+          <div class="ec-head" style="color:var(--teal)">✨ AI-Enriched Version</div>
+          <div class="ec-body" id="enrich-output" style="color:var(--text)"></div>
+        </div>
+      </div>
+      <div class="gao-result" id="enrich-score-result">
+        <div class="gr-header"><div class="gr-title" id="enrich-score-title">📊 GAO Content Score</div></div>
+        <div class="gr-body" id="enrich-score-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: VISIBILITY HISTORY ══ -->
+  <div class="tab-panel" id="panel-history">
+    <div style="padding:24px">
+      <div class="section-hdr" style="margin-bottom:16px">
+        <div class="section-title">📈 Visibility History</div>
+        <div class="section-sub">Track your AI visibility score over time — see trends, improvements and what's working</div>
+      </div>
+
+      <div class="history-chart">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">AI Visibility Trend — Last 7 Analyses</div>
+          <div style="font-size:11px;color:var(--text3)">Run GAO analyses regularly to build your history</div>
+        </div>
+        <div class="hc-bars" id="history-bars">
+          <!-- Populated by JS -->
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#22C55E"></div><span style="font-size:11px;color:var(--text2)">ChatGPT</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--violet)"></div><span style="font-size:11px;color:var(--text2)">Claude</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--blue)"></div><span style="font-size:11px;color:var(--text2)">Gemini</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--gold)"></div><span style="font-size:11px;color:var(--text2)">Perplexity</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--teal)"></div><span style="font-size:11px;color:var(--text2)">DeepSeek</span></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+        <div class="vis-card" style="--vc-color:var(--teal)">
+          <div class="vis-platform">📈 Best Score Ever</div>
+          <div class="vis-score" id="hist-best">--<span>%</span></div>
+          <div class="vis-label" id="hist-best-date">No data yet</div>
+        </div>
+        <div class="vis-card" style="--vc-color:#22C55E">
+          <div class="vis-platform">📊 Latest Score</div>
+          <div class="vis-score" id="hist-latest">--<span>%</span></div>
+          <div class="vis-label" id="hist-trend">Run your first analysis</div>
+        </div>
+        <div class="vis-card" style="--vc-color:var(--gold)">
+          <div class="vis-platform">🔢 Total Analyses</div>
+          <div class="vis-score" id="hist-count">0<span></span></div>
+          <div class="vis-label">GAO analyses run</div>
+        </div>
+      </div>
+
+      <!-- History table -->
+      <div class="prompt-table">
+        <div class="pt-header" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 100px">
+          <div class="pt-col">Brand</div>
+          <div class="pt-col">Date</div>
+          <div class="pt-col">Avg Score</div>
+          <div class="pt-col">Best LLM</div>
+          <div class="pt-col">Prompts</div>
+          <div class="pt-col">Action</div>
+        </div>
+        <div id="history-table-body">
+          <div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">No GAO analyses saved yet. Run a GAO Analysis in the Overview tab to start building your history.</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   </div><!-- end page-body -->
 </div><!-- end main -->
@@ -798,6 +1106,449 @@ function exportReport(){
   a.click();
   toast('Report downloaded!','success');
 }
+
+// ── Tab switching ─────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.gao-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='history') renderHistory();
+}
+
+// ── GAO History Storage ───────────────────────────────────
+function saveGAOResult(brand, scores, promptCount) {
+  try {
+    const history = JSON.parse(localStorage.getItem('gao_history')||'[]');
+    const avg = Math.round(Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length);
+    const best = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0];
+    history.unshift({
+      brand, date: new Date().toISOString(), scores, avg,
+      bestLLM: best[0], bestScore: best[1], promptCount
+    });
+    localStorage.setItem('gao_history', JSON.stringify(history.slice(0,20)));
+    renderHistory();
+    // Update history tab stats
+    document.getElementById('hist-latest').innerHTML = avg+'<span>%</span>';
+    document.getElementById('hist-count').innerHTML = history.length+'<span></span>';
+    const bestEver = Math.max(...history.map(h=>h.avg));
+    document.getElementById('hist-best').innerHTML = bestEver+'<span>%</span>';
+  } catch(e){}
+}
+
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem('gao_history')||'[]');
+  const tbody = document.getElementById('history-table-body');
+  if(!history.length) {
+    tbody.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">No GAO analyses saved yet. Run a GAO Analysis in the Overview tab.</div>';
+    renderHistoryChart([]);
+    return;
+  }
+  tbody.innerHTML = history.map((h,i)=>{
+    const date = new Date(h.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'});
+    const color = h.avg>=50?'#22C55E':h.avg>=30?'var(--gold)':'var(--red)';
+    return `<div class="pt-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 100px">
+      <div class="pt-prompt">${h.brand}</div>
+      <div style="font-size:12px;color:var(--text2)">${date}</div>
+      <div class="pt-score" style="color:${color}">${h.avg}%</div>
+      <div style="font-size:12px;color:var(--text2);text-transform:capitalize">${h.bestLLM} (${h.bestScore}%)</div>
+      <div style="font-size:12px;color:var(--text2)">${h.promptCount||0} prompts</div>
+      <div><button class="btn btn-outline" style="padding:4px 10px;font-size:11px" onclick="deleteHistory(${i})">🗑️</button></div>
+    </div>`;
+  }).join('');
+  renderHistoryChart(history.slice(0,7).reverse());
+
+  // Update stats
+  const bestEver = Math.max(...history.map(h=>h.avg));
+  const latest = history[0];
+  document.getElementById('hist-latest').innerHTML = latest.avg+'<span>%</span>';
+  document.getElementById('hist-best').innerHTML = bestEver+'<span>%</span>';
+  document.getElementById('hist-count').innerHTML = history.length+'<span></span>';
+  document.getElementById('hist-trend').textContent = history.length>1 ?
+    (latest.avg > history[1].avg ? '↑ Improving' : '↓ Declining') : 'First analysis';
+}
+
+function renderHistoryChart(data) {
+  const container = document.getElementById('history-bars');
+  if(!data.length) {
+    container.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;width:100%;padding:20px">Run analyses to see your trend</div>';
+    return;
+  }
+  const maxVal = Math.max(...data.map(h=>h.avg), 10);
+  container.innerHTML = data.map(h=>{
+    const height = Math.round((h.avg/maxVal)*100);
+    const date = new Date(h.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    const color = h.avg>=50?'#22C55E':h.avg>=30?'var(--gold)':'var(--red)';
+    return `<div class="hc-bar-wrap">
+      <div class="hc-val">${h.avg}%</div>
+      <div class="hc-bar" style="height:${height}%;background:${color};opacity:.8"></div>
+      <div class="hc-label">${date}</div>
+    </div>`;
+  }).join('');
+}
+
+function deleteHistory(idx) {
+  const history = JSON.parse(localStorage.getItem('gao_history')||'[]');
+  history.splice(idx,1);
+  localStorage.setItem('gao_history', JSON.stringify(history));
+  renderHistory();
+  toast('Deleted','');
+}
+
+// Override runGAO to also save history
+const _origRunGAO = runGAO;
+async function runGAO() {
+  await _origRunGAO();
+  // Save after analysis completes
+  setTimeout(()=>{
+    const brand = document.getElementById('brand-input').value.trim();
+    const prompts = document.getElementById('prompts-input').value.trim().split('\n').filter(p=>p.trim());
+    const scores = {};
+    ['gpt','claude','gemini','perplexity','deepseek'].forEach(id=>{
+      const el = document.getElementById('sc-'+id);
+      if(el) { const v=parseInt(el.textContent); if(!isNaN(v)) scores[id]=v; }
+    });
+    if(brand && Object.keys(scores).length) saveGAOResult(brand, scores, prompts.length);
+  }, 2000);
+}
+
+// ── Entity Extractor ──────────────────────────────────────
+async function runEntityExtractor() {
+  const content = document.getElementById('entity-input').value.trim();
+  if(!content){toast('Paste some content first','error');return;}
+  const listEl = document.getElementById('entity-list');
+  listEl.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`Extract and classify all key entities from this content. Return ONLY a JSON array with this exact format:
+[{"text":"entity name","type":"brand|person|place|topic|product|technology","relevance":"high|medium|low"}]
+
+Content:
+${content.substring(0,3000)}`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+
+    let entities = [];
+    try {
+      const json = data.message.match(/\[[\s\S]*\]/)?.[0];
+      entities = JSON.parse(json||'[]');
+    } catch(e) {
+      // Fallback: parse text
+      entities = [{text:'Could not parse entities',type:'topic',relevance:'low'}];
+    }
+
+    const typeColors = {brand:'et-brand',person:'et-person',place:'et-place',topic:'et-topic',product:'et-product',technology:'et-topic'};
+    listEl.innerHTML = entities.map(e=>`
+      <span class="entity-tag ${typeColors[e.type]||'et-topic'}" onclick="analyzeEntity('${e.text.replace(/'/g,"\\'")}','${e.type}')">
+        ${e.text}
+        <span class="et-badge">${e.type}</span>
+      </span>`).join('');
+
+    toast(`✓ ${entities.length} entities extracted!`,'success');
+    // Auto store for copy
+    window._lastEntities = entities;
+  } catch(e){
+    listEl.innerHTML = `<div style="color:var(--red);font-size:13px">Error: ${e.message}</div>`;
+    toast('Error: '+e.message,'error');
+  }
+}
+
+async function analyzeEntity(entity, type) {
+  const brand = document.getElementById('brand-input').value.trim() || 'your brand';
+  const resultEl = document.getElementById('entity-result-body');
+  resultEl.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`Analyze the GAO (Generative AI Optimization) importance of this entity for ${brand}:
+
+Entity: "${entity}" (Type: ${type})
+
+Provide:
+1. AI Visibility Impact (High/Medium/Low) — how much does mentioning this entity help AI cite your content?
+2. Which LLMs recognize this entity most?
+3. How to use this entity to get cited in AI answers
+4. 2 content recommendations using this entity
+Keep it concise — max 150 words.`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    resultEl.textContent = data.message;
+  } catch(e){ resultEl.textContent = 'Error: '+e.message; }
+}
+
+async function runEntityGAO() {
+  const content = document.getElementById('entity-input').value.trim();
+  if(!content){toast('Paste content first','error');return;}
+  const summaryEl = document.getElementById('entity-summary');
+  const bodyEl = document.getElementById('entity-summary-body');
+  const titleEl = document.getElementById('entity-summary-title');
+  summaryEl.style.display='block';
+  bodyEl.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`Perform a full entity-based GAO analysis of this content:
+
+${content.substring(0,3000)}
+
+Analyze:
+1. ENTITY COVERAGE — what key entities are present and which are missing for good AI citation
+2. ENTITY GAPS — what important entities should be added to improve AI visibility
+3. SEMANTIC RICHNESS SCORE (0-100) — how well-structured are the entities for LLM consumption
+4. TOP 5 MISSING ENTITIES — specific entities to add to get cited more
+5. CONTENT RECOMMENDATIONS — 3 specific improvements to make this content more AI-citation-worthy`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    bodyEl.textContent = data.message;
+    titleEl.textContent = '🏷️ Entity GAO Analysis Complete';
+    toast('✓ Entity GAO analysis done!','success');
+  } catch(e){bodyEl.textContent='Error: '+e.message;}
+}
+
+function copyEntities() {
+  if(!window._lastEntities){toast('Extract entities first','error');return;}
+  navigator.clipboard.writeText(window._lastEntities.map(e=>`${e.text} (${e.type})`).join('\n'))
+    .then(()=>toast('Entities copied!','success'));
+}
+
+function copyEntityReport() {
+  const text = document.getElementById('entity-summary-body').textContent;
+  navigator.clipboard.writeText(text).then(()=>toast('Copied!','success'));
+}
+
+// ── Internal Link Suggester ───────────────────────────────
+async function runLinkSuggester() {
+  const content = document.getElementById('link-input').value.trim();
+  const currentUrl = document.getElementById('link-current-url').value.trim();
+  const domain = document.getElementById('link-domain').value.trim();
+  const industry = document.getElementById('link-industry').value.trim();
+  if(!content){toast('Paste your content first','error');return;}
+
+  const resultDiv = document.getElementById('link-result');
+  const bodyDiv = document.getElementById('link-body');
+  const titleDiv = document.getElementById('link-title');
+  resultDiv.classList.add('show');
+  bodyDiv.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`You are an internal linking expert. Analyze this content and suggest strategic internal links.
+
+Current page: ${currentUrl||'unknown'}
+Domain: ${domain||'unknown'}
+Industry: ${industry||'unknown'}
+Content: ${content.substring(0,3000)}
+
+Provide 8-10 internal link suggestions in this format for each:
+**Anchor Text:** [exact phrase to link]
+**Suggested URL:** [/page-slug or full URL]
+**Link Reason:** [why this link helps SEO and AI visibility]
+**Priority:** High/Medium/Low
+
+Then provide:
+**INTERNAL LINKING STRATEGY:** 3 key principles for this site's linking structure
+**AI CRAWLABILITY TIP:** How good internal links help LLMs understand your site structure`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    bodyDiv.textContent = data.message;
+    titleDiv.textContent = '🔗 Internal Link Suggestions — '+( domain||'Your Site');
+    toast('✓ Link suggestions ready!','success');
+  } catch(e){bodyDiv.textContent='Error: '+e.message;toast('Error: '+e.message,'error');}
+}
+
+async function runSitemapLinks() {
+  const domain = document.getElementById('link-domain').value.trim();
+  const industry = document.getElementById('link-industry').value.trim();
+  if(!domain&&!industry){toast('Enter domain or industry first','error');return;}
+
+  const resultDiv = document.getElementById('link-result');
+  const bodyDiv = document.getElementById('link-body');
+  const titleDiv = document.getElementById('link-title');
+  resultDiv.classList.add('show');
+  bodyDiv.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`Create a complete internal linking strategy for:
+Domain: ${domain||'[website]'}
+Industry: ${industry||'SaaS'}
+
+Provide:
+1. PILLAR PAGE STRUCTURE — main hub pages that should attract most internal links
+2. CLUSTER PAGES — supporting content that links back to pillars
+3. LINK ARCHITECTURE MAP — how pages should connect to each other
+4. AI VISIBILITY LINKING TIPS — how internal links help LLMs understand site authority
+5. PRIORITY PAGES TO CREATE — gaps in the link structure
+6. MALAYSIA-SPECIFIC TIPS — local SEO linking strategy for Malaysian market`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    bodyDiv.textContent = data.message;
+    titleDiv.textContent = '🗺️ Link Architecture Strategy — '+(domain||industry);
+    toast('✓ Link strategy ready!','success');
+  } catch(e){bodyDiv.textContent='Error: '+e.message;}
+}
+
+function copyLinkResult() {
+  navigator.clipboard.writeText(document.getElementById('link-body').textContent)
+    .then(()=>toast('Copied!','success'));
+}
+
+// ── Schema Builder ────────────────────────────────────────
+let selectedSchemaType = 'organization';
+function selectSchemaType(el, type) {
+  document.querySelectorAll('.stt').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  selectedSchemaType = type;
+}
+
+async function runSchemaBuilder() {
+  const brand = document.getElementById('schema-brand').value.trim();
+  const url = document.getElementById('schema-url').value.trim();
+  const industry = document.getElementById('schema-industry').value.trim();
+  const extra = document.getElementById('schema-extra').value.trim();
+  if(!brand){toast('Enter your brand name first','error');return;}
+
+  const outputEl = document.getElementById('schema-builder-output');
+  outputEl.textContent = '// Generating '+selectedSchemaType+' schema...';
+
+  const typePrompts = {
+    organization: `Generate a complete Organization JSON-LD schema`,
+    software: `Generate a complete SoftwareApplication JSON-LD schema`,
+    faq: `Generate a FAQPage JSON-LD schema with 6 relevant Q&As`,
+    product: `Generate a Product JSON-LD schema`,
+    article: `Generate an Article JSON-LD schema`,
+    local: `Generate a LocalBusiness JSON-LD schema`,
+    complete: `Generate a COMPLETE schema suite including: Organization, WebSite with SearchAction, BreadcrumbList, FAQPage (5 Q&As), and SoftwareApplication schemas`
+  };
+
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`${typePrompts[selectedSchemaType]||'Generate Organization schema'} for:
+
+Brand: ${brand}
+URL: ${url||'https://example.com'}
+Industry: ${industry||'SaaS Software'}
+${extra?'Additional context: '+extra:''}
+Market: Malaysia/SEA
+
+Requirements:
+- Optimize for AI crawler readability (GPTBot, ClaudeBot, GeminiBot, Googlebot)
+- Include all relevant properties
+- Add @context and @type correctly
+- Make it comprehensive for GAO (Generative AI Optimization)
+- Return ONLY valid JSON-LD code, no explanation`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    outputEl.textContent = data.message;
+    toast('✓ Schema generated!','success');
+  } catch(e){outputEl.textContent='// Error: '+e.message;toast('Error: '+e.message,'error');}
+}
+
+async function validateSchema() {
+  const schema = document.getElementById('schema-builder-output').textContent;
+  if(schema.includes('will appear here')||!schema.trim()){toast('Generate a schema first','error');return;}
+  const outputEl = document.getElementById('schema-builder-output');
+  const original = outputEl.textContent;
+  outputEl.textContent = '// Validating schema...';
+  try {
+    JSON.parse(schema.replace(/\/\/.*/g,''));
+    outputEl.textContent = original;
+    toast('✅ Valid JSON-LD schema!','success');
+  } catch(e){
+    // Ask AI to fix it
+    try {
+      const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`Fix this JSON-LD schema — it has a syntax error. Return ONLY valid corrected JSON-LD:\n${schema}`}]})});
+      const data = await res.json();
+      outputEl.textContent = data.message;
+      toast('✓ Schema fixed and validated!','success');
+    } catch(e2){outputEl.textContent=original;toast('Could not validate','error');}
+  }
+}
+
+function copySchema() {
+  const text = document.getElementById('schema-builder-output').textContent;
+  if(text.includes('will appear here')){toast('Generate a schema first','error');return;}
+  navigator.clipboard.writeText(text).then(()=>toast('Schema copied!','success'));
+}
+
+// ── Content Enricher ──────────────────────────────────────
+async function runContentEnricher() {
+  const content = document.getElementById('enrich-input').value.trim();
+  const llm = document.getElementById('enrich-llm').value;
+  const goal = document.getElementById('enrich-goal').value;
+  const industry = document.getElementById('enrich-industry').value.trim();
+  if(!content){toast('Paste your content first','error');return;}
+
+  const compareEl = document.getElementById('enricher-compare');
+  const originalEl = document.getElementById('enrich-original');
+  const outputEl = document.getElementById('enrich-output');
+  const scoreEl = document.getElementById('enrich-score-result');
+
+  compareEl.style.display='grid';
+  originalEl.textContent = content.substring(0,1500)+(content.length>1500?'...':'');
+  outputEl.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  scoreEl.classList.remove('show');
+
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`You are a GAO (Generative AI Optimization) content specialist. Enrich this content to maximize visibility in ${llm} responses.
+
+Goal: ${goal}
+Industry: ${industry||'general'}
+
+Original content:
+${content.substring(0,2500)}
+
+Rewrite this content with:
+1. Added named entities (people, companies, places, concepts) that LLMs recognize
+2. Structured facts and statistics (even estimated ones) that AI systems cite
+3. Clear semantic structure that helps LLMs extract information
+4. Authority signals — expert quotes, source references, specific data points
+5. Conversational question-answer patterns that match how users ask LLMs
+6. Malaysian/SEA context where relevant
+
+Return ONLY the enriched content — no explanation, no headers about what you changed.`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    outputEl.textContent = data.message;
+    toast('✓ Content enriched!','success');
+  } catch(e){outputEl.textContent='Error: '+e.message;toast('Error: '+e.message,'error');}
+}
+
+async function runGAOScore() {
+  const content = document.getElementById('enrich-input').value.trim();
+  if(!content){toast('Paste content first','error');return;}
+
+  const scoreEl = document.getElementById('enrich-score-result');
+  const bodyEl = document.getElementById('enrich-score-body');
+  const titleEl = document.getElementById('enrich-score-title');
+  scoreEl.classList.add('show');
+  bodyEl.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:authH(),body:JSON.stringify({messages:[{role:'user',content:`Score this content for GAO (Generative AI Optimization) readiness.
+
+Content:
+${content.substring(0,2500)}
+
+Score it on these dimensions (0-100 each):
+1. Entity Richness — presence of named entities LLMs recognize
+2. Semantic Clarity — how clearly concepts are explained for AI extraction
+3. Citation Worthiness — does it contain facts/stats AI would want to cite?
+4. Question Coverage — does it answer questions users ask AI systems?
+5. Structural Quality — headings, lists, clear organization
+6. Authority Signals — expert quotes, sources, specific data
+
+Then provide:
+OVERALL GAO SCORE: [0-100]
+TOP 3 IMPROVEMENTS to increase the score`}]})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    bodyEl.textContent = data.message;
+    titleEl.textContent = '📊 GAO Content Score Complete';
+    toast('✓ Content scored!','success');
+  } catch(e){bodyEl.textContent='Error: '+e.message;}
+}
+
+function copyEnriched() {
+  const text = document.getElementById('enrich-output').textContent;
+  if(!text){toast('Enrich content first','error');return;}
+  navigator.clipboard.writeText(text).then(()=>toast('Enriched content copied!','success'));
+}
+
+// ── Init history chart on load ────────────────────────────
+renderHistory();
 
 // Check if logged in
 if(!TOKEN){ document.querySelector('.gao-hero-sub').innerHTML += '<br><strong style="color:var(--orange)">⚠️ Please <a href="login.html" style="color:var(--teal)">sign in</a> to run live GAO analysis.</strong>'; }
