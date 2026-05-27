@@ -723,9 +723,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
 <script>
 // ── Auth check ────────────────────────────────────────────
 const TOKEN = localStorage.getItem('msm_token');
-const API_BASE = window.location.origin;
-
-function authH() { return {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}; }
+function authH() { 
+  const tok = localStorage.getItem('msm_token');
+  return {'Content-Type':'application/json','Authorization':'Bearer '+tok};
+}
 
 // ── Helpers ───────────────────────────────────────────────
 function toggleLLM(el) { el.classList.toggle('selected'); }
@@ -841,6 +842,7 @@ Format with clear headers and be specific to ${brand} in the ${industry || 'give
     animateStat('stat-citations',Math.floor(Math.random()*15)+5);
 
     toast('✓ GAO Analysis complete!','success');
+    saveGAOAfterAnalysis();
   } catch(e){
     bodyDiv.textContent = 'Error: '+e.message+'\n\nPlease make sure you are logged in and have credits remaining.';
     toast('Analysis failed: '+e.message,'error');
@@ -1195,11 +1197,8 @@ function deleteHistory(idx) {
   toast('Deleted','');
 }
 
-// Override runGAO to also save history
-const _origRunGAO = runGAO;
-async function runGAO() {
-  await _origRunGAO();
-  // Save after analysis completes
+// Save history after GAO analysis
+function saveGAOAfterAnalysis() {
   setTimeout(()=>{
     const brand = document.getElementById('brand-input').value.trim();
     const prompts = document.getElementById('prompts-input').value.trim().split('\n').filter(p=>p.trim());
