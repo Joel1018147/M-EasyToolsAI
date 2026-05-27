@@ -1551,8 +1551,11 @@ function applyUser(u) {
   // Banner title uses current language
   const g = document.querySelector('.banner-title');
   if (g) g.textContent = `${t('dash_welcome')}, ${u.name.split(' ')[0]}`;
-  // Re-apply all translations after user loaded (ensures correct language everywhere)
-  setTimeout(() => applyTranslations(), 50);
+  // Re-apply translations and reload stats with correct language
+  setTimeout(() => {
+    applyTranslations();
+    if (typeof loadStats === 'function') loadStats();
+  }, 100);
 }
 
 // ── Profile Menu ─────────────────────────────────────────
@@ -2910,6 +2913,13 @@ function toggleLang() {
   applyTranslations();
   renderTools(TOOLS);
   updateProfileMenuLabels();
+  // Re-run loadStats so delta texts update to correct language
+  if (typeof loadStats === 'function') loadStats();
+  // Re-apply banner title with correct language
+  if (currentUser) {
+    const g = document.querySelector('.banner-title');
+    if (g) g.textContent = t('dash_welcome') + ', ' + currentUser.name.split(' ')[0];
+  }
   toast(currentLang === 'bm' ? '🇲🇾 Bahasa Malaysia diaktifkan' : '🇬🇧 English activated', 'success');
 }
 
@@ -2922,13 +2932,7 @@ function initLang() {
 renderTools(TOOLS);
 initTheme();
 initLang();
-initApp().then(() => {
-  // Re-apply translations after user data loads to fix any mixed language
-  setTimeout(() => {
-    applyTranslations();
-    updateProfileMenuLabels();
-  }, 200);
-});
+initApp();
 </script>
 </body>
 </html>
