@@ -861,6 +861,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <script>
 // ── Chat Widget Logic ──────────────────────────────────
 const CHAT_API = 'https://m-easytools-ai-production.up.railway.app/api/chat';
+function cwEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 let cwHistory = [];
 let cwOpen = false;
 let tooltipDismissed = false;
@@ -931,7 +932,7 @@ async function cwSend() {
   document.getElementById('cw-quick').style.display = 'none';
 
   // Show user message
-  cwAppend('user', msg.replace(/\n/g, '<br>'));
+  cwAppend('user', cwEsc(msg).replace(/\n/g, '<br>'));
   cwHistory.push({ role: 'user', content: msg });
 
   // Show typing indicator

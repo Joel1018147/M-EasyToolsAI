@@ -855,6 +855,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);display:flex;f
     <svg class="sb-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="9" r="2.5"/><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.22 4.22l1.42 1.42M12.36 12.36l1.42 1.42M4.22 13.78l1.42-1.42M12.36 5.64l1.42-1.42"/></svg>
     <span data-i18n="nav_settings">Settings</span>
   </button>
+  <button class="sb-item" id="admin-nav-btn" onclick="window.location.href='/admin.html'" style="display:none">
+    <svg class="sb-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2l1.5 4h4l-3.5 2.5 1.5 4L9 10 5.5 12.5l1.5-4L3.5 6h4z"/></svg>
+    <span>Admin Panel</span>
+  </button>
 
   <div class="sb-bottom">
     <!-- Profile tile with dropdown -->
@@ -1480,7 +1484,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);display:flex;f
             </div>
           </div>
           <div id="bulk-results" style="display:none;flex-direction:column;gap:12px"></div>
-          <div id="bulk-done-actions" style="display:none;margin-top:16px;display:none">
+          <div id="bulk-done-actions" style="display:none;margin-top:16px">
             <button class="btn btn-outline" onclick="exportBulkCSV()">📥 Export CSV</button>
           </div>
         </div>
@@ -1556,11 +1560,8 @@ function applyUser(u) {
   // Banner title uses current language
   const g = document.querySelector('.banner-title');
   if (g) g.textContent = `${t('dash_welcome')}, ${u.name.split(' ')[0]}`;
-  // Re-apply translations and reload stats with correct language
-  setTimeout(() => {
-    applyTranslations();
-    if (typeof loadStats === 'function') loadStats();
-  }, 100);
+  // Re-apply translations after user data is set
+  setTimeout(() => { applyTranslations(); }, 50);
 }
 
 // ── Profile Menu ─────────────────────────────────────────
@@ -1727,18 +1728,18 @@ const FORMS={
 
 // ── Tools Rendering ──────────────────────────────────────
 function renderTools(list) {
-  document.getElementById('tools-grid').innerHTML=list.map(t=>`
-    <div class="tool-card" onclick="openTool('${t.id}')" style="--tc-color:${t.color}">
+  document.getElementById('tools-grid').innerHTML=list.map(tool=>`
+    <div class="tool-card" onclick="openTool('${tool.id}')" style="--tc-color:${tool.color}">
       <div class="tc-stripe"></div>
-      ${t.badge?`<span class="tc-badge" style="background:${t.color}15;color:${t.color}">${t.badge}</span>`:''}
-      <div class="tc-icon" style="background:${t.bg}">${t.icon}</div>
-      <div class="tc-name">${t.name}</div>
-      <div class="tc-desc">${t.desc}</div>
+      ${tool.badge?`<span class="tc-badge" style="background:${tool.color}15;color:${tool.color}">${tool.badge}</span>`:''}
+      <div class="tc-icon" style="background:${tool.bg}">${tool.icon}</div>
+      <div class="tc-name">${tool.name}</div>
+      <div class="tc-desc">${tool.desc}</div>
     </div>`).join('');
 }
 
-function filterTools(q) { renderTools(TOOLS.filter(t=>t.name.toLowerCase().includes(q.toLowerCase())||t.desc.toLowerCase().includes(q.toLowerCase()))); }
-function catFilter(cat,btn) { document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); renderTools(cat==='all'?TOOLS:TOOLS.filter(t=>t.cat===cat)); }
+function filterTools(q) { renderTools(TOOLS.filter(tool=>tool.name.toLowerCase().includes(q.toLowerCase())||tool.desc.toLowerCase().includes(q.toLowerCase()))); }
+function catFilter(cat,btn) { document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); renderTools(cat==='all'?TOOLS:TOOLS.filter(tool=>tool.cat===cat)); }
 
 // ── Editor ───────────────────────────────────────────────
 function openTool(id) {
@@ -1757,7 +1758,7 @@ function openTool(id) {
     container.appendChild(sec);
   });
   const toneSec=document.createElement('div'); toneSec.className='form-section';
-  toneSec.innerHTML=`<div class="f-label">Tone of Voice</div><div class="tone-wrap">${['Professional','Friendly','Witty','Bold','Empathetic','Casual'].map(t=>`<div class="tone-tag ${t===activeTone?'on':''}" onclick="setTone('${t}',this)">${t}</div>`).join('')}</div>`;
+  toneSec.innerHTML=`<div class="f-label">Tone of Voice</div><div class="tone-wrap">${['Professional','Friendly','Witty','Bold','Empathetic','Casual'].map(tone=>`<div class="tone-tag ${tone===activeTone?'on':''}" onclick="setTone('${tone}',this)">${tone}</div>`).join('')}</div>`;
   container.appendChild(toneSec);
   const varSec=document.createElement('div'); varSec.className='form-section';
   varSec.innerHTML=`<div class="f-label">Number of Variants</div><select class="f-select" id="ff-variants"><option>1 variant</option><option selected>2 variants</option><option>3 variants</option></select>`;
@@ -1792,7 +1793,8 @@ async function generateContent() {
     if(!res.ok){const err=await res.json();throw new Error(err.error||'Generation failed');}
     const data=await res.json();
     credits=Math.max(0,credits-(data.creditsUsed||10));
-    document.getElementById('cred-count').textContent=credits.toLocaleString()+' credits';
+    const credLabel=currentLang==='bm'?'kredit':'credits';
+    document.getElementById('cred-count').textContent=credits.toLocaleString()+' '+credLabel;
     renderOutput(data.text,varCount);
     toast('✓ Content generated successfully','success');
   } catch(e){
@@ -1907,11 +1909,13 @@ async function sendMessage() {
 function appendMsg(type,html,raw){
   const win=document.getElementById('chat-window');
   const el=document.createElement('div');el.className='msg '+type;
-  el.innerHTML=`<div class="m-av" style="${type==='ai'?'font-size:10px;font-weight:800;font-family:\'Libre Baskerville\',serif':''}">${type==='ai'?'M':'JD'}</div><div class="m-bubble">${raw?html:html.replace(/\n/g,'<br>')}</div>`;
+  const userInitials=currentUser?.name?.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)||'U';
+  const safeHtml=raw?html:escHtml(html).replace(/\n/g,'<br>');
+  el.innerHTML=`<div class="m-av" style="${type==='ai'?'font-size:10px;font-weight:800;font-family:\'Libre Baskerville\',serif':''}">${type==='ai'?'M':userInitials}</div><div class="m-bubble">${safeHtml}</div>`;
   win.appendChild(el);scrollChat();return el;
 }
 function scrollChat(){const w=document.getElementById('chat-window');w.scrollTop=w.scrollHeight;}
-function clearChat(){chatHistory=[];document.getElementById('chat-window').innerHTML=`<div class="msg ai"><div class="m-av" style="font-size:10px;font-weight:800;font-family:'Libre Baskerville',serif">M</div><div class="m-bubble">Chat cleared! What would you like to create today?</div></div>`;}
+function clearChat(){chatHistory=[];document.getElementById('chat-window').innerHTML=`<div class="msg ai"><div class="m-av" style="font-size:10px;font-weight:800;font-family:'Libre Baskerville',serif">M</div><div class="m-bubble">${escHtml(t('chat_cleared'))}</div></div>`;}
 
 // ── Documents ────────────────────────────────────────────
 const TYPE_STYLE={'Blog Writer':'background:#EEF2FF;color:#4F46E5','Email Campaign':'background:#ECFDF5;color:#059669','Product Description':'background:#FFF1F2;color:#E11D48','Ad Copy':'background:var(--orange-bg);color:var(--orange)','Social Media Posts':'background:#FEF3C7;color:#B45309','Sales Outreach Email':'background:#F0FDF4;color:#16A34A','SEO Meta Generator':'background:#EFF6FF;color:#2563EB','Keyword Cluster Builder':'background:#FEFCE8;color:#CA8A04','Landing Page Copy':'background:#FFF7ED;color:#EA580C','Content Rewriter':'background:#F5F3FF;color:#7C3AED'};
@@ -2798,24 +2802,15 @@ function applyTranslations() {
   }
 
   // Update search placeholder
-  const searchInput = document.getElementById('search-tools-input');
+  const searchInput = document.getElementById('search-tools');
   if (searchInput) searchInput.placeholder = t('tools_search');
 
   // Update chat placeholder
   const chatTa = document.getElementById('chat-ta');
   if (chatTa) chatTa.placeholder = t('chat_placeholder');
 
-  // Update page titles and subtitles dynamically
+  // Update page titles, subtitles, pills, and bulk page
   updatePageTexts();
-
-  // Update bulk page
-  updateBulkPageTexts();
-
-  // Update settings nav items
-  updateSettingsNav();
-
-  // Update category pills
-  updateCategoryPills();
 
   // Update topbar buttons
   const credChip = document.getElementById('cred-count');
@@ -2828,9 +2823,8 @@ function updatePageTexts() {
   if (bannerHello) bannerHello.textContent = t('dash_hello');
   const bannerSub = document.querySelector('.banner-sub');
   if (bannerSub) {
-    const docCount = document.querySelector('.m-card-val') ? 
-      (document.querySelectorAll('.m-card-val')[1]?.textContent || '0') : '0';
-    const docVal = document.querySelectorAll('.m-card-val')[1]?.textContent?.trim() || '0'; bannerSub.textContent = t('dash_sub').replace('{n}', docVal);
+    const docVal = document.querySelectorAll('.m-card-val')[1]?.textContent?.trim() || '0';
+    bannerSub.textContent = t('dash_sub').replace('{n}', docVal);
   }
 
   // Quick Create tiles
@@ -2859,7 +2853,9 @@ function updatePageTexts() {
   // Credit note
   const creditNote = document.getElementById('credit-note');
   if (creditNote && currentUser) {
-    creditNote.textContent = `${(currentUser.credits_max - currentUser.credits)||0} ${t('dash_this_month')} · ${currentUser.credits||0} ${t('dash_remaining')}`;
+    const usedLabel = currentLang === 'bm' ? 'digunakan' : 'used';
+    const credUsed = (currentUser.credits_max || 0) - (currentUser.credits || 0);
+    creditNote.textContent = `${Math.max(0,credUsed).toLocaleString()} ${usedLabel} · ${(currentUser.credits||0).toLocaleString()} ${t('dash_remaining')}`;
   }
 
   // Credit label

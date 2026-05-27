@@ -191,6 +191,7 @@ const TOKEN = localStorage.getItem('msm_token') || '';
 let editId = null;
 
 function H() { return {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}; }
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function showPage(id, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -228,9 +229,9 @@ async function loadAll() {
 
     document.getElementById('recent-users-tbody').innerHTML = d.recentUsers.map(u=>`
       <tr>
-        <td style="font-weight:600">${u.name}</td>
-        <td style="color:var(--mist);font-size:12px">${u.email}</td>
-        <td><span class="badge badge-${u.plan}">${u.plan}</span></td>
+        <td style="font-weight:600">${esc(u.name)}</td>
+        <td style="color:var(--mist);font-size:12px">${esc(u.email)}</td>
+        <td><span class="badge badge-${esc(u.plan)}">${esc(u.plan)}</span></td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${(u.credits||0).toLocaleString()}</td>
         <td style="font-size:12px;color:var(--mist)">${fmtDate(u.created_at)}</td>
       </tr>`).join('');
@@ -257,13 +258,13 @@ async function loadUsers(page=1,search='') {
     document.getElementById('users-total').textContent=d.total.toLocaleString()+' total users';
     document.getElementById('users-tbody').innerHTML = d.users.map(u=>`
       <tr>
-        <td><div style="font-weight:600">${u.name}</div><div style="font-size:11px;color:var(--mist)">${u.email}</div></td>
-        <td><span class="badge badge-${u.plan}">${u.plan}</span></td>
+        <td><div style="font-weight:600">${esc(u.name)}</div><div style="font-size:11px;color:var(--mist)">${esc(u.email)}</div></td>
+        <td><span class="badge badge-${esc(u.plan)}">${esc(u.plan)}</span></td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${(u.credits||0).toLocaleString()}</td>
-        <td><span class="badge badge-${u.role==='admin'?'admin':'free'}">${u.role}</span></td>
+        <td><span class="badge badge-${u.role==='admin'?'admin':'free'}">${esc(u.role)}</span></td>
         <td><span class="badge badge-${u.is_active?'active':'inactive'}">${u.is_active?'Active':'Suspended'}</span></td>
         <td style="font-size:12px;color:var(--mist)">${u.last_login?fmtDate(u.last_login):'Never'}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="openModal(${u.id},'${u.name.replace(/'/g,"\\'")}','${u.plan}','${u.role}',${u.is_active})">Edit</button></td>
+        <td><button class="btn btn-outline btn-sm" data-id="${u.id}" data-name="${esc(u.name)}" data-plan="${esc(u.plan)}" data-role="${esc(u.role)}" data-active="${u.is_active}" onclick="openModal(this)">Edit</button></td>
       </tr>`).join('');
     // Pagination
     const totalPages=Math.ceil(d.total/20);
@@ -274,12 +275,12 @@ async function loadUsers(page=1,search='') {
 let searchT;
 function searchUsers(v){clearTimeout(searchT);searchT=setTimeout(()=>loadUsers(1,v),400);}
 
-function openModal(id,name,plan,role,active) {
-  editId=id;
-  document.getElementById('modal-user-name').textContent='Edit: '+name;
-  document.getElementById('modal-plan').value=plan;
-  document.getElementById('modal-role').value=role;
-  document.getElementById('modal-status').value=String(active);
+function openModal(el) {
+  editId=el.dataset.id;
+  document.getElementById('modal-user-name').textContent='Edit: '+el.dataset.name;
+  document.getElementById('modal-plan').value=el.dataset.plan;
+  document.getElementById('modal-role').value=el.dataset.role;
+  document.getElementById('modal-status').value=el.dataset.active;
   document.getElementById('modal-err').style.display='none';
   document.getElementById('user-modal').classList.add('show');
 }
@@ -313,9 +314,9 @@ async function loadAnalytics() {
     const max=Math.max(...d.topTools.map(t=>+t.uses||0));
     document.getElementById('analytics-tools-list').innerHTML=d.topTools.map(t=>`
       <div class="tool-row">
-        <div class="tool-name">${t.tool_name}</div>
+        <div class="tool-name">${esc(t.tool_name)}</div>
         <div class="tool-bar-track"><div class="tool-bar-fill" style="width:${max>0?(t.uses/max*100):0}%"></div></div>
-        <div class="tool-count">${t.uses}</div>
+        <div class="tool-count">${+t.uses||0}</div>
       </div>`).join('');
   } catch(e){console.error(e);}
 }
@@ -327,7 +328,7 @@ async function loadToolStats() {
     const max=Math.max(...d.topTools.map(t=>+t.uses||0));
     document.getElementById('tools-stats-tbody').innerHTML=d.topTools.map(t=>`
       <tr>
-        <td style="font-weight:600">${t.tool_name||'Unknown'}</td>
+        <td style="font-weight:600">${esc(t.tool_name||'Unknown')}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${(+t.uses||0).toLocaleString()}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${(+t.words||0).toLocaleString()}</td>
         <td style="width:200px"><div class="tool-bar-track" style="height:8px"><div class="tool-bar-fill" style="width:${max>0?(t.uses/max*100):0}%"></div></div></td>

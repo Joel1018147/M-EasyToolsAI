@@ -158,7 +158,7 @@ const db = {
 //  MIDDLEWARE
 // ════════════════════════════════════════════════════
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -740,10 +740,10 @@ app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
 app.put('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { plan, credits, is_active, role } = req.body;
   const planCredits = { free: 2500, pro: 10000, agency: 999999 };
-  const newCredits = plan ? planCredits[plan] : credits;
+  const newCredits = plan ? (planCredits[plan] ?? null) : (credits ?? null);
   await db.run(
     'UPDATE users SET plan=COALESCE($1,plan), credits=COALESCE($2,credits), credits_max=COALESCE($3,credits_max), is_active=COALESCE($4,is_active), role=COALESCE($5,role) WHERE id=$6',
-    [plan, newCredits, newCredits, is_active, role, req.params.id]
+    [plan || null, newCredits, newCredits, is_active ?? null, role || null, req.params.id]
   );
   res.json({ success: true });
 });
@@ -788,9 +788,13 @@ app.get('/api/docs', (req, res) => {
 //  HEALTH CHECK
 // ════════════════════════════════════════════════════
 app.get('/api/health', async (req, res) => {
-  const users = await db.getOne('SELECT COUNT(*) as c FROM users');
-  const docs  = await db.getOne('SELECT COUNT(*) as c FROM documents');
-  res.json({ status: 'ok', app: 'M-EasyTools AI', version: '4.0.0', database: 'PostgreSQL', users: parseInt(users.c), documents: parseInt(docs.c), groq: !!GROQ_KEY, google: !!GOOGLE_ID, timestamp: new Date().toISOString() });
+  try {
+    const users = await db.getOne('SELECT COUNT(*) as c FROM users');
+    const docs  = await db.getOne('SELECT COUNT(*) as c FROM documents');
+    res.json({ status: 'ok', app: 'M-EasyTools AI', version: '4.0.0', database: 'PostgreSQL', users: parseInt(users.c), documents: parseInt(docs.c), groq: !!GROQ_KEY, google: !!GOOGLE_ID, timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(503).json({ status: 'error', app: 'M-EasyTools AI', database: 'unavailable', error: err.message, timestamp: new Date().toISOString() });
+  }
 });
 
 // Page routes
