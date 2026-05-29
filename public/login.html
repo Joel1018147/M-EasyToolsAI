@@ -238,7 +238,7 @@ body{
       <div class="form-options">
         <label class="checkbox-wrap">
           <input type="checkbox" id="remember-me">
-          <span class="checkbox-label">Remember me</span>
+          <span class="checkbox-label">Keep me signed in</span>
         </label>
         <a href="#" class="forgot-link">Forgot password?</a>
       </div>
@@ -286,9 +286,16 @@ async function handleLogin(e) {
 
     if (!res.ok) throw new Error(data.error || 'Login failed');
 
-    // Store auth token
-    localStorage.setItem('msm_token', data.token);
-    localStorage.setItem('msm_user', JSON.stringify(data.user));
+    const remember = document.getElementById('remember-me').checked;
+    if (remember) {
+      localStorage.setItem('msm_token', data.token);
+      localStorage.setItem('msm_user', JSON.stringify(data.user));
+      const exp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `msm_token=${data.token}; expires=${exp}; path=/; SameSite=Strict`;
+    } else {
+      sessionStorage.setItem('msm_token', data.token);
+      sessionStorage.setItem('msm_user', JSON.stringify(data.user));
+    }
 
     sucMsg.textContent = `Welcome back, ${data.user.name}! Redirecting to dashboard…`;
     sucMsg.style.display = 'block';
@@ -315,21 +322,14 @@ function getRedirect() {
 }
 
 function socialLogin(provider) {
-  window.location.href = `/api/auth/${provider.toLowerCase()}`;
+  const remember = document.getElementById('remember-me').checked;
+  window.location.href = `/api/auth/${provider.toLowerCase()}` + (remember ? '?remember=true' : '');
 }
 
-// Handle Google OAuth redirect (token passed in URL after callback)
+// Handle OAuth error redirects back to login page
 (function() {
   const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
   const error = params.get('error');
-  const name  = params.get('name');
-  if (token) {
-    localStorage.setItem('msm_token', token);
-    if (name) localStorage.setItem('msm_user', JSON.stringify({ name: decodeURIComponent(name) }));
-    window.location.href = getRedirect();
-    return;
-  }
   if (error) {
     const errMsg = document.getElementById('error-msg');
     const msgs = { google_cancelled: 'Google sign-in was cancelled. Please try again.', account_disabled: 'Your account has been disabled. Contact support.' };

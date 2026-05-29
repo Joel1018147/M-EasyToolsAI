@@ -248,13 +248,17 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
 app.get('/api/auth/google', (req, res) => {
   if (!GOOGLE_ID) return res.status(500).send('Google OAuth not configured');
-  const params = new URLSearchParams({ client_id: GOOGLE_ID, redirect_uri: `${APP_URL}/api/auth/google/callback`, response_type: 'code', scope: 'openid email profile', access_type: 'offline', prompt: 'select_account' });
+  const remember = req.query.remember === 'true' ? 'true' : 'false';
+  const state = Buffer.from(JSON.stringify({ remember })).toString('base64url');
+  const params = new URLSearchParams({ client_id: GOOGLE_ID, redirect_uri: `${APP_URL}/api/auth/google/callback`, response_type: 'code', scope: 'openid email profile', access_type: 'offline', prompt: 'select_account', state });
   res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 });
 
 app.get('/api/auth/google/callback', async (req, res) => {
-  const { code, error } = req.query;
+  const { code, error, state } = req.query;
   if (error || !code) return res.redirect('/login.html?error=google_cancelled');
+  let remember = 'false';
+  try { remember = JSON.parse(Buffer.from(state || '', 'base64url').toString()).remember === 'true' ? 'true' : 'false'; } catch {}
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -282,7 +286,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
       user = await db.getOne('UPDATE users SET last_login=CURRENT_TIMESTAMP,avatar=$1 WHERE id=$2 RETURNING *', [gUser.picture, user.id]);
     }
     if (!user.is_active) return res.redirect('/login.html?error=account_disabled');
-    res.redirect(`/app.html?token=${makeToken(user.id)}&name=${encodeURIComponent(user.name)}`);
+    res.redirect(`/auth-success.html?token=${makeToken(user.id)}&name=${encodeURIComponent(user.name)}&remember=${remember}`);
   } catch (err) { res.redirect(`/login.html?error=${encodeURIComponent(err.message)}`); }
 });
 

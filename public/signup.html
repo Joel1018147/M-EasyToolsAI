@@ -170,6 +170,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--black);color:va
         <div class="terms-text">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I understand M-EasyTools AI may send product updates to my email.</div>
       </div>
 
+      <div class="terms-row" style="margin-top:-6px">
+        <input type="checkbox" id="keep-signed-in">
+        <div class="terms-text">Keep me signed in on this device</div>
+      </div>
+
       <button type="submit" class="btn-submit" id="signup-btn">Create Free Account →</button>
     </form>
 
@@ -249,8 +254,16 @@ async function handleSignup(e) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');
 
-    localStorage.setItem('msm_token', data.token);
-    localStorage.setItem('msm_user', JSON.stringify(data.user));
+    const remember = document.getElementById('keep-signed-in').checked;
+    if (remember) {
+      localStorage.setItem('msm_token', data.token);
+      localStorage.setItem('msm_user', JSON.stringify(data.user));
+      const exp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `msm_token=${data.token}; expires=${exp}; path=/; SameSite=Strict`;
+    } else {
+      sessionStorage.setItem('msm_token', data.token);
+      sessionStorage.setItem('msm_user', JSON.stringify(data.user));
+    }
     sucMsg.textContent = `Account created! Welcome to M-EasyTools AI, ${firstName}! Redirecting…`;
     sucMsg.style.display = 'block';
     setTimeout(() => window.location.href = 'app.html', 1400);
@@ -263,7 +276,8 @@ async function handleSignup(e) {
 }
 
 function socialSignup(provider) {
-  window.location.href = `/api/auth/${provider.toLowerCase()}`;
+  const remember = document.getElementById('keep-signed-in').checked;
+  window.location.href = `/api/auth/${provider.toLowerCase()}` + (remember ? '?remember=true' : '');
 }
 </script>
 </body>
