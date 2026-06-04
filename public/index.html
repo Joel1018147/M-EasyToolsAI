@@ -3,7 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>M-EasyTools AI+ — One Platform. Eight Powerful Systems.</title>
+<title>M-EasyTools AI+ — One Platform. Nine Powerful Systems.</title>
+<meta name="description" content="M-EasyTools AI+ brings together Content, Social, Email, Ads, SEO, Commerce, Sales, Productivity and GAO tools — all in one AI-native platform built to grow your business faster.">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="M-EasyTools AI+">
+<meta property="og:title" content="M-EasyTools AI+ — One Platform. Nine Powerful Systems.">
+<meta property="og:description" content="M-EasyTools AI+ brings together Content, Social, Email, Ads, SEO, Commerce, Sales, Productivity and GAO tools — all in one AI-native platform built to grow your business faster.">
+<meta property="og:url" content="https://m-easytools-ai-production.up.railway.app/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="ms_MY">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="M-EasyTools AI+ — One Platform. Nine Powerful Systems.">
+<meta name="twitter:description" content="M-EasyTools AI+ brings together Content, Social, Email, Ads, SEO, Commerce, Sales, Productivity and GAO tools in one AI-native platform.">
+
+<!-- Multilingual SEO: hreflang alternate links -->
+<link rel="canonical" href="https://m-easytools-ai-production.up.railway.app/">
+<link rel="alternate" hreflang="en"      href="https://m-easytools-ai-production.up.railway.app/?lang=en">
+<link rel="alternate" hreflang="zh-Hans" href="https://m-easytools-ai-production.up.railway.app/?lang=zh">
+<link rel="alternate" hreflang="ms"      href="https://m-easytools-ai-production.up.railway.app/?lang=ms">
+<link rel="alternate" hreflang="x-default" href="https://m-easytools-ai-production.up.railway.app/">
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "M-EasyTools AI+",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "url": "https://m-easytools-ai-production.up.railway.app/",
+  "description": "AI-native marketing platform with 9 powerful systems for content, social, email, ads, SEO, ecommerce, sales, productivity, and GAO.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "MYR" },
+  "author": { "@type": "Organization", "name": "Modus AI Associates" },
+  "inLanguage": ["en", "zh-Hans", "ms"]
+}
+</script>
+
+<!-- Early language detection — start translation fetch before DOM loads -->
+<script>
+(function(){
+  var SUPPORTED=['en','zh','ms'],LS='msm_lang';
+  var lang=(function(){
+    try{
+      var p=new URLSearchParams(location.search).get('lang');
+      if(SUPPORTED.indexOf(p)!==-1)return p;
+      var s=localStorage.getItem(LS);
+      if(SUPPORTED.indexOf(s)!==-1)return s;
+    }catch(e){}
+    var b=(navigator.language||'').toLowerCase();
+    if(b.startsWith('zh'))return'zh';
+    if(b.startsWith('ms'))return'ms';
+    return'en';
+  })();
+  if(lang!=='en'){
+    window._i18nFetch=fetch('/locales/'+lang+'.json').then(function(r){return r.json();}).catch(function(){return null;});
+  }
+  document.documentElement.lang={zh:'zh-Hans',ms:'ms',en:'en'}[lang]||'en';
+})();
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
@@ -29,8 +92,9 @@ nav{
   background:rgba(7,9,15,0.85);
   backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);
+  gap:12px;
 }
-.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .nav-logo-icon{
   width:32px;height:32px;border-radius:8px;
   background:linear-gradient(135deg,var(--orange),var(--orange2));
@@ -42,7 +106,7 @@ nav{
 .nav-links{display:flex;align-items:center;gap:32px}
 .nav-links a{font-size:13px;font-weight:500;color:var(--text2);transition:color .15s}
 .nav-links a:hover{color:var(--text)}
-.nav-cta{display:flex;gap:10px;align-items:center}
+.nav-right{display:flex;gap:10px;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:var(--r-sm);font-size:13px;font-weight:600;transition:all .15s}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
 .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,0.2)}
@@ -51,6 +115,44 @@ nav{
 .btn-lg{padding:14px 32px;font-size:15px;border-radius:var(--r)}
 .btn-outline-lg{padding:13px 31px;font-size:15px;border-radius:var(--r);background:transparent;color:var(--text);border:1px solid var(--border2)}
 .btn-outline-lg:hover{border-color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.04)}
+
+/* ── LANGUAGE SWITCHER ── */
+.lang-switcher{position:relative;flex-shrink:0}
+.lang-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:var(--r-sm);
+  background:transparent;color:var(--text2);
+  border:1px solid var(--border2);
+  font-size:13px;font-weight:600;cursor:pointer;
+  font-family:var(--font);transition:all .15s;white-space:nowrap;
+}
+.lang-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.2)}
+.lang-btn:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.lang-btn[aria-expanded="true"] .lang-chevron{transform:rotate(180deg)}
+.lang-globe{font-size:14px;line-height:1}
+.lang-chevron{font-size:9px;opacity:.6;transition:transform .2s;display:inline-block}
+.lang-dropdown{
+  position:absolute;top:calc(100% + 8px);right:0;
+  background:var(--card2);border:1px solid var(--border2);
+  border-radius:var(--r-sm);
+  box-shadow:0 16px 48px rgba(0,0,0,0.6);
+  min-width:175px;overflow:hidden;
+  flex-direction:column;z-index:300;
+  display:none;
+}
+.lang-dropdown.open{display:flex}
+.lang-option{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 16px;border:none;
+  background:transparent;color:var(--text2);
+  font-size:13px;font-weight:500;cursor:pointer;
+  font-family:var(--font);text-align:left;width:100%;
+  transition:all .12s;
+}
+.lang-option:hover{background:rgba(255,255,255,0.05);color:var(--text)}
+.lang-option.active{color:var(--orange);font-weight:700;background:rgba(232,98,42,0.06)}
+.lang-option:focus-visible{outline:2px solid var(--orange);outline-offset:-2px;background:rgba(232,98,42,0.08)}
+.lang-flag{font-size:16px;line-height:1;flex-shrink:0}
 
 /* ── HERO ── */
 .hero{
@@ -101,10 +203,10 @@ nav{
 .hero-desc{
   font-size:18px;font-weight:400;
   color:var(--text2);line-height:1.7;
-  max-width:580px;margin:0 auto 48px;
+  max-width:600px;margin:0 auto 48px;
   position:relative;
 }
-.hero-cta{display:flex;gap:12px;justify-content:center;position:relative}
+.hero-cta{display:flex;gap:12px;justify-content:center;position:relative;flex-wrap:wrap}
 .hero-stats{
   display:flex;align-items:center;gap:0;
   margin-top:72px;position:relative;
@@ -134,7 +236,7 @@ nav{
 }
 .section-sub{
   font-size:16px;color:var(--text2);
-  text-align:center;max-width:520px;
+  text-align:center;max-width:560px;
   margin:0 auto 64px;line-height:1.7;
 }
 .systems-grid{
@@ -142,6 +244,7 @@ nav{
   grid-template-columns:repeat(4,1fr);
   gap:16px;
 }
+
 /* System card */
 .sys-card{
   background:var(--card);
@@ -240,7 +343,6 @@ nav{
   border-top:1px solid var(--border);border-bottom:1px solid var(--border);
 }
 .why-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
-.why-text{}
 .why-tag{font-size:11px;font-weight:700;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
 .why-title{font-family:'Libre Baskerville',serif;font-size:clamp(32px,3.5vw,46px);font-weight:900;letter-spacing:-1.5px;line-height:1.05;margin-bottom:20px}
 .why-desc{font-size:15px;color:var(--text2);line-height:1.8;margin-bottom:32px}
@@ -282,8 +384,9 @@ nav{
   background:radial-gradient(ellipse,rgba(232,98,42,0.12) 0%,transparent 70%);
 }
 .cta-title{font-family:'Libre Baskerville',serif;font-size:clamp(40px,5vw,64px);font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:20px;position:relative}
-.cta-desc{font-size:16px;color:var(--text2);max-width:480px;margin:0 auto 40px;line-height:1.7;position:relative}
-.cta-btns{display:flex;gap:12px;justify-content:center;position:relative}
+.cta-accent{color:var(--orange)}
+.cta-desc{font-size:16px;color:var(--text2);max-width:520px;margin:0 auto 40px;line-height:1.7;position:relative}
+.cta-btns{display:flex;gap:12px;justify-content:center;position:relative;flex-wrap:wrap}
 
 /* ── FOOTER ── */
 footer{
@@ -291,15 +394,35 @@ footer{
   display:flex;align-items:center;justify-content:space-between;
 }
 .footer-copy{font-size:13px;color:var(--text3)}
-.footer-links{display:flex;gap:24px}
+.footer-links{display:flex;gap:24px;flex-wrap:wrap}
 .footer-links a{font-size:13px;color:var(--text3);transition:color .15s}
 .footer-links a:hover{color:var(--text2)}
+
+/* ── CHINESE TYPOGRAPHY ── */
+:lang(zh-Hans) body{
+  font-family:'PingFang SC','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC','Plus Jakarta Sans',system-ui,sans-serif;
+}
+:lang(zh-Hans) .hero-title,
+:lang(zh-Hans) .hero-title-2,
+:lang(zh-Hans) .section-title,
+:lang(zh-Hans) .why-title,
+:lang(zh-Hans) .cta-title{
+  font-family:'PingFang SC','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+  letter-spacing:0;
+}
+:lang(zh-Hans) .hero-title{line-height:1.1}
+:lang(zh-Hans) .hero-title-2{font-style:normal;letter-spacing:2px}
+:lang(zh-Hans) .cta-title{letter-spacing:0}
+:lang(zh-Hans) .sys-module-tag{letter-spacing:.5px}
 
 /* ── RESPONSIVE ── */
 @media(max-width:1024px){
   .systems-grid{grid-template-columns:repeat(2,1fr)}
   .why-inner{grid-template-columns:1fr;gap:48px}
   .why-visual{display:none}
+}
+@media(max-width:768px){
+  .nav-links{display:none}
 }
 @media(max-width:640px){
   nav{padding:0 20px}
@@ -311,6 +434,12 @@ footer{
   .why-section{padding:60px 20px}
   .cta-section{padding:80px 20px}
   footer{flex-direction:column;gap:16px;text-align:center}
+  .footer-links{justify-content:center}
+}
+@media(max-width:480px){
+  .lang-btn{padding:6px 8px;gap:4px}
+  #lang-current,.lang-chevron{display:none}
+  .nav-right{gap:6px}
 }
 </style>
 </head>
@@ -323,310 +452,358 @@ footer{
     <div class="nav-logo-text">M-EasyTools <em>AI+</em></div>
   </div>
   <div class="nav-links">
-    <a href="#systems">Our Systems</a>
-    <a href="#why">Why Us</a>
+    <a href="#systems" data-i18n="nav.systems">Our Systems</a>
+    <a href="#why" data-i18n="nav.why">Why Us</a>
   </div>
-  <div class="nav-cta">
-    <a href="https://m-easytools-ai-production.up.railway.app/login.html" class="btn btn-ghost">Sign In</a>
-    <a href="https://m-easytools-ai-production.up.railway.app/signup.html" class="btn btn-primary">Start Free →</a>
+  <div class="nav-right">
+
+    <!-- Language Switcher -->
+    <div class="lang-switcher" role="navigation">
+      <button
+        class="lang-btn"
+        id="lang-btn"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        data-i18n-aria="nav.lang_label"
+        aria-label="Select language"
+      >
+        <span class="lang-globe" aria-hidden="true">🌐</span>
+        <span id="lang-current">EN</span>
+        <span class="lang-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div
+        class="lang-dropdown"
+        id="lang-dropdown"
+        role="listbox"
+        aria-label="Select language"
+      >
+        <button class="lang-option active" data-lang="en" role="option" aria-selected="true">
+          <span class="lang-flag" aria-hidden="true">🇬🇧</span>
+          <span>English</span>
+        </button>
+        <button class="lang-option" data-lang="zh" role="option" aria-selected="false">
+          <span class="lang-flag" aria-hidden="true">🇨🇳</span>
+          <span>中文</span>
+        </button>
+        <button class="lang-option" data-lang="ms" role="option" aria-selected="false">
+          <span class="lang-flag" aria-hidden="true">🇲🇾</span>
+          <span>Bahasa Malaysia</span>
+        </button>
+      </div>
+    </div>
+
+    <a href="https://m-easytools-ai-production.up.railway.app/login.html" class="btn btn-ghost" data-i18n="nav.signin">Sign In</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/signup.html" class="btn btn-primary" data-i18n="nav.start">Start Free →</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-grid"></div>
+  <div class="hero-grid" aria-hidden="true"></div>
   <div class="hero-badge">
-    <span class="hero-badge-dot"></span>
-    M-EasyTools AI+ — Powered by Modus AI Associates
+    <span class="hero-badge-dot" aria-hidden="true"></span>
+    <span data-i18n="hero.badge">M-EasyTools AI+ — Powered by Modus AI Associates</span>
   </div>
-  <h1 class="hero-title">One Platform.<br><span>Nine Powerful</span></h1>
-  <div class="hero-title-2">AI+ Systems.</div>
-  <p class="hero-desc">M-EasyTools AI+ brings together Content, Social, Email, Ads, SEO, Commerce, Sales, Productivity and GAO tools — all in one AI-native platform built to grow your business faster.</p>
+  <h1 class="hero-title" data-i18n-html="hero.title_html">One Platform.<br><span>Nine Powerful</span></h1>
+  <div class="hero-title-2" data-i18n="hero.title2" aria-hidden="true">AI+ Systems.</div>
+  <p class="hero-desc" data-i18n="hero.desc">M-EasyTools AI+ brings together Content, Social, Email, Ads, SEO, Commerce, Sales, Productivity and GAO tools — all in one AI-native platform built to grow your business faster.</p>
   <div class="hero-cta">
-    <a href="#systems" class="btn btn-primary btn-lg">Explore Our Systems ↓</a>
-    <a href="https://m-easytools-ai-production.up.railway.app/signup.html" class="btn-outline-lg btn">Start for Free →</a>
+    <a href="#systems" class="btn btn-primary btn-lg" data-i18n="hero.cta1">Explore Our Systems ↓</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/signup.html" class="btn-outline-lg btn" data-i18n="hero.cta2">Start for Free →</a>
   </div>
-  <div class="hero-stats">
-    <div class="h-stat"><div class="h-stat-num">8<span>+</span></div><div class="h-stat-label">AI Systems</div></div>
-    <div class="h-stat"><div class="h-stat-num">40<span>+</span></div><div class="h-stat-label">AI Tools</div></div>
-    <div class="h-stat"><div class="h-stat-num">100<span>%</span></div><div class="h-stat-label">Free AI (Groq)</div></div>
-    <div class="h-stat"><div class="h-stat-num">1<span>-</span>Click</div><div class="h-stat-label">Content Ready</div></div>
+  <div class="hero-stats" role="list">
+    <div class="h-stat" role="listitem">
+      <div class="h-stat-num">9<span>+</span></div>
+      <div class="h-stat-label" data-i18n="hero.stat1_label">AI Systems</div>
+    </div>
+    <div class="h-stat" role="listitem">
+      <div class="h-stat-num">40<span>+</span></div>
+      <div class="h-stat-label" data-i18n="hero.stat2_label">AI Tools</div>
+    </div>
+    <div class="h-stat" role="listitem">
+      <div class="h-stat-num">100<span>%</span></div>
+      <div class="h-stat-label" data-i18n="hero.stat3_label">Free AI (Groq)</div>
+    </div>
+    <div class="h-stat" role="listitem">
+      <div class="h-stat-num" data-i18n-html="hero.stat4_num_html">1<span>-</span>Click</div>
+      <div class="h-stat-label" data-i18n="hero.stat4_label">Content Ready</div>
+    </div>
   </div>
 </section>
 
 <!-- SYSTEMS SECTION -->
 <section class="systems-section" id="systems">
-  <div class="section-eyebrow">Our 9 AI-Powered Systems</div>
-  <h2 class="section-title">Everything your marketing needs,<br>in one platform</h2>
-  <p class="section-sub">Click on any system below to get started — sign up or log in and you'll be taken directly to that system.</p>
+  <div class="section-eyebrow" data-i18n="systems.eyebrow">Our 9 AI-Powered Systems</div>
+  <h2 class="section-title" data-i18n-html="systems.title_html">Everything your marketing needs,<br>in one platform</h2>
+  <p class="section-sub" data-i18n="systems.sub">Click on any system below to get started — sign up or log in and you'll be taken directly to that system.</p>
 
   <div class="systems-grid">
 
     <!-- 1. M-EasyContent AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=tools&cat=blog" class="sys-card sys-content">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">✍️</div>
-        <div class="sys-module-tag">Content Creation Module</div>
-        <div class="sys-name">M-EasyContent <em>AI+</em> Tools</div>
-        <div class="sys-desc">Generate blog posts, landing pages, articles and long-form content in seconds with AI.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">✍️</div>
+        <div class="sys-module-tag" data-i18n="systems.s1.tag">Content Creation Module</div>
+        <div class="sys-name" data-i18n-html="systems.s1.name_html">M-EasyContent <em>AI+</em> Tools</div>
+        <div class="sys-desc" data-i18n="systems.s1.desc">Generate blog posts, landing pages, articles and long-form content in seconds with AI.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Blog Writer</span><span class="sys-feat-desc">— SEO-optimized articles with H2/H3 structure</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Landing Page Copy</span><span class="sys-feat-desc">— Conversion-focused page copy with CTAs</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Article Outline</span><span class="sys-feat-desc">— Detailed outlines with H2/H3 structure</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Content Rewriter</span><span class="sys-feat-desc">— Rewrite and improve existing content</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">AI Humanizer</span><span class="sys-feat-desc">— Remove AI detection patterns</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s1.f1n">Blog Writer</span><span class="sys-feat-desc" data-i18n="systems.s1.f1d">— SEO-optimized articles with H2/H3 structure</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s1.f2n">Landing Page Copy</span><span class="sys-feat-desc" data-i18n="systems.s1.f2d">— Conversion-focused page copy with CTAs</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s1.f3n">Article Outline</span><span class="sys-feat-desc" data-i18n="systems.s1.f3d">— Detailed outlines with H2/H3 structure</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s1.f4n">Content Rewriter</span><span class="sys-feat-desc" data-i18n="systems.s1.f4d">— Rewrite and improve existing content</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s1.f5n">AI Humanizer</span><span class="sys-feat-desc" data-i18n="systems.s1.f5d">— Remove AI detection patterns</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 2. M-EasySocial AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=tools&cat=social" class="sys-card sys-social">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">📱</div>
-        <div class="sys-module-tag">Social Media Module</div>
-        <div class="sys-name">M-EasySocial <em>AI+</em> Tools</div>
-        <div class="sys-desc">Create scroll-stopping social media content for Instagram, LinkedIn, TikTok and more.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">📱</div>
+        <div class="sys-module-tag" data-i18n="systems.s2.tag">Social Media Module</div>
+        <div class="sys-name" data-i18n-html="systems.s2.name_html">M-EasySocial <em>AI+</em> Tools</div>
+        <div class="sys-desc" data-i18n="systems.s2.desc">Create scroll-stopping social media content for Instagram, LinkedIn, TikTok and more.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Social Media Posts</span><span class="sys-feat-desc">— Posts for all major platforms with hashtags</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Instagram Bio</span><span class="sys-feat-desc">— Punchy bios with clear value propositions</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">LinkedIn Post</span><span class="sys-feat-desc">— Thought leadership and company updates</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">YouTube Script</span><span class="sys-feat-desc">— Full video scripts with hook and CTA</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Content Summarizer</span><span class="sys-feat-desc">— Condense long content into social snippets</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s2.f1n">Social Media Posts</span><span class="sys-feat-desc" data-i18n="systems.s2.f1d">— Posts for all major platforms with hashtags</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s2.f2n">Instagram Bio</span><span class="sys-feat-desc" data-i18n="systems.s2.f2d">— Punchy bios with clear value propositions</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s2.f3n">LinkedIn Post</span><span class="sys-feat-desc" data-i18n="systems.s2.f3d">— Thought leadership and company updates</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s2.f4n">YouTube Script</span><span class="sys-feat-desc" data-i18n="systems.s2.f4d">— Full video scripts with hook and CTA</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s2.f5n">Content Summarizer</span><span class="sys-feat-desc" data-i18n="systems.s2.f5d">— Condense long content into social snippets</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 3. M-EasyMail AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=tools&cat=email" class="sys-card sys-mail">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">📧</div>
-        <div class="sys-module-tag">Email Marketing Module</div>
-        <div class="sys-name">M-EasyMail <em>AI+</em> Tools</div>
-        <div class="sys-desc">Write high-converting email campaigns, sequences and subject lines that get opened and clicked.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">📧</div>
+        <div class="sys-module-tag" data-i18n="systems.s3.tag">Email Marketing Module</div>
+        <div class="sys-name" data-i18n-html="systems.s3.name_html">M-EasyMail <em>AI+</em> Tools</div>
+        <div class="sys-desc" data-i18n="systems.s3.desc">Write high-converting email campaigns, sequences and subject lines that get opened and clicked.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Email Campaign</span><span class="sys-feat-desc">— Subject lines, body copy and CTAs</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Email Sequence</span><span class="sys-feat-desc">— 3-7 email drip sequences for nurturing</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Subject Line Generator</span><span class="sys-feat-desc">— A/B-testable subject lines</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Welcome Email</span><span class="sys-feat-desc">— Onboarding and first-impression emails</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Re-engagement Email</span><span class="sys-feat-desc">— Win back inactive subscribers</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s3.f1n">Email Campaign</span><span class="sys-feat-desc" data-i18n="systems.s3.f1d">— Subject lines, body copy and CTAs</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s3.f2n">Email Sequence</span><span class="sys-feat-desc" data-i18n="systems.s3.f2d">— 3-7 email drip sequences for nurturing</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s3.f3n">Subject Line Generator</span><span class="sys-feat-desc" data-i18n="systems.s3.f3d">— A/B-testable subject lines</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s3.f4n">Welcome Email</span><span class="sys-feat-desc" data-i18n="systems.s3.f4d">— Onboarding and first-impression emails</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s3.f5n">Re-engagement Email</span><span class="sys-feat-desc" data-i18n="systems.s3.f5d">— Win back inactive subscribers</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 4. M-EasyAds AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=tools&cat=ads" class="sys-card sys-ads">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">🎯</div>
-        <div class="sys-module-tag">Advertising Module</div>
-        <div class="sys-name">M-EasyAds <em>AI+</em> Tools</div>
-        <div class="sys-desc">Write high-converting ads for Facebook, Instagram, Google and LinkedIn that drive real results.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">🎯</div>
+        <div class="sys-module-tag" data-i18n="systems.s4.tag">Advertising Module</div>
+        <div class="sys-name" data-i18n-html="systems.s4.name_html">M-EasyAds <em>AI+</em> Tools</div>
+        <div class="sys-desc" data-i18n="systems.s4.desc">Write high-converting ads for Facebook, Instagram, Google and LinkedIn that drive real results.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Facebook & Instagram Ads</span><span class="sys-feat-desc">— 3 ad variants with headlines and copy</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Google Search Ads</span><span class="sys-feat-desc">— Headlines (30 chars) and descriptions (90 chars)</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">LinkedIn Ads</span><span class="sys-feat-desc">— B2B-focused ad copy that converts</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Push Notifications</span><span class="sys-feat-desc">— Short urgent copy that drives clicks</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">TikTok Ads</span><span class="sys-feat-desc">— Video ad scripts optimized for TikTok</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s4.f1n">Facebook &amp; Instagram Ads</span><span class="sys-feat-desc" data-i18n="systems.s4.f1d">— 3 ad variants with headlines and copy</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s4.f2n">Google Search Ads</span><span class="sys-feat-desc" data-i18n="systems.s4.f2d">— Headlines (30 chars) and descriptions (90 chars)</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s4.f3n">LinkedIn Ads</span><span class="sys-feat-desc" data-i18n="systems.s4.f3d">— B2B-focused ad copy that converts</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s4.f4n">Push Notifications</span><span class="sys-feat-desc" data-i18n="systems.s4.f4d">— Short urgent copy that drives clicks</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s4.f5n">TikTok Ads</span><span class="sys-feat-desc" data-i18n="systems.s4.f5d">— Video ad scripts optimized for TikTok</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 5. M-EasySEO AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=seo" class="sys-card sys-seo">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">🔍</div>
-        <div class="sys-module-tag">SEO Suite Module</div>
-        <div class="sys-name">M-EasySEO <em>AI+</em> Tools</div>
-        <div class="sys-desc">Rank higher on Google with AI-powered SEO tools for keywords, meta tags and content optimization.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">🔍</div>
+        <div class="sys-module-tag" data-i18n="systems.s5.tag">SEO Suite Module</div>
+        <div class="sys-name" data-i18n-html="systems.s5.name_html">M-EasySEO <em>AI+</em> Tools</div>
+        <div class="sys-desc" data-i18n="systems.s5.desc">Rank higher on Google with AI-powered SEO tools for keywords, meta tags and content optimization.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">SEO Meta Generator</span><span class="sys-feat-desc">— Title tags and meta descriptions for Google</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Keyword Cluster Builder</span><span class="sys-feat-desc">— Long-tail keywords with intent mapping</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">FAQ Generator</span><span class="sys-feat-desc">— SEO-rich FAQ sections for any topic</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Content Scorer</span><span class="sys-feat-desc">— SEO score, readability and keyword density</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">SEO Article Writer</span><span class="sys-feat-desc">— Long-form articles structured for ranking</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s5.f1n">SEO Meta Generator</span><span class="sys-feat-desc" data-i18n="systems.s5.f1d">— Title tags and meta descriptions for Google</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s5.f2n">Keyword Cluster Builder</span><span class="sys-feat-desc" data-i18n="systems.s5.f2d">— Long-tail keywords with intent mapping</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s5.f3n">FAQ Generator</span><span class="sys-feat-desc" data-i18n="systems.s5.f3d">— SEO-rich FAQ sections for any topic</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s5.f4n">Content Scorer</span><span class="sys-feat-desc" data-i18n="systems.s5.f4d">— SEO score, readability and keyword density</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s5.f5n">SEO Article Writer</span><span class="sys-feat-desc" data-i18n="systems.s5.f5d">— Long-form articles structured for ranking</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 6. M-EasyCommerce AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=tools&cat=ecom" class="sys-card sys-commerce">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">🛍️</div>
-        <div class="sys-module-tag">eCommerce Module</div>
-        <div class="sys-name">M-EasyCommerce <em>AI+</em> Tools</div>
-        <div class="sys-desc">Write product descriptions, listings and review replies that turn browsers into buyers on Shopify and Amazon.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">🛍️</div>
+        <div class="sys-module-tag" data-i18n="systems.s6.tag">eCommerce Module</div>
+        <div class="sys-name" data-i18n-html="systems.s6.name_html">M-EasyCommerce <em>AI+</em> Tools</div>
+        <div class="sys-desc" data-i18n="systems.s6.desc">Write product descriptions, listings and review replies that turn browsers into buyers on Shopify and Amazon.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Product Description</span><span class="sys-feat-desc">— Persuasive copy for Shopify and Amazon</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Product Title Generator</span><span class="sys-feat-desc">— SEO-friendly titles for listings</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Review Responder</span><span class="sys-feat-desc">— Professional replies to customer reviews</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Shopify Integration</span><span class="sys-feat-desc">— Push content directly to your store</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">WordPress Integration</span><span class="sys-feat-desc">— Publish blog content directly to WordPress</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s6.f1n">Product Description</span><span class="sys-feat-desc" data-i18n="systems.s6.f1d">— Persuasive copy for Shopify and Amazon</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s6.f2n">Product Title Generator</span><span class="sys-feat-desc" data-i18n="systems.s6.f2d">— SEO-friendly titles for listings</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s6.f3n">Review Responder</span><span class="sys-feat-desc" data-i18n="systems.s6.f3d">— Professional replies to customer reviews</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s6.f4n">Shopify Integration</span><span class="sys-feat-desc" data-i18n="systems.s6.f4d">— Push content directly to your store</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s6.f5n">WordPress Integration</span><span class="sys-feat-desc" data-i18n="systems.s6.f5d">— Publish blog content directly to WordPress</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 7. M-EasySales AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=tools&cat=sales" class="sys-card sys-sales">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">💼</div>
-        <div class="sys-module-tag">Sales Module</div>
-        <div class="sys-name">M-EasySales <em>AI+</em> Tools</div>
-        <div class="sys-desc">Close more deals with AI-written sales emails, cold outreach, pitch scripts and follow-up sequences.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">💼</div>
+        <div class="sys-module-tag" data-i18n="systems.s7.tag">Sales Module</div>
+        <div class="sys-name" data-i18n-html="systems.s7.name_html">M-EasySales <em>AI+</em> Tools</div>
+        <div class="sys-desc" data-i18n="systems.s7.desc">Close more deals with AI-written sales emails, cold outreach, pitch scripts and follow-up sequences.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Sales Outreach Email</span><span class="sys-feat-desc">— 3-touch cold email sequences</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Cold DM Templates</span><span class="sys-feat-desc">— LinkedIn and Instagram outreach scripts</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Sales Pitch Script</span><span class="sys-feat-desc">— Elevator pitches and call scripts</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Follow-up Email</span><span class="sys-feat-desc">— Breakup emails and re-engagement</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Bulk Generate</span><span class="sys-feat-desc">— Generate 20 sales emails at once</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s7.f1n">Sales Outreach Email</span><span class="sys-feat-desc" data-i18n="systems.s7.f1d">— 3-touch cold email sequences</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s7.f2n">Cold DM Templates</span><span class="sys-feat-desc" data-i18n="systems.s7.f2d">— LinkedIn and Instagram outreach scripts</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s7.f3n">Sales Pitch Script</span><span class="sys-feat-desc" data-i18n="systems.s7.f3d">— Elevator pitches and call scripts</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s7.f4n">Follow-up Email</span><span class="sys-feat-desc" data-i18n="systems.s7.f4d">— Breakup emails and re-engagement</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s7.f5n">Bulk Generate</span><span class="sys-feat-desc" data-i18n="systems.s7.f5d">— Generate 20 sales emails at once</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 8. M-EasyTools AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/app.html?goto=chat" class="sys-card sys-tools">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">⚡</div>
-        <div class="sys-module-tag">Productivity System</div>
-        <div class="sys-name">M-EasyTools <em>AI+</em> System</div>
-        <div class="sys-desc">Your complete AI productivity hub — chat assistant, bulk generation, document management and developer API.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">⚡</div>
+        <div class="sys-module-tag" data-i18n="systems.s8.tag">Productivity System</div>
+        <div class="sys-name" data-i18n-html="systems.s8.name_html">M-EasyTools <em>AI+</em> System</div>
+        <div class="sys-desc" data-i18n="systems.s8.desc">Your complete AI productivity hub — chat assistant, bulk generation, document management and developer API.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">AI Chat Assistant</span><span class="sys-feat-desc">— Expert marketing AI available 24/7</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Bulk Generate</span><span class="sys-feat-desc">— Create up to 20 pieces of content at once</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Document Manager</span><span class="sys-feat-desc">— Save, organize and manage all generated content</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Developer API</span><span class="sys-feat-desc">— Use AI tools inside your own apps</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Team Workspace</span><span class="sys-feat-desc">— Collaborate with your team in one place</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s8.f1n">AI Chat Assistant</span><span class="sys-feat-desc" data-i18n="systems.s8.f1d">— Expert marketing AI available 24/7</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s8.f2n">Bulk Generate</span><span class="sys-feat-desc" data-i18n="systems.s8.f2d">— Create up to 20 pieces of content at once</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s8.f3n">Document Manager</span><span class="sys-feat-desc" data-i18n="systems.s8.f3d">— Save, organize and manage all generated content</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s8.f4n">Developer API</span><span class="sys-feat-desc" data-i18n="systems.s8.f4d">— Use AI tools inside your own apps</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s8.f5n">Team Workspace</span><span class="sys-feat-desc" data-i18n="systems.s8.f5d">— Collaborate with your team in one place</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
     <!-- 9. M-EasyGAO AI+ -->
     <a href="https://m-easytools-ai-production.up.railway.app/gao.html" class="sys-card sys-gao">
       <div class="sys-card-top">
-        <div class="sys-icon-wrap">🤖</div>
-        <div class="sys-module-tag">GAO Suite Module</div>
-        <div class="sys-name">M-EasyGAO <em>AI+</em> Suite</div>
-        <div class="sys-desc">Track your AI visibility, monitor brand mentions in AI answers and benchmark against competitors across every major AI platform.</div>
+        <div class="sys-icon-wrap" aria-hidden="true">🤖</div>
+        <div class="sys-module-tag" data-i18n="systems.s9.tag">GAO Suite Module</div>
+        <div class="sys-name" data-i18n-html="systems.s9.name_html">M-EasyGAO <em>AI+</em> Suite</div>
+        <div class="sys-desc" data-i18n="systems.s9.desc">Track your AI visibility, monitor brand mentions in AI answers and benchmark against competitors across every major AI platform.</div>
       </div>
       <div class="sys-card-features">
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">AI Visibility Tracker</span><span class="sys-feat-desc">— See how your brand appears in AI-generated answers</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Prompt Monitor</span><span class="sys-feat-desc">— Discover which prompts surface your brand in AI</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Competitor Comparison</span><span class="sys-feat-desc">— Benchmark your AI presence vs. your rivals</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">ChatGPT, Claude & Gemini</span><span class="sys-feat-desc">— Coverage across OpenAI, Anthropic and Google AI</span></div></div>
-        <div class="sys-feat"><div class="sys-feat-dot"></div><div><span class="sys-feat-name">Perplexity & DeepSeek</span><span class="sys-feat-desc">— Full multi-platform AI search monitoring</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s9.f1n">AI Visibility Tracker</span><span class="sys-feat-desc" data-i18n="systems.s9.f1d">— See how your brand appears in AI-generated answers</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s9.f2n">Prompt Monitor</span><span class="sys-feat-desc" data-i18n="systems.s9.f2d">— Discover which prompts surface your brand in AI</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s9.f3n">Competitor Comparison</span><span class="sys-feat-desc" data-i18n="systems.s9.f3d">— Benchmark your AI presence vs. your rivals</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s9.f4n">ChatGPT, Claude &amp; Gemini</span><span class="sys-feat-desc" data-i18n="systems.s9.f4d">— Coverage across OpenAI, Anthropic and Google AI</span></div></div>
+        <div class="sys-feat"><div class="sys-feat-dot" aria-hidden="true"></div><div><span class="sys-feat-name" data-i18n="systems.s9.f5n">Perplexity &amp; DeepSeek</span><span class="sys-feat-desc" data-i18n="systems.s9.f5d">— Full multi-platform AI search monitoring</span></div></div>
       </div>
       <div class="sys-card-footer">
-        <span class="sys-cta-text">Get Started →</span>
-        <div class="sys-arrow">↗</div>
+        <span class="sys-cta-text" data-i18n="systems.cta">Get Started →</span>
+        <div class="sys-arrow" aria-hidden="true">↗</div>
       </div>
     </a>
 
   </div>
-  <p style="text-align:center;font-size:13px;color:var(--text3);margin-top:32px">All 9 systems are included in one platform. Sign up once, access everything.</p>
+  <p style="text-align:center;font-size:13px;color:var(--text3);margin-top:32px" data-i18n="systems.note">All 9 systems are included in one platform. Sign up once, access everything.</p>
 </section>
 
 <!-- WHY SECTION -->
 <section class="why-section" id="why">
   <div class="why-inner">
     <div class="why-text">
-      <div class="why-tag">Why M-EasyTools AI+</div>
-      <h2 class="why-title">Built for results,<br>not complexity</h2>
-      <p class="why-desc">Unlike generic AI tools, M-EasyTools AI+ is purpose-built for marketing — every tool is trained to produce conversion-focused content that actually works.</p>
+      <div class="why-tag" data-i18n="why.tag">Why M-EasyTools AI+</div>
+      <h2 class="why-title" data-i18n-html="why.title_html">Built for results,<br>not complexity</h2>
+      <p class="why-desc" data-i18n="why.desc">Unlike generic AI tools, M-EasyTools AI+ is purpose-built for marketing — every tool is trained to produce conversion-focused content that actually works.</p>
       <div class="why-points">
         <div class="why-point">
-          <div class="why-point-icon">🆓</div>
+          <div class="why-point-icon" aria-hidden="true">🆓</div>
           <div class="why-point-text">
-            <div class="why-point-title">100% Free AI — Powered by Groq</div>
-            <div class="why-point-desc">No OpenAI costs. Our platform uses Groq's LLaMA model — enterprise-grade AI at zero API cost.</div>
+            <div class="why-point-title" data-i18n="why.p1_title">100% Free AI — Powered by Groq</div>
+            <div class="why-point-desc" data-i18n="why.p1_desc">No OpenAI costs. Our platform uses Groq's LLaMA model — enterprise-grade AI at zero API cost.</div>
           </div>
         </div>
         <div class="why-point">
-          <div class="why-point-icon">⚡</div>
+          <div class="why-point-icon" aria-hidden="true">⚡</div>
           <div class="why-point-text">
-            <div class="why-point-title">Generate in 10 Seconds</div>
-            <div class="why-point-desc">What takes a copywriter hours takes M-EasyTools AI+ seconds. 40+ specialized tools, one platform.</div>
+            <div class="why-point-title" data-i18n="why.p2_title">Generate in 10 Seconds</div>
+            <div class="why-point-desc" data-i18n="why.p2_desc">What takes a copywriter hours takes M-EasyTools AI+ seconds. 40+ specialized tools, one platform.</div>
           </div>
         </div>
         <div class="why-point">
-          <div class="why-point-icon">🇲🇾</div>
+          <div class="why-point-icon" aria-hidden="true">🇲🇾</div>
           <div class="why-point-text">
-            <div class="why-point-title">Built for Malaysia</div>
-            <div class="why-point-desc">Full Bahasa Malaysia interface. Priced for Malaysian SMEs. Powered by Modus AI Associates.</div>
+            <div class="why-point-title" data-i18n="why.p3_title">Built for Malaysia</div>
+            <div class="why-point-desc" data-i18n="why.p3_desc">Full Bahasa Malaysia interface. Priced for Malaysian SMEs. Powered by Modus AI Associates.</div>
           </div>
         </div>
         <div class="why-point">
-          <div class="why-point-icon">🔌</div>
+          <div class="why-point-icon" aria-hidden="true">🔌</div>
           <div class="why-point-text">
-            <div class="why-point-title">Publish Directly to WordPress & Shopify</div>
-            <div class="why-point-desc">Generate content and publish it to your website or store in one click. No copy-pasting needed.</div>
+            <div class="why-point-title" data-i18n="why.p4_title">Publish Directly to WordPress &amp; Shopify</div>
+            <div class="why-point-desc" data-i18n="why.p4_desc">Generate content and publish it to your website or store in one click. No copy-pasting needed.</div>
           </div>
         </div>
       </div>
     </div>
-    <div class="why-visual">
-      <div style="font-size:12px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">System Coverage</div>
-      <div class="wv-row"><div class="wv-icon">✍️</div><div class="wv-name">Content AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:92%;background:#E8622A"></div></div><div class="wv-pct" style="color:#E8622A">92%</div></div>
-      <div class="wv-row"><div class="wv-icon">📱</div><div class="wv-name">Social AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:88%;background:#A855F7"></div></div><div class="wv-pct" style="color:#A855F7">88%</div></div>
-      <div class="wv-row"><div class="wv-icon">📧</div><div class="wv-name">Mail AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:95%;background:#06B6D4"></div></div><div class="wv-pct" style="color:#06B6D4">95%</div></div>
-      <div class="wv-row"><div class="wv-icon">🎯</div><div class="wv-name">Ads AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:85%;background:#F59E0B"></div></div><div class="wv-pct" style="color:#F59E0B">85%</div></div>
-      <div class="wv-row"><div class="wv-icon">🔍</div><div class="wv-name">SEO AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:78%;background:#10B981"></div></div><div class="wv-pct" style="color:#10B981">78%</div></div>
-      <div class="wv-row"><div class="wv-icon">🛍️</div><div class="wv-name">Commerce AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:90%;background:#F43F5E"></div></div><div class="wv-pct" style="color:#F43F5E">90%</div></div>
-      <div class="wv-row"><div class="wv-icon">💼</div><div class="wv-name">Sales AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:83%;background:#3B82F6"></div></div><div class="wv-pct" style="color:#3B82F6">83%</div></div>
-      <div class="wv-row"><div class="wv-icon">⚡</div><div class="wv-name">Tools AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:97%;background:#8B5CF6"></div></div><div class="wv-pct" style="color:#8B5CF6">97%</div></div>
+    <div class="why-visual" aria-hidden="true">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px" data-i18n="why.visual_label">System Coverage</div>
+      <div class="wv-row"><div class="wv-icon">✍️</div><div class="wv-name" data-i18n="why.v1">Content AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:92%;background:#E8622A"></div></div><div class="wv-pct" style="color:#E8622A">92%</div></div>
+      <div class="wv-row"><div class="wv-icon">📱</div><div class="wv-name" data-i18n="why.v2">Social AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:88%;background:#A855F7"></div></div><div class="wv-pct" style="color:#A855F7">88%</div></div>
+      <div class="wv-row"><div class="wv-icon">📧</div><div class="wv-name" data-i18n="why.v3">Mail AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:95%;background:#06B6D4"></div></div><div class="wv-pct" style="color:#06B6D4">95%</div></div>
+      <div class="wv-row"><div class="wv-icon">🎯</div><div class="wv-name" data-i18n="why.v4">Ads AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:85%;background:#F59E0B"></div></div><div class="wv-pct" style="color:#F59E0B">85%</div></div>
+      <div class="wv-row"><div class="wv-icon">🔍</div><div class="wv-name" data-i18n="why.v5">SEO AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:78%;background:#10B981"></div></div><div class="wv-pct" style="color:#10B981">78%</div></div>
+      <div class="wv-row"><div class="wv-icon">🛍️</div><div class="wv-name" data-i18n="why.v6">Commerce AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:90%;background:#F43F5E"></div></div><div class="wv-pct" style="color:#F43F5E">90%</div></div>
+      <div class="wv-row"><div class="wv-icon">💼</div><div class="wv-name" data-i18n="why.v7">Sales AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:83%;background:#3B82F6"></div></div><div class="wv-pct" style="color:#3B82F6">83%</div></div>
+      <div class="wv-row"><div class="wv-icon">⚡</div><div class="wv-name" data-i18n="why.v8">Tools AI+</div><div class="wv-bar-track"><div class="wv-bar-fill" style="width:97%;background:#8B5CF6"></div></div><div class="wv-pct" style="color:#8B5CF6">97%</div></div>
     </div>
   </div>
 </section>
 
 <!-- CTA SECTION -->
 <section class="cta-section">
-  <h2 class="cta-title">Start generating content<br><span style="color:var(--orange)">in 60 seconds</span></h2>
-  <p class="cta-desc">Join hundreds of Malaysian businesses using M-EasyTools AI+ to create better content, faster.</p>
+  <h2 class="cta-title" data-i18n-html="cta.title_html">Start generating content<br><span class="cta-accent">in 60 seconds</span></h2>
+  <p class="cta-desc" data-i18n="cta.desc">Join hundreds of Malaysian businesses using M-EasyTools AI+ to create better content, faster.</p>
   <div class="cta-btns">
-    <a href="https://m-easytools-ai-production.up.railway.app/signup.html" class="btn btn-primary btn-lg">Create Free Account →</a>
-    <a href="https://m-easytools-ai-production.up.railway.app/login.html" class="btn-outline-lg btn">Sign In</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/signup.html" class="btn btn-primary btn-lg" data-i18n="cta.create">Create Free Account →</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/login.html" class="btn-outline-lg btn" data-i18n="cta.signin">Sign In</a>
   </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-copy">© 2025 M-EasyTools AI+ · Powered by Modus AI Associates</div>
+  <div class="footer-copy" data-i18n="footer.copy">© 2025 M-EasyTools AI+ · Powered by Modus AI Associates</div>
   <div class="footer-links">
-    <a href="https://m-easytools-ai-production.up.railway.app/login.html">Sign In</a>
-    <a href="https://m-easytools-ai-production.up.railway.app/signup.html">Sign Up</a>
-    <a href="https://m-easytools-ai-production.up.railway.app/app.html">Dashboard</a>
-    <a href="https://m-easytools-ai-production.up.railway.app/privacy.html">Privacy Policy</a>
-    <a href="https://m-easytools-ai-production.up.railway.app/terms.html">Terms of Service</a>
-    <a href="mailto:admin@modusaiassociates.com">Contact</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/login.html" data-i18n="footer.signin">Sign In</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/signup.html" data-i18n="footer.signup">Sign Up</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/app.html" data-i18n="footer.dashboard">Dashboard</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/privacy.html" data-i18n="footer.privacy">Privacy Policy</a>
+    <a href="https://m-easytools-ai-production.up.railway.app/terms.html" data-i18n="footer.terms">Terms of Service</a>
+    <a href="mailto:admin@modusaiassociates.com" data-i18n="footer.contact">Contact</a>
   </div>
 </footer>
 
@@ -651,199 +828,66 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- ══ FLOATING AI CHAT WIDGET ══ -->
 <style>
-/* Chat bubble button */
-.chat-fab {
-  position:fixed;bottom:28px;right:28px;z-index:1000;
-  display:flex;flex-direction:column;align-items:flex-end;gap:10px;
-}
-.chat-tooltip {
-  display:flex;align-items:center;gap:10px;
-  background:white;border-radius:12px;
-  padding:10px 16px;
-  box-shadow:0 8px 32px rgba(0,0,0,0.18);
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:13px;font-weight:600;color:#1A1A2E;
-  white-space:nowrap;
-  animation:tooltipIn .3s cubic-bezier(.34,1.56,.64,1);
-  cursor:pointer;
-}
+.chat-fab{position:fixed;bottom:28px;right:28px;z-index:1000;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.chat-tooltip{display:flex;align-items:center;gap:10px;background:white;border-radius:12px;padding:10px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;color:#1A1A2E;white-space:nowrap;animation:tooltipIn .3s cubic-bezier(.34,1.56,.64,1);cursor:pointer}
 .chat-tooltip-icon{font-size:18px}
-.chat-tooltip-close{
-  width:18px;height:18px;border-radius:50%;
-  background:rgba(0,0,0,0.08);
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;cursor:pointer;flex-shrink:0;
-  color:#666;font-weight:700;
-}
+.chat-tooltip-close{width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;flex-shrink:0;color:#666;font-weight:700}
 @keyframes tooltipIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-
-.chat-btn {
-  width:60px;height:60px;border-radius:50%;
-  background:linear-gradient(135deg,#E8622A,#FF8C5A);
-  border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 28px rgba(232,98,42,0.45);
-  transition:all .2s cubic-bezier(.34,1.56,.64,1);
-  position:relative;
-}
+.chat-btn{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#E8622A,#FF8C5A);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(232,98,42,0.45);transition:all .2s cubic-bezier(.34,1.56,.64,1);position:relative}
 .chat-btn:hover{transform:scale(1.1);box-shadow:0 12px 36px rgba(232,98,42,0.55)}
 .chat-btn:active{transform:scale(0.96)}
-.chat-btn-ring {
-  position:absolute;inset:-4px;border-radius:50%;
-  border:2px solid rgba(232,98,42,0.3);
-  animation:ring 2.5s ease-in-out infinite;
-}
+.chat-btn-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(232,98,42,0.3);animation:ring 2.5s ease-in-out infinite}
 @keyframes ring{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.15);opacity:0}}
 .chat-btn svg{width:28px;height:28px}
-
-/* Chat window */
-.chat-window {
-  position:fixed;bottom:104px;right:28px;z-index:1000;
-  width:360px;height:500px;
-  background:#0D1018;
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:20px;
-  overflow:hidden;
-  box-shadow:0 24px 64px rgba(0,0,0,0.6);
-  display:flex;flex-direction:column;
-  transform:scale(0.85) translateY(20px);
-  opacity:0;pointer-events:none;
-  transform-origin:bottom right;
-  transition:all .25s cubic-bezier(.34,1.56,.64,1);
-}
-.chat-window.open {
-  transform:scale(1) translateY(0);
-  opacity:1;pointer-events:all;
-}
-
-/* Chat header */
-.cw-header {
-  padding:16px 18px;
-  background:linear-gradient(135deg,#E8622A,#FF7A45);
-  display:flex;align-items:center;gap:12px;
-}
-.cw-avatar {
-  width:38px;height:38px;border-radius:50%;
-  background:rgba(255,255,255,0.2);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;flex-shrink:0;
-}
+.chat-window{position:fixed;bottom:104px;right:28px;z-index:1000;width:360px;height:500px;background:#0D1018;border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.6);display:flex;flex-direction:column;transform:scale(0.85) translateY(20px);opacity:0;pointer-events:none;transform-origin:bottom right;transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+.chat-window.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all}
+.cw-header{padding:16px 18px;background:linear-gradient(135deg,#E8622A,#FF7A45);display:flex;align-items:center;gap:12px}
+.cw-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .cw-info{flex:1}
 .cw-name{font-size:14px;font-weight:700;color:white;line-height:1.2}
 .cw-status{font-size:11px;color:rgba(255,255,255,0.75);display:flex;align-items:center;gap:5px;margin-top:2px}
 .cw-status-dot{width:6px;height:6px;border-radius:50%;background:#4ADE80}
-.cw-close{
-  width:28px;height:28px;border-radius:50%;
-  background:rgba(255,255,255,0.15);border:none;
-  color:white;font-size:14px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .15s;
-}
+.cw-close{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:white;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .cw-close:hover{background:rgba(255,255,255,0.25)}
-
-/* Chat messages */
-.cw-messages {
-  flex:1;overflow-y:auto;padding:16px;
-  display:flex;flex-direction:column;gap:12px;
-  scroll-behavior:smooth;
-}
+.cw-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
 .cw-messages::-webkit-scrollbar{width:3px}
 .cw-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
-
 .cw-msg{display:flex;gap:8px;align-items:flex-end}
 .cw-msg.user{flex-direction:row-reverse}
-.cw-msg-av{
-  width:28px;height:28px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,#E8622A,#FF7A45);
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;color:white;
-  font-family:'Libre Baskerville',serif;
-}
+.cw-msg-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#E8622A,#FF7A45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:white;font-family:'Libre Baskerville',serif}
 .cw-msg-av.user-av{background:rgba(255,255,255,0.1);font-size:10px}
-.cw-bubble{
-  max-width:78%;padding:10px 14px;
-  border-radius:16px 16px 16px 4px;
-  background:rgba(255,255,255,0.06);
-  border:1px solid rgba(255,255,255,0.06);
-  font-size:13px;line-height:1.6;color:#E8EDF2;
-  font-family:'Plus Jakarta Sans',sans-serif;
-}
-.cw-msg.user .cw-bubble{
-  border-radius:16px 16px 4px 16px;
-  background:linear-gradient(135deg,rgba(232,98,42,0.25),rgba(255,122,74,0.2));
-  border-color:rgba(232,98,42,0.3);
-}
+.cw-bubble{max-width:78%;padding:10px 14px;border-radius:16px 16px 16px 4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);font-size:13px;line-height:1.6;color:#E8EDF2;font-family:'Plus Jakarta Sans',sans-serif}
+.cw-msg.user .cw-bubble{border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,rgba(232,98,42,0.25),rgba(255,122,74,0.2));border-color:rgba(232,98,42,0.3)}
 .cw-typing{display:flex;gap:4px;align-items:center;padding:4px 0}
 .cw-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);animation:bounce .9s infinite}
 .cw-dot:nth-child(2){animation-delay:.15s}
 .cw-dot:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-
-/* Chat input */
-.cw-input-bar{
-  padding:12px 14px;
-  background:rgba(255,255,255,0.03);
-  border-top:1px solid rgba(255,255,255,0.06);
-  display:flex;gap:8px;align-items:flex-end;
-}
-.cw-input{
-  flex:1;background:rgba(255,255,255,0.06);
-  border:1px solid rgba(255,255,255,0.1);
-  border-radius:12px;padding:10px 14px;
-  font-size:13px;color:#E8EDF2;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  outline:none;resize:none;max-height:90px;
-  min-height:40px;line-height:1.5;
-}
+.cw-input-bar{padding:12px 14px;background:rgba(255,255,255,0.03);border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;align-items:flex-end}
+.cw-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;font-size:13px;color:#E8EDF2;font-family:'Plus Jakarta Sans',sans-serif;outline:none;resize:none;max-height:90px;min-height:40px;line-height:1.5}
 .cw-input::placeholder{color:rgba(255,255,255,0.25)}
 .cw-input:focus{border-color:rgba(232,98,42,0.4);background:rgba(255,255,255,0.08)}
-.cw-send{
-  width:38px;height:38px;border-radius:10px;flex-shrink:0;
-  background:linear-gradient(135deg,#E8622A,#FF7A45);
-  border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;transition:all .15s;
-}
+.cw-send{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#E8622A,#FF7A45);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
 .cw-send:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(232,98,42,0.4)}
 .cw-send:disabled{opacity:.4;cursor:not-allowed;transform:none}
-
-/* Quick replies */
-.cw-quick{
-  padding:0 14px 12px;
-  display:flex;flex-wrap:wrap;gap:6px;
-}
-.cw-quick-btn{
-  padding:5px 12px;border-radius:20px;
-  background:rgba(232,98,42,0.1);
-  border:1px solid rgba(232,98,42,0.25);
-  color:#FF7A45;font-size:11px;font-weight:600;
-  cursor:pointer;transition:all .15s;
-  font-family:'Plus Jakarta Sans',sans-serif;
-}
+.cw-quick{padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px}
+.cw-quick-btn{padding:5px 12px;border-radius:20px;background:rgba(232,98,42,0.1);border:1px solid rgba(232,98,42,0.25);color:#FF7A45;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
 .cw-quick-btn:hover{background:rgba(232,98,42,0.2);border-color:rgba(232,98,42,0.4)}
-
-/* Powered by */
-.cw-powered{
-  text-align:center;padding:6px;
-  font-size:10px;color:rgba(255,255,255,0.2);
-  font-family:'Plus Jakarta Sans',sans-serif;
-  border-top:1px solid rgba(255,255,255,0.04);
-}
+.cw-powered{text-align:center;padding:6px;font-size:10px;color:rgba(255,255,255,0.2);font-family:'Plus Jakarta Sans',sans-serif;border-top:1px solid rgba(255,255,255,0.04)}
 .cw-powered a{color:rgba(232,98,42,0.5);text-decoration:none}
+@media(max-width:400px){.chat-window{width:calc(100vw - 20px);right:10px}}
 </style>
 
 <!-- Floating Button -->
 <div class="chat-fab" id="chat-fab">
-  <!-- Tooltip -->
-  <div class="chat-tooltip" id="chat-tooltip" onclick="openChat()">
-    <span class="chat-tooltip-icon">🤖</span>
-    <span>AI Assistant — Click to ask me anything!</span>
-    <span class="chat-tooltip-close" onclick="dismissTooltip(event)">✕</span>
+  <div class="chat-tooltip" id="chat-tooltip" onclick="openChat()" style="display:none">
+    <span class="chat-tooltip-icon" aria-hidden="true">🤖</span>
+    <span data-i18n="chat.tooltip">AI Assistant — Click to ask me anything!</span>
+    <span class="chat-tooltip-close" onclick="dismissTooltip(event)" aria-label="Dismiss">✕</span>
   </div>
-  <!-- FAB Button -->
-  <button class="chat-btn" onclick="toggleChat()" id="chat-fab-btn" aria-label="Open AI Chat">
-    <div class="chat-btn-ring"></div>
-    <svg width="26" height="26" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <button class="chat-btn" onclick="toggleChat()" id="chat-fab-btn" data-i18n-aria="chat.name" aria-label="Open AI Chat">
+    <div class="chat-btn-ring" aria-hidden="true"></div>
+    <svg width="26" height="26" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M5 20V8L10.5 16L14 10L17.5 16L23 8V20" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
       <circle cx="23.5" cy="4.5" r="1.5" fill="#FFD580"/>
       <circle cx="26" cy="7.5" r="1" fill="#FFD580" opacity="0.7"/>
@@ -852,32 +896,31 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <!-- Chat Window -->
-<div class="chat-window" id="chat-window-widget">
+<div class="chat-window" id="chat-window-widget" role="dialog" aria-label="M-EasyTools AI+ Chat" aria-modal="false">
   <div class="cw-header">
-    <div class="cw-avatar">🤖</div>
+    <div class="cw-avatar" aria-hidden="true">🤖</div>
     <div class="cw-info">
-      <div class="cw-name">M-EasyTools AI+</div>
-      <div class="cw-status"><span class="cw-status-dot"></span>Online — Powered by Groq AI</div>
+      <div class="cw-name" data-i18n="chat.name">M-EasyTools AI+</div>
+      <div class="cw-status"><span class="cw-status-dot" aria-hidden="true"></span><span data-i18n="chat.status">Online — Powered by Groq AI</span></div>
     </div>
-    <button class="cw-close" onclick="toggleChat()">✕</button>
+    <button class="cw-close" onclick="toggleChat()" aria-label="Close chat">✕</button>
   </div>
-  <div class="cw-messages" id="cw-msgs">
+  <div class="cw-messages" id="cw-msgs" role="log" aria-live="polite" aria-label="Chat messages">
     <div class="cw-msg">
-      <div class="cw-msg-av">M</div>
-      <div class="cw-bubble">👋 Hi! I'm M-EasyTools AI+, your intelligent marketing assistant.<br><br>I can help you with content creation, SEO, email marketing, ads, and more. What would you like to know?</div>
+      <div class="cw-msg-av" aria-hidden="true">M</div>
+      <div class="cw-bubble" data-i18n-html="chat.welcome_html">👋 Hi! I'm M-EasyTools AI+, your intelligent marketing assistant.<br><br>I can help you with content creation, SEO, email marketing, ads, and more. What would you like to know?</div>
     </div>
   </div>
   <div class="cw-quick" id="cw-quick">
-    <button class="cw-quick-btn" onclick="quickSend('What can M-EasyTools AI+ do?')">What can you do?</button>
-    
-    <button class="cw-quick-btn" onclick="quickSend('How do I get started?')">Get started</button>
-    <button class="cw-quick-btn" onclick="quickSend('What AI tools are available?')">AI Tools</button>
+    <button class="cw-quick-btn" onclick="quickSend('What can M-EasyTools AI+ do?')" data-i18n="chat.q1">What can you do?</button>
+    <button class="cw-quick-btn" onclick="quickSend('How do I get started?')" data-i18n="chat.q2">Get started</button>
+    <button class="cw-quick-btn" onclick="quickSend('What AI tools are available?')" data-i18n="chat.q3">AI Tools</button>
   </div>
   <div class="cw-input-bar">
-    <textarea class="cw-input" id="cw-input" placeholder="Ask me anything about marketing…" rows="1" onkeydown="cwKeyDown(event)" oninput="cwResize(this)"></textarea>
-    <button class="cw-send" id="cw-send-btn" onclick="cwSend()">➤</button>
+    <textarea class="cw-input" id="cw-input" data-i18n-placeholder="chat.placeholder" placeholder="Ask me anything about marketing…" rows="1" onkeydown="cwKeyDown(event)" oninput="cwResize(this)" aria-label="Chat input"></textarea>
+    <button class="cw-send" id="cw-send-btn" onclick="cwSend()" aria-label="Send message">➤</button>
   </div>
-  <div class="cw-powered">Powered by <a href="https://m-easytools-ai-production.up.railway.app" target="_blank">M-EasyTools AI+</a></div>
+  <div class="cw-powered"><span data-i18n="chat.powered">Powered by</span> <a href="https://m-easytools-ai-production.up.railway.app" target="_blank" rel="noopener">M-EasyTools AI+</a></div>
 </div>
 
 <script>
@@ -936,7 +979,7 @@ function cwAppend(type, html) {
   el.className = 'cw-msg ' + type;
   const isAI = type === 'ai';
   el.innerHTML = `
-    <div class="cw-msg-av ${isAI ? '' : 'user-av'}">${isAI ? 'M' : '👤'}</div>
+    <div class="cw-msg-av ${isAI ? '' : 'user-av'}" aria-hidden="true">${isAI ? 'M' : '👤'}</div>
     <div class="cw-bubble">${html}</div>`;
   msgs.appendChild(el);
   msgs.scrollTop = msgs.scrollHeight;
@@ -953,25 +996,21 @@ async function cwSend() {
   document.getElementById('cw-send-btn').disabled = true;
   document.getElementById('cw-quick').style.display = 'none';
 
-  // Show user message
   cwAppend('user', cwEsc(msg).replace(/\n/g, '<br>'));
   cwHistory.push({ role: 'user', content: msg });
 
-  // Show typing indicator
   const typingEl = cwAppend('ai', '<div class="cw-typing"><div class="cw-dot"></div><div class="cw-dot"></div><div class="cw-dot"></div></div>');
 
   try {
-    // Get token if logged in
     const token = localStorage.getItem('msm_token');
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
-    const systemMsg = `You are M-EasyTools AI+, a friendly and knowledgeable marketing assistant for the M-EasyTools AI+ platform. You help visitors understand what the platform does, its 8 AI systems (M-EasyContent, M-EasySocial, M-EasyMail, M-EasyAds, M-EasySEO, M-EasyCommerce, M-EasySales, M-EasyTools), and how to get started. Pricing plans are coming soon — encourage users to sign up for free. Be concise, helpful, and encourage users to sign up. Platform URL: https://m-easytools-ai-production.up.railway.app`;
+    const systemMsg = `You are M-EasyTools AI+, a friendly and knowledgeable marketing assistant for the M-EasyTools AI+ platform. You help visitors understand what the platform does, its 9 AI systems (M-EasyContent, M-EasySocial, M-EasyMail, M-EasyAds, M-EasySEO, M-EasyCommerce, M-EasySales, M-EasyTools, M-EasyGAO), and how to get started. Pricing plans are coming soon — encourage users to sign up for free. Be concise, helpful, and encourage users to sign up. Platform URL: https://m-easytools-ai-production.up.railway.app`;
 
     let responseText = '';
 
     if (token) {
-      // Use real API if logged in
       const res = await fetch(CHAT_API, {
         method: 'POST',
         headers,
@@ -981,7 +1020,6 @@ async function cwSend() {
       if (data.message) responseText = data.message;
       else throw new Error(data.error || 'API error');
     } else {
-      // Use Anthropic API for non-logged-in visitors
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1008,5 +1046,8 @@ async function cwSend() {
   document.getElementById('cw-msgs').scrollTop = document.getElementById('cw-msgs').scrollHeight;
 }
 </script>
+
+<!-- i18n Engine -->
+<script src="/js/i18n.js"></script>
 </body>
 </html>
