@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M-EasyTools AI+ System — AI Marketing Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FAF8F4;--cream2:#F2EFE8;--cream3:#E8E4DC;--white:#FFFFFF;
+  --navy:#0D1B2A;--navy2:#1A2D42;--navy3:#243B55;
+  --steel:#3D5A73;--slate:#607D94;--mist:#8EA3B5;--silver:#B8C8D5;--fog:#D4DFE8;
+  --mod:#7C3AED;--mod2:#8B5CF6;--mod3:#C4B5FD;
+  --mod-bg:rgba(124,58,237,0.08);--mod-glow:rgba(124,58,237,0.18);
+  --r:12px;--r-sm:8px;
+  --sh-sm:0 1px 3px rgba(13,27,42,0.08);--sh:0 4px 16px rgba(13,27,42,0.08);--sh-lg:0 12px 40px rgba(13,27,42,0.12);
+}
+[data-theme="dark"]{
+  --cream:#0F1923;--cream2:#141E2A;--cream3:#1A2535;--white:#1C2940;
+  --navy:#E8EDF2;--navy2:#CDD5DE;--navy3:#B0BCC8;
+  --steel:#8EA3B5;--slate:#7A96AA;--silver:#3D5A73;--fog:#243B55;
+  --sh-sm:0 1px 4px rgba(0,0,0,0.3);--sh:0 4px 20px rgba(0,0,0,0.35);--sh-lg:0 12px 40px rgba(0,0,0,0.45);
+}
+html,body{height:100%;overflow:hidden;background:var(--cream);font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--fog);border-radius:3px}
+
+/* NAV */
+.top-nav{height:58px;min-height:58px;background:var(--navy);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
+.nav-logo{display:flex;align-items:center;gap:11px;flex:1}
+.logo-g{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--mod),#4C1D95);display:flex;align-items:center;justify-content:center;font-family:'Libre Baskerville',serif;font-weight:700;font-size:16px;color:white;flex-shrink:0;box-shadow:0 4px 10px rgba(124,58,237,0.4)}
+.nav-title{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:white;letter-spacing:-0.2px}
+.nav-title em{font-style:normal;color:var(--mod3)}
+.nav-sub{font-size:9px;color:rgba(255,255,255,0.32);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.nav-r{display:flex;align-items:center;gap:8px}
+.cred-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.65);font-family:'JetBrains Mono',monospace}
+.cred-dot{width:6px;height:6px;background:var(--mod3);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:all .18s;text-decoration:none;white-space:nowrap}
+.btn-out{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.12)}
+.btn-out:hover{background:rgba(255,255,255,0.13);color:white}
+.u-chip{display:flex;align-items:center;gap:7px;padding:4px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:20px}
+.u-av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--mod),#4C1D95);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white}
+.u-nm{font-size:12px;color:rgba(255,255,255,0.6);font-weight:500}
+.th-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);color:rgba(255,255,255,0.5);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.th-btn:hover{background:rgba(255,255,255,0.12);color:white}
+
+/* CHAT SHELL */
+.chat-shell{height:calc(100vh - 58px);display:flex;background:var(--cream)}
+.chat-sidebar{width:260px;min-width:260px;background:var(--navy);display:flex;flex-direction:column;overflow:hidden;border-right:1px solid rgba(255,255,255,0.06)}
+.sb-head{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sb-title{font-family:'Libre Baskerville',serif;font-size:15px;font-weight:700;color:white;margin-bottom:4px}
+.sb-sub{font-size:11px;color:rgba(255,255,255,0.35)}
+.sb-prompts{padding:12px 10px;overflow-y:auto;flex:1}
+.sb-label{font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:1px;text-transform:uppercase;padding:8px 6px 6px}
+.q-tile{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r-sm);padding:9px 12px;margin-bottom:5px;cursor:pointer;transition:all .15s}
+.q-tile:hover{background:rgba(255,255,255,0.08);border-color:rgba(124,58,237,0.3)}
+.q-tile span{font-size:12px;color:rgba(255,255,255,0.55);line-height:1.4;display:block}
+.sb-new{padding:14px 12px;border-top:1px solid rgba(255,255,255,0.06)}
+.btn-new{width:100%;padding:9px 14px;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3);border-radius:var(--r-sm);color:var(--mod3);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
+.btn-new:hover{background:rgba(124,58,237,0.3);color:white}
+
+[data-theme="dark"] .chat-sidebar{background:#0A1018}
+
+/* CHAT MAIN */
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-window{flex:1;overflow-y:auto;padding:24px 32px;display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;gap:10px;max-width:720px}
+.msg.user{flex-direction:row-reverse;margin-left:auto}
+.m-av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.msg.ai .m-av{background:linear-gradient(135deg,var(--mod),#4C1D95);color:white;font-size:12px}
+.msg.user .m-av{background:linear-gradient(135deg,var(--navy3),var(--steel));color:rgba(255,255,255,0.7)}
+.m-bubble{padding:11px 15px;border-radius:16px;font-size:13px;line-height:1.65;max-width:600px}
+.msg.ai .m-bubble{background:var(--white);border:1px solid var(--fog);color:var(--navy2);border-radius:4px 16px 16px 16px}
+.msg.user .m-bubble{background:var(--mod);color:white;border-radius:16px 4px 16px 16px}
+.chat-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:40px}
+.w-icon{font-size:52px;margin-bottom:18px;opacity:.7}
+.w-title{font-family:'Libre Baskerville',serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.w-sub{font-size:13px;color:var(--slate);max-width:360px;line-height:1.6;margin-bottom:24px}
+.w-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:480px}
+.w-chip{padding:7px 14px;background:var(--white);border:1px solid var(--fog);border-radius:20px;font-size:12px;color:var(--slate);cursor:pointer;transition:all .15s;font-weight:500}
+.w-chip:hover{border-color:var(--mod);color:var(--mod);background:var(--mod-bg)}
+[data-theme="dark"] .w-title{color:#E8EDF2}
+[data-theme="dark"] .msg.ai .m-bubble{background:#1C2940;border-color:#243B55;color:#CDD5DE}
+[data-theme="dark"] .chat-window{background:#0F1923}
+[data-theme="dark"] .w-chip{background:#1C2940;border-color:#243B55;color:#8EA3B5}
+
+/* CHAT INPUT */
+.chat-input-bar{flex-shrink:0;background:var(--white);border-top:1px solid var(--fog);padding:16px 24px;display:flex;align-items:flex-end;gap:12px}
+.chat-ta{flex:1;border:1px solid var(--fog);border-radius:12px;padding:10px 14px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);background:var(--cream);outline:none;resize:none;line-height:1.5;max-height:120px;overflow-y:auto;transition:border-color .15s}
+.chat-ta:focus{border-color:var(--mod);background:var(--white)}
+.send-btn{width:40px;height:40px;border-radius:10px;background:var(--mod);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;color:white;font-size:17px}
+.send-btn:hover{background:var(--mod2);transform:scale(1.05)}
+.send-btn:disabled{opacity:.5;cursor:default;transform:none}
+[data-theme="dark"] .chat-input-bar{background:#141E2A;border-color:#243B55}
+[data-theme="dark"] .chat-ta{background:#243B55;border-color:#3D5A73;color:#E8EDF2}
+[data-theme="dark"] .chat-ta:focus{background:#1C2940}
+
+.toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:var(--navy);color:white;padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:600;box-shadow:var(--sh-lg);transform:translateY(80px);opacity:0;transition:all .3s;max-width:300px}
+.toast.show{transform:none;opacity:1}
+.toast.err{background:#C0392B}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <div class="nav-logo">
+    <div class="logo-g">AI</div>
+    <div><div class="nav-title">M-Easy<em>Tools</em> AI+ System</div><div class="nav-sub">AI Marketing Assistant</div></div>
+  </div>
+  <div class="nav-r">
+    <button class="th-btn" id="th-btn" onclick="toggleTheme()">☀️</button>
+    <div class="cred-chip"><div class="cred-dot"></div><span id="cred-count">—</span> credits</div>
+    <a href="/app" class="btn btn-out">← Dashboard</a>
+    <div class="u-chip"><div class="u-av" id="u-av">?</div><span class="u-nm" id="u-nm">…</span></div>
+  </div>
+</nav>
+
+<div class="chat-shell">
+  <div class="chat-sidebar">
+    <div class="sb-head">
+      <div class="sb-title">AI Assistant</div>
+      <div class="sb-sub">Your always-on marketing brain</div>
+    </div>
+    <div class="sb-prompts">
+      <div class="sb-label">Quick Prompts</div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>Write me a marketing strategy for a new product launch</span></div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>What's the best way to grow my email list from 0?</span></div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>Help me write a brand positioning statement</span></div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>Give me 10 viral content ideas for Instagram</span></div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>How do I improve my Google Ads quality score?</span></div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>Write a compelling about page for my website</span></div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>What are the best email subject lines for Black Friday?</span></div>
+      <div class="q-tile" onclick="usePrompt(this)"><span>Help me audit my current marketing funnel</span></div>
+    </div>
+    <div class="sb-new">
+      <button class="btn-new" onclick="newChat()">+ New Conversation</button>
+    </div>
+  </div>
+  <div class="chat-main">
+    <div class="chat-window" id="chat-window">
+      <div class="chat-welcome" id="chat-welcome">
+        <div class="w-icon">🤖</div>
+        <div class="w-title">Your AI Marketing Assistant</div>
+        <div class="w-sub">Ask me anything about marketing, content, sales, SEO, ads, or business growth. I'm here 24/7.</div>
+        <div class="w-chips">
+          <div class="w-chip" onclick="useChip(this)">📝 Write content</div>
+          <div class="w-chip" onclick="useChip(this)">📊 Marketing strategy</div>
+          <div class="w-chip" onclick="useChip(this)">🎯 Ad campaign ideas</div>
+          <div class="w-chip" onclick="useChip(this)">📧 Email subject lines</div>
+          <div class="w-chip" onclick="useChip(this)">🔍 SEO advice</div>
+          <div class="w-chip" onclick="useChip(this)">💼 Sales scripts</div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-bar">
+      <textarea class="chat-ta" id="chat-ta" placeholder="Ask me anything about marketing…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="send()" title="Send (Enter)">➤</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+let token=localStorage.getItem('token')||sessionStorage.getItem('token');
+let currentUser=null;
+let chatHistory=[];
+
+async function init(){
+  if(!token){window.location='/login';return}
+  try{
+    const r=await fetch('/api/auth/me',{headers:{Authorization:'Bearer '+token}});
+    if(!r.ok){localStorage.removeItem('token');sessionStorage.removeItem('token');window.location='/login';return}
+    currentUser=(await r.json()).user;
+    document.getElementById('u-av').textContent=currentUser.name[0].toUpperCase();
+    document.getElementById('u-nm').textContent=currentUser.name.split(' ')[0];
+    document.getElementById('cred-count').textContent=currentUser.credits.toLocaleString();
+  }catch{window.location='/login'}
+  const th=localStorage.getItem('theme')||'light';
+  document.documentElement.dataset.theme=th;
+  document.getElementById('th-btn').textContent=th==='dark'?'🌙':'☀️';
+}
+
+function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);document.getElementById('th-btn').textContent=t==='dark'?'🌙':'☀️';}
+function toast(msg,type='ok'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+type;setTimeout(()=>el.className='toast',3200);}
+
+function usePrompt(tile){
+  const text=tile.querySelector('span').textContent;
+  document.getElementById('chat-ta').value=text;
+  document.getElementById('chat-ta').focus();
+}
+
+function useChip(chip){
+  const text=chip.textContent.replace(/^[^\s]+\s/,'');
+  document.getElementById('chat-ta').value='Help me with: '+text;
+  document.getElementById('chat-ta').focus();
+}
+
+function newChat(){chatHistory=[];const w=document.getElementById('chat-window');w.innerHTML='';w.innerHTML=`<div class="chat-welcome" id="chat-welcome"><div class="w-icon">🤖</div><div class="w-title">Your AI Marketing Assistant</div><div class="w-sub">Ask me anything about marketing, content, sales, SEO, ads, or business growth.</div><div class="w-chips"><div class="w-chip" onclick="useChip(this)">📝 Write content</div><div class="w-chip" onclick="useChip(this)">📊 Marketing strategy</div><div class="w-chip" onclick="useChip(this)">🎯 Ad campaign ideas</div><div class="w-chip" onclick="useChip(this)">📧 Email subject lines</div><div class="w-chip" onclick="useChip(this)">🔍 SEO advice</div><div class="w-chip" onclick="useChip(this)">💼 Sales scripts</div></div></div>`;}
+
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+
+function appendMsg(role,html,isLoading=false){
+  const welcome=document.getElementById('chat-welcome');
+  if(welcome)welcome.remove();
+  const w=document.getElementById('chat-window');
+  const div=document.createElement('div');
+  div.className='msg '+(role==='user'?'user':'ai');
+  const initial=role==='user'?(currentUser?.name||'U')[0].toUpperCase():'AI';
+  div.innerHTML=`<div class="m-av">${initial}</div><div class="m-bubble">${html}</div>`;
+  w.appendChild(div);
+  w.scrollTop=w.scrollHeight;
+  return div;
+}
+
+async function send(){
+  const ta=document.getElementById('chat-ta');
+  const msg=ta.value.trim();
+  if(!msg)return;
+  ta.value='';ta.style.height='auto';
+  appendMsg('user',escHtml(msg));
+  chatHistory.push({role:'user',content:msg});
+  const thinking=appendMsg('ai','<em style="opacity:.5">Thinking…</em>',true);
+  const btn=document.getElementById('send-btn');btn.disabled=true;
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({messages:chatHistory.slice(-20)})});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Chat failed');
+    const reply=data.message||'';
+    thinking.querySelector('.m-bubble').innerHTML=escHtml(reply).replace(/\n/g,'<br>');
+    chatHistory.push({role:'assistant',content:reply});
+    if(currentUser){currentUser.credits=Math.max(0,currentUser.credits-5);document.getElementById('cred-count').textContent=currentUser.credits.toLocaleString();}
+  }catch(err){
+    thinking.querySelector('.m-bubble').innerHTML=`<span style="color:#C0392B">Error: ${escHtml(err.message)}</span>`;
+  }
+  btn.disabled=false;
+  document.getElementById('chat-window').scrollTop=99999;
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+init();
+</script>
+</body>
+</html>

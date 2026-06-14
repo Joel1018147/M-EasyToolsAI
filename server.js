@@ -133,6 +133,29 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_documents_team ON documents(team_id);
       CREATE INDEX IF NOT EXISTS idx_usage_user ON usage_log(user_id);
       CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key);
+
+      CREATE TABLE IF NOT EXISTS platform_modules (
+        id         SERIAL PRIMARY KEY,
+        module_id  VARCHAR(50) UNIQUE NOT NULL,
+        name       VARCHAR(255) NOT NULL,
+        is_enabled BOOLEAN DEFAULT TRUE,
+        sort_order INTEGER DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      INSERT INTO platform_modules (module_id, name, sort_order) VALUES
+        ('content',  'M-EasyContent AI+',       1),
+        ('social',   'M-EasySocial AI+',        2),
+        ('mail',     'M-EasyMail AI+',          3),
+        ('ads',      'M-EasyAds AI+',           4),
+        ('seo',      'M-EasySEO AI+',           5),
+        ('commerce', 'M-EasyCommerce AI+',      6),
+        ('sales',    'M-EasySales AI+',         7),
+        ('aichat',   'M-EasyTools AI+ System',  8),
+        ('gao',      'M-EasyGAO AI+',           9)
+      ON CONFLICT (module_id) DO NOTHING;
     `);
 
     // Make first user admin
@@ -801,11 +824,67 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// ════════════════════════════════════════════════════
+//  MODULE MANAGEMENT (Seller Panel)
+// ════════════════════════════════════════════════════
+app.get('/api/modules', async (req, res) => {
+  try {
+    const modules = await db.getAll('SELECT module_id, name, is_enabled, sort_order FROM platform_modules ORDER BY sort_order');
+    res.json({ modules });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/seller/modules/:moduleId', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { moduleId } = req.params;
+    const { is_enabled } = req.body;
+    const mod = await db.getOne('SELECT id FROM platform_modules WHERE module_id = $1', [moduleId]);
+    if (!mod) return res.status(404).json({ error: 'Module not found' });
+    await db.run('UPDATE platform_modules SET is_enabled = $1, updated_at = CURRENT_TIMESTAMP WHERE module_id = $2', [!!is_enabled, moduleId]);
+    res.json({ success: true, module_id: moduleId, is_enabled: !!is_enabled });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/seller/stats', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const modules = await db.getAll('SELECT module_id, name, is_enabled FROM platform_modules ORDER BY sort_order');
+    const toolUsage = await db.getAll(`
+      SELECT tool_id, COUNT(*) as uses, SUM(credits_used) as credits
+      FROM usage_log WHERE created_at > NOW() - INTERVAL '30 days'
+      GROUP BY tool_id ORDER BY uses DESC LIMIT 30
+    `);
+    res.json({ modules, toolUsage });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ════════════════════════════════════════════════════
+//  MODULE PAGE ROUTES
+// ════════════════════════════════════════════════════
+function checkModule(moduleId) {
+  return async (req, res, next) => {
+    try {
+      const mod = await db.getOne('SELECT is_enabled FROM platform_modules WHERE module_id = $1', [moduleId]);
+      if (mod && !mod.is_enabled) return res.sendFile(path.join(__dirname, 'public', 'module-unavailable.html'));
+      next();
+    } catch { next(); }
+  };
+}
+
 // Page routes
-app.get('/app',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
-app.get('/admin',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/login',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
-app.get('/signup', (req, res) => res.sendFile(path.join(__dirname, 'public', 'signup.html')));
+app.get('/app',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
+app.get('/admin',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/login',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/signup',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'signup.html')));
+app.get('/seller',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'seller.html')));
+app.get('/content',  checkModule('content'),  (req, res) => res.sendFile(path.join(__dirname, 'public', 'content.html')));
+app.get('/social',   checkModule('social'),   (req, res) => res.sendFile(path.join(__dirname, 'public', 'social.html')));
+app.get('/mail',     checkModule('mail'),     (req, res) => res.sendFile(path.join(__dirname, 'public', 'mail.html')));
+app.get('/ads',      checkModule('ads'),      (req, res) => res.sendFile(path.join(__dirname, 'public', 'ads.html')));
+app.get('/seo',      checkModule('seo'),      (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo.html')));
+app.get('/commerce', checkModule('commerce'), (req, res) => res.sendFile(path.join(__dirname, 'public', 'commerce.html')));
+app.get('/sales',    checkModule('sales'),    (req, res) => res.sendFile(path.join(__dirname, 'public', 'sales.html')));
+app.get('/aichat',   checkModule('aichat'),   (req, res) => res.sendFile(path.join(__dirname, 'public', 'aichat.html')));
+app.get('/gao',      checkModule('gao'),      (req, res) => res.sendFile(path.join(__dirname, 'public', 'gao.html')));
 
 app.listen(PORT, () => {
   console.log(`

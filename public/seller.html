@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller Panel — M-EasyTools AI+</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FAF8F4;--cream2:#F2EFE8;--cream3:#E8E4DC;--white:#FFFFFF;
+  --navy:#0D1B2A;--navy2:#1A2D42;--navy3:#243B55;
+  --steel:#3D5A73;--slate:#607D94;--mist:#8EA3B5;--silver:#B8C8D5;--fog:#D4DFE8;
+  --orange:#E8622A;--orange2:#F07340;--orange3:#FF8F66;
+  --r:12px;--r-sm:8px;--r-lg:18px;
+  --sh-sm:0 1px 3px rgba(13,27,42,0.08);--sh:0 4px 16px rgba(13,27,42,0.08);--sh-lg:0 12px 40px rgba(13,27,42,0.12);
+}
+[data-theme="dark"]{
+  --cream:#0F1923;--cream2:#141E2A;--cream3:#1A2535;--white:#1C2940;
+  --navy:#E8EDF2;--navy2:#CDD5DE;--navy3:#B0BCC8;
+  --steel:#8EA3B5;--slate:#7A96AA;--silver:#3D5A73;--fog:#243B55;
+  --sh-sm:0 1px 4px rgba(0,0,0,0.3);--sh:0 4px 20px rgba(0,0,0,0.35);--sh-lg:0 12px 40px rgba(0,0,0,0.45);
+}
+html,body{min-height:100%;background:var(--cream);font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--fog);border-radius:3px}
+
+/* NAV */
+.top-nav{height:58px;background:var(--navy);display:flex;align-items:center;padding:0 28px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
+.nav-logo{display:flex;align-items:center;gap:11px;flex:1}
+.logo-g{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--orange),#C44E1E);display:flex;align-items:center;justify-content:center;font-family:'Libre Baskerville',serif;font-weight:700;font-size:16px;color:white;flex-shrink:0;box-shadow:0 4px 10px rgba(232,98,42,0.4)}
+.nav-title{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:white}
+.nav-title em{font-style:normal;color:var(--orange3)}
+.nav-sub{font-size:9px;color:rgba(255,255,255,0.32);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.nav-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:all .18s;text-decoration:none;white-space:nowrap}
+.btn-out{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.12)}
+.btn-out:hover{background:rgba(255,255,255,0.13);color:white}
+.th-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);color:rgba(255,255,255,0.5);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.th-btn:hover{background:rgba(255,255,255,0.12);color:white}
+.u-chip{display:flex;align-items:center;gap:7px;padding:4px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:20px}
+.u-av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#C44E1E);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white}
+.u-nm{font-size:12px;color:rgba(255,255,255,0.6);font-weight:500}
+
+/* PAGE */
+.page{max-width:1100px;margin:0 auto;padding:36px 32px 60px}
+
+/* HEADER */
+.page-head{margin-bottom:32px}
+.access-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(232,98,42,0.1);border:1px solid rgba(232,98,42,0.2);color:var(--orange);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
+.page-title{font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;color:var(--navy);margin-bottom:8px;letter-spacing:-0.3px}
+[data-theme="dark"] .page-title{color:#E8EDF2}
+.page-sub{font-size:14px;color:var(--slate);line-height:1.6;max-width:500px}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--white);border:1px solid var(--fog);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh-sm)}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.stat-lbl{font-size:12px;color:var(--slate);font-weight:500}
+[data-theme="dark"] .stat-card{background:#1C2940;border-color:#243B55}
+[data-theme="dark"] .stat-val{color:#E8EDF2}
+
+/* MODULES GRID */
+.modules-title{font-family:'Libre Baskerville',serif;font-size:18px;font-weight:700;color:var(--navy);margin-bottom:18px}
+[data-theme="dark"] .modules-title{color:#E8EDF2}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+
+/* MODULE CARD */
+.mod-card{background:var(--white);border:1px solid var(--fog);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-sm);transition:box-shadow .2s}
+.mod-card:hover{box-shadow:var(--sh)}
+.mod-card.disabled{opacity:.7}
+.mc-stripe{height:4px;width:100%}
+.mc-body{padding:18px 20px}
+.mc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.mc-icon-name{display:flex;align-items:center;gap:12px}
+.mc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.mc-name{font-size:15px;font-weight:700;color:var(--navy2)}
+.mc-url{font-size:11px;color:var(--mist);font-family:'JetBrains Mono',monospace;margin-top:2px}
+[data-theme="dark"] .mc-name{color:#CDD5DE}
+
+/* TOGGLE SWITCH */
+.toggle-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.toggle-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mist)}
+.toggle{position:relative;width:44px;height:24px;cursor:pointer}
+.toggle input{display:none}
+.toggle-track{position:absolute;inset:0;border-radius:12px;background:var(--fog);transition:background .2s}
+.toggle input:checked~.toggle-track{background:#16A34A}
+.toggle-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform .2s}
+.toggle input:checked~.toggle-knob{transform:translateX(20px)}
+.mod-card.disabled .toggle-track{background:#C0392B}
+
+.mc-desc{font-size:12px;color:var(--slate);line-height:1.5;margin-bottom:14px}
+.mc-foot{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--fog)}
+.mc-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
+.mc-status.on{background:rgba(22,163,74,0.1);color:#16A34A}
+.mc-status.off{background:rgba(192,57,43,0.1);color:#C0392B}
+.mc-link{font-size:12px;color:var(--mist);text-decoration:none;display:flex;align-items:center;gap:4px;font-weight:500;transition:color .15s}
+.mc-link:hover{color:var(--orange)}
+
+[data-theme="dark"] .mod-card{background:#1C2940;border-color:#243B55}
+[data-theme="dark"] .mc-foot{border-color:#243B55}
+[data-theme="dark"] .toggle-track{background:#3D5A73}
+
+/* LOADING STATE */
+.loading-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.skel{background:var(--cream2);border-radius:var(--r-lg);height:180px;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* ACCESS DENIED */
+.access-denied{text-align:center;padding:80px 32px}
+.ad-icon{font-size:56px;margin-bottom:20px;opacity:.5}
+.ad-title{font-family:'Libre Baskerville',serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.ad-sub{font-size:14px;color:var(--slate);max-width:360px;margin:0 auto 24px;line-height:1.6}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:var(--navy);color:white;padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:600;box-shadow:var(--sh-lg);transform:translateY(80px);opacity:0;transition:all .3s;max-width:300px}
+.toast.show{transform:none;opacity:1}
+.toast.err{background:#C0392B}.toast.ok{background:#16A34A}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <div class="nav-logo">
+    <div class="logo-g">S</div>
+    <div><div class="nav-title">M-Easy<em>Tools</em> AI+</div><div class="nav-sub">Seller Control Panel</div></div>
+  </div>
+  <div class="nav-r">
+    <button class="th-btn" id="th-btn" onclick="toggleTheme()">☀️</button>
+    <a href="/app" class="btn btn-out">← Dashboard</a>
+    <a href="/admin" class="btn btn-out">Admin</a>
+    <div class="u-chip"><div class="u-av" id="u-av">?</div><span class="u-nm" id="u-nm">…</span></div>
+  </div>
+</nav>
+
+<div id="main-content" style="display:none">
+<div class="page">
+  <div class="page-head">
+    <div class="access-badge">🏪 Seller Panel</div>
+    <h1 class="page-title">Module Control Center</h1>
+    <p class="page-sub">Enable or disable individual AI modules across your platform. Changes take effect immediately for all users.</p>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-val" id="stat-active">—</div><div class="stat-lbl">Active Modules</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-total">9</div><div class="stat-lbl">Total Modules</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-disabled">—</div><div class="stat-lbl">Disabled Modules</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-plan">—</div><div class="stat-lbl">Your Role</div></div>
+  </div>
+
+  <div class="modules-title">Platform Modules</div>
+  <div id="modules-container">
+    <div class="loading-grid">
+      <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+      <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div id="access-denied" style="display:none">
+  <div class="access-denied">
+    <div class="ad-icon">🔒</div>
+    <div class="ad-title">Admin Access Required</div>
+    <div class="ad-sub">The Seller Panel is only accessible to platform administrators. Please log in with an admin account.</div>
+    <a href="/app" class="btn" style="background:var(--orange);color:white;padding:10px 24px;border-radius:10px;font-size:14px">← Go to Dashboard</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const token=localStorage.getItem('token')||sessionStorage.getItem('token');
+let currentUser=null;
+
+const MODULE_META={
+  content:  {icon:'✍️',color:'#4F46E5',bg:'#EEF2FF',desc:'Blog posts, landing pages, article outlines, content rewriting and AI humanizer tools.'},
+  social:   {icon:'📱',color:'#D97706',bg:'#FEF3C7',desc:'Social media posts, Instagram bios, YouTube scripts, LinkedIn content and content summaries.'},
+  mail:     {icon:'📧',color:'#059669',bg:'#ECFDF5',desc:'Email campaigns, drip sequences, subject line generators and re-engagement emails.'},
+  ads:      {icon:'🎯',color:'#DC2626',bg:'#FEE2E2',desc:'Facebook/Instagram ads, Google Ads, push notifications and TikTok ad scripts.'},
+  seo:      {icon:'🔍',color:'#1D4ED8',bg:'#EFF6FF',desc:'SEO meta tags, keyword clustering, FAQ generation and SEO article writing.'},
+  commerce: {icon:'🛍️',color:'#DB2777',bg:'#FFF1F2',desc:'Product descriptions, listing titles, review responses and upsell scripts.'},
+  sales:    {icon:'💼',color:'#16A34A',bg:'#F0FDF4',desc:'Cold outreach emails, DM templates, sales pitch scripts and proposal copy.'},
+  aichat:   {icon:'🤖',color:'#7C3AED',bg:'#F5F3FF',desc:'Always-on AI marketing assistant for brainstorming, strategy and content on demand.'},
+  gao:      {icon:'🧠',color:'#1A8F7A',bg:'#ECFDF5',desc:'Track brand visibility in ChatGPT, Claude, Gemini and Perplexity. AI search optimization for Malaysia & SEA.'},
+};
+
+function toast(msg,type='ok'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+type;setTimeout(()=>el.className='toast',3200);}
+function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);document.getElementById('th-btn').textContent=t==='dark'?'🌙':'☀️';}
+
+async function init(){
+  if(!token){window.location='/login';return}
+  const th=localStorage.getItem('theme')||'light';
+  document.documentElement.dataset.theme=th;
+  document.getElementById('th-btn').textContent=th==='dark'?'🌙':'☀️';
+  try{
+    const r=await fetch('/api/auth/me',{headers:{Authorization:'Bearer '+token}});
+    if(!r.ok){localStorage.removeItem('token');sessionStorage.removeItem('token');window.location='/login';return}
+    currentUser=(await r.json()).user;
+    document.getElementById('u-av').textContent=currentUser.name[0].toUpperCase();
+    document.getElementById('u-nm').textContent=currentUser.name.split(' ')[0];
+    document.getElementById('stat-plan').textContent=currentUser.role.toUpperCase();
+    if(currentUser.role!=='admin'){
+      document.getElementById('access-denied').style.display='block';
+      return;
+    }
+    document.getElementById('main-content').style.display='block';
+    loadModules();
+  }catch{window.location='/login'}
+}
+
+async function loadModules(){
+  try{
+    const r=await fetch('/api/modules');
+    const data=await r.json();
+    const modules=data.modules||[];
+    const active=modules.filter(m=>m.is_enabled).length;
+    document.getElementById('stat-active').textContent=active;
+    document.getElementById('stat-disabled').textContent=modules.length-active;
+    document.getElementById('stat-total').textContent=modules.length;
+    renderModules(modules);
+  }catch(err){toast('Failed to load modules: '+err.message,'err');}
+}
+
+function renderModules(modules){
+  const c=document.getElementById('modules-container');
+  c.innerHTML='<div class="modules-grid">'+modules.map(m=>{
+    const meta=MODULE_META[m.module_id]||{icon:'📦',color:'#607D94',bg:'#F2EFE8',desc:'Module for this platform.'};
+    const enabled=m.is_enabled;
+    const url='/'+m.module_id;
+    return `
+    <div class="mod-card ${enabled?'':'disabled'}" id="card-${m.module_id}">
+      <div class="mc-stripe" style="background:${meta.color}"></div>
+      <div class="mc-body">
+        <div class="mc-top">
+          <div class="mc-icon-name">
+            <div class="mc-icon" style="background:${meta.bg}">${meta.icon}</div>
+            <div>
+              <div class="mc-name">${m.name}</div>
+              <div class="mc-url">${url}</div>
+            </div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-lbl">${enabled?'ON':'OFF'}</span>
+            <label class="toggle">
+              <input type="checkbox" ${enabled?'checked':''} onchange="toggleModule('${m.module_id}',this)">
+              <div class="toggle-track"></div>
+              <div class="toggle-knob"></div>
+            </label>
+          </div>
+        </div>
+        <div class="mc-desc">${meta.desc}</div>
+        <div class="mc-foot">
+          <span class="mc-status ${enabled?'on':'off'}" id="status-${m.module_id}">${enabled?'✓ Active':'✗ Disabled'}</span>
+          <a href="${url}" target="_blank" class="mc-link">Visit Module →</a>
+        </div>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+async function toggleModule(moduleId,checkbox){
+  const enabled=checkbox.checked;
+  const card=document.getElementById('card-'+moduleId);
+  const statusEl=document.getElementById('status-'+moduleId);
+  const labelEl=checkbox.closest('.toggle-wrap').querySelector('.toggle-lbl');
+  checkbox.disabled=true;
+  try{
+    const r=await fetch('/api/seller/modules/'+moduleId,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+      body:JSON.stringify({is_enabled:enabled})
+    });
+    if(!r.ok){const e=await r.json();throw new Error(e.error||'Update failed');}
+    card.classList.toggle('disabled',!enabled);
+    statusEl.textContent=enabled?'✓ Active':'✗ Disabled';
+    statusEl.className='mc-status '+(enabled?'on':'off');
+    labelEl.textContent=enabled?'ON':'OFF';
+    const active=document.querySelectorAll('.mod-card:not(.disabled)').length;
+    document.getElementById('stat-active').textContent=active;
+    document.getElementById('stat-disabled').textContent=9-active;
+    toast((enabled?'✓ ':'✗ ')+moduleId+' module '+(enabled?'enabled':'disabled'),'ok');
+  }catch(err){
+    checkbox.checked=!enabled;
+    toast(err.message,'err');
+  }finally{checkbox.disabled=false;}
+}
+
+init();
+</script>
+</body>
+</html>
