@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -169,7 +169,7 @@ html,body{min-height:100%;background:var(--cream);font-family:'Plus Jakarta Sans
 <div class="toast" id="toast"></div>
 
 <script>
-const token=localStorage.getItem('token')||sessionStorage.getItem('token');
+const token=localStorage.getItem('msm_token')||sessionStorage.getItem('msm_token');
 let currentUser=null;
 
 const MODULE_META={
@@ -194,7 +194,7 @@ async function init(){
   document.getElementById('th-btn').textContent=th==='dark'?'🌙':'☀️';
   try{
     const r=await fetch('/api/auth/me',{headers:{Authorization:'Bearer '+token}});
-    if(!r.ok){localStorage.removeItem('token');sessionStorage.removeItem('token');window.location='/login';return}
+    if(!r.ok){localStorage.removeItem('msm_token');sessionStorage.removeItem('msm_token');window.location='/login';return}
     currentUser=(await r.json()).user;
     document.getElementById('u-av').textContent=currentUser.name[0].toUpperCase();
     document.getElementById('u-nm').textContent=currentUser.name.split(' ')[0];
@@ -289,3 +289,4 @@ init();
 </script>
 </body>
 </html>
+

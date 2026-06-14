@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -177,7 +177,7 @@ html,body{height:100%;overflow:hidden;background:var(--cream);font-family:'Plus 
 
 <div class="toast" id="toast"></div>
 <script>
-let token=localStorage.getItem('token')||sessionStorage.getItem('token');
+let token=localStorage.getItem('msm_token')||sessionStorage.getItem('msm_token');
 let currentUser=null,currentTool=null,activeTone='Professional',allTools=[];
 
 const TOOLS=[
@@ -221,7 +221,7 @@ async function init(){
   if(!token){window.location='/login';return}
   try{
     const r=await fetch('/api/auth/me',{headers:{Authorization:'Bearer '+token}});
-    if(!r.ok){localStorage.removeItem('token');sessionStorage.removeItem('token');window.location='/login';return}
+    if(!r.ok){localStorage.removeItem('msm_token');sessionStorage.removeItem('msm_token');window.location='/login';return}
     currentUser=(await r.json()).user;
     document.getElementById('u-av').textContent=currentUser.name[0].toUpperCase();
     document.getElementById('u-nm').textContent=currentUser.name.split(' ')[0];
@@ -281,3 +281,4 @@ init();
 </script>
 </body>
 </html>
+
