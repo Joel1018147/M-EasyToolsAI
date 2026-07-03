@@ -3848,6 +3848,19 @@ function prDownloadReport(data) {
 // ══ END M-EasyPR AI+ MODULE ══════════════════════════════════════
 
 // ── Init ──────────────────────────────────────────────────
+// ── Deep Link Handler (?goto=page) ──────────────────────────
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const goto = params.get('goto');
+  const validPages = ['dashboard','tools','chat','documents','seo','bulk','templates','settings','pr'];
+  if (goto && validPages.includes(goto)) {
+    // Remove the param from the URL without triggering a reload
+    const cleanUrl = window.location.pathname + (params.toString().replace(/goto=[^&]*/,'').replace(/^&|&$/,'') ? '?' + params.toString().replace(/goto=[^&]*/,'').replace(/^&|&$/,'') : '');
+    history.replaceState(null, '', cleanUrl || window.location.pathname);
+    // Navigate to the requested page after DOM is ready
+    requestAnimationFrame(function() { goTo(goto); });
+  }
+})();
 renderTools(TOOLS);
 initTheme();
 initLang();
