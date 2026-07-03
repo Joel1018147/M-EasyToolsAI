@@ -3848,17 +3848,26 @@ function prDownloadReport(data) {
 // ══ END M-EasyPR AI+ MODULE ══════════════════════════════════════
 
 // ── Init ──────────────────────────────────────────────────
-// ── Deep Link Handler (?goto=page) ──────────────────────────
+// ── Deep Link Handler (?goto=page & ?cat=category) ──────────
 (function() {
   const params = new URLSearchParams(window.location.search);
   const goto = params.get('goto');
+  const cat  = params.get('cat');
   const validPages = ['dashboard','tools','chat','documents','seo','bulk','templates','settings','pr'];
   if (goto && validPages.includes(goto)) {
-    // Remove the param from the URL without triggering a reload
-    const cleanUrl = window.location.pathname + (params.toString().replace(/goto=[^&]*/,'').replace(/^&|&$/,'') ? '?' + params.toString().replace(/goto=[^&]*/,'').replace(/^&|&$/,'') : '');
-    history.replaceState(null, '', cleanUrl || window.location.pathname);
-    // Navigate to the requested page after DOM is ready
-    requestAnimationFrame(function() { goTo(goto); });
+    // Strip goto/cat from the URL bar without triggering a reload
+    params.delete('goto'); params.delete('cat');
+    const qs = params.toString();
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+    // Navigate after DOM is ready; pre-filter the tools category if requested
+    requestAnimationFrame(function() {
+      goTo(goto);
+      if (goto === 'tools' && cat) {
+        const pill = [...document.querySelectorAll('.cat-pill')]
+          .find(p => (p.getAttribute('onclick') || '').includes("catFilter('" + cat + "'"));
+        if (pill) catFilter(cat, pill);
+      }
+    });
   }
 })();
 renderTools(TOOLS);
