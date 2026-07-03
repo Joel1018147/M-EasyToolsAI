@@ -789,6 +789,24 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 }
 #sub-banner { grid-column: 2; }
 .alert { position: sticky; top: 0; z-index: 30; border-radius: 0; }
+
+/* ── M-EasyPR AI+ Module ── */
+.f-group{margin-bottom:14px}
+.pr-tab{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-size:13px;font-weight:600;color:var(--mist);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font);transition:all .15s}
+.pr-tab:hover{color:var(--navy2,var(--navy))}
+.pr-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.pr-pkg{background:var(--white);border:1.5px solid var(--fog);border-radius:var(--r);padding:22px;cursor:pointer;transition:all .2s;position:relative}
+.pr-pkg:hover{border-color:var(--orange);box-shadow:var(--shadow-sm)}
+.pr-pkg.selected{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,98,42,0.12)}
+.pr-pkg.featured{border-color:var(--orange)}
+.pr-pkg-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.pr-pkg-price{font-size:28px;font-weight:800;color:var(--orange);letter-spacing:-.5px}
+.pr-pkg-sub{font-size:12px;color:var(--mist);margin-bottom:14px;font-weight:600}
+.pr-pkg-divider{height:1px;background:var(--fog);margin:12px 0}
+.pr-pkg-feat{font-size:12px;color:var(--navy);padding:3px 0;display:flex;align-items:center;gap:6px}
+.pr-score-box{background:var(--white);border:1px solid var(--fog);border-radius:var(--r-sm,8px);padding:10px 16px;display:flex;align-items:center;gap:8px}
+.pr-score-label{font-size:11px;color:var(--mist);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.pr-score-val{font-size:20px;font-weight:800;line-height:1}
 </style>
 </head>
 <body>
@@ -833,6 +851,11 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
     <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2L9 6M9 12L9 16M2 9L6 9M12 9L16 9M4.5 4.5L7 7M11 11L13.5 13.5M13.5 4.5L11 7M7 11L4.5 13.5"/></svg>
     <span data-i18n="nav_gao">GAO Suite</span>
     <span class="sidebar-item-badge" style="background:var(--teal);color:white">NEW</span>
+  </button>
+  <button class="sidebar-item" onclick="goTo('pr')">
+    <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="1.5"/><path d="M5 7h8M5 10h5"/></svg>
+    PR &amp; Media
+    <span class="sidebar-item-badge" style="background:#1D4ED8;color:white">New</span>
   </button>
   <button class="sidebar-item" onclick="goTo('bulk')">
     <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="14" height="3" rx="1"/><rect x="2" y="7.5" width="14" height="3" rx="1"/><rect x="2" y="13" width="14" height="3" rx="1"/></svg>
@@ -989,6 +1012,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
         <button class="cat-pill" onclick="catFilter('sales',this)">💼 Sales</button>
         <button class="cat-pill" onclick="catFilter('rewrite',this)">🔄 Rewrite</button>
         <button class="cat-pill" onclick="catFilter('seo',this)">🔍 SEO</button>
+        <button class="cat-pill" onclick="catFilter('pr',this)">📰 PR &amp; Media</button>
       </div>
     </div>
     <div class="tools-canvas">
@@ -1457,6 +1481,190 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
     </div>
   </div>
 
+  <!-- ══ M-EasyPR AI+ PAGE ══ -->
+  <div class="page" id="page-pr">
+    <div class="page-body">
+
+      <!-- Page header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-.3px">M-EasyPR AI+ <span style="font-size:12px;font-weight:700;background:rgba(29,78,216,0.1);color:#1D4ED8;padding:3px 10px;border-radius:20px;vertical-align:middle;margin-left:6px">BETA</span></div>
+          <div style="font-size:13px;color:var(--mist);margin-top:3px">Write, distribute, and track press releases across Malaysian and Southeast Asian media</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="prTab('history')">📋 My Press Releases</button>
+          <button class="btn btn-primary btn-sm" onclick="prTab('write')">✦ Write New PR</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div style="display:flex;border-bottom:2px solid var(--fog);margin-bottom:20px">
+        <button class="pr-tab active" id="prtab-write"     onclick="prTab('write')">✍️ Write</button>
+        <button class="pr-tab"        id="prtab-distribute" onclick="prTab('distribute')">🚀 Distribute</button>
+        <button class="pr-tab"        id="prtab-history"   onclick="prTab('history')">📋 My PRs</button>
+      </div>
+
+      <!-- ── WRITE TAB ── -->
+      <div id="prpanel-write">
+        <div style="display:grid;grid-template-columns:360px 1fr;gap:20px">
+
+          <!-- Form panel -->
+          <div style="background:var(--white);border:1px solid var(--fog);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm)">
+            <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px">📰 Press Release Details</div>
+            <div class="f-group"><div class="f-label">Company / Brand Name *</div><input class="f-input" id="pr-company" placeholder="e.g. Modus AI Associates Sdn Bhd"></div>
+            <div class="f-group"><div class="f-label">Headline / Announcement *</div><input class="f-input" id="pr-headline" placeholder="e.g. Modus AI Launches AI-Native Business Operating System"></div>
+            <div class="f-group"><div class="f-label">Key Messages *</div><textarea class="f-textarea" id="pr-messages" rows="4" placeholder="List 3–5 key points you want journalists to know..."></textarea></div>
+            <div class="f-group"><div class="f-label">Spokesperson Quote</div><input class="f-input" id="pr-quote" placeholder="e.g. This will transform how Malaysian SMEs operate"></div>
+            <div class="f-group"><div class="f-label">Spokesperson Name & Title</div><input class="f-input" id="pr-spokesperson" placeholder="e.g. Joel Tan, Founder & Director"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="f-group"><div class="f-label">Target Media</div>
+                <select class="f-select" id="pr-audience">
+                  <option>General Business Media</option><option>Tech & Innovation Press</option>
+                  <option>Industry Trade Publications</option><option>Financial & Investor Media</option>
+                  <option>Consumer Media</option><option>All Media</option>
+                </select>
+              </div>
+              <div class="f-group"><div class="f-label">Region</div>
+                <select class="f-select" id="pr-region">
+                  <option>Malaysia Only</option><option>Malaysia + Singapore</option>
+                  <option>Southeast Asia</option><option>Asia Pacific</option><option>Global</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-group"><div class="f-label">Call to Action</div><input class="f-input" id="pr-cta" placeholder="e.g. Visit modusaiassociates.com or email us"></div>
+            <div class="f-group"><div class="f-label">Tone</div>
+              <select class="f-select" id="pr-tone">
+                <option>Professional</option><option>Authoritative</option><option>Friendly</option><option>Bold</option><option>Corporate</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" id="pr-gen-btn" onclick="generatePR()">✦ Generate Press Release</button>
+          </div>
+
+          <!-- Output panel -->
+          <div>
+            <div id="pr-out-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:420px;background:var(--white);border:1px solid var(--fog);border-radius:var(--r);text-align:center;gap:12px">
+              <div style="font-size:48px;opacity:.3">📰</div>
+              <div style="font-size:15px;font-weight:700;color:var(--navy)">Your press release appears here</div>
+              <div style="font-size:13px;color:var(--mist);max-width:300px">Fill in the details on the left and click Generate. AI will write a journalist-ready press release.</div>
+            </div>
+            <div id="pr-out-loading" style="display:none;align-items:center;justify-content:center;height:420px;background:var(--white);border:1px solid var(--fog);border-radius:var(--r);flex-direction:column;gap:16px">
+              <div class="spinner spinner-lg"></div>
+              <div style="font-size:14px;font-weight:600;color:var(--navy)">Writing your press release...</div>
+              <div style="font-size:12px;color:var(--mist)">Optimising for journalists and AI citation</div>
+            </div>
+            <div id="pr-out-result" style="display:none">
+              <!-- Score row -->
+              <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+                <div class="pr-score-box"><span class="pr-score-label">Words</span><span class="pr-score-val" id="pr-s-words" style="color:var(--navy)">—</span></div>
+                <div class="pr-score-box"><span class="pr-score-label">SEO</span><span class="pr-score-val" id="pr-s-seo" style="color:var(--orange)">—</span><span style="font-size:11px;color:var(--mist)">/100</span></div>
+                <div class="pr-score-box"><span class="pr-score-label">🤖 GEO</span><span class="pr-score-val" id="pr-s-geo" style="color:#7C3AED">—</span><span style="font-size:11px;color:var(--mist)">/100</span></div>
+                <div style="flex:1;min-width:180px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:10px 14px">
+                  <div style="font-size:10px;font-weight:700;color:#7C3AED;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px">AI Citation Likelihood</div>
+                  <div style="font-size:12px;color:var(--navy)" id="pr-s-georeason">—</div>
+                </div>
+              </div>
+              <!-- Content box -->
+              <div style="background:var(--white);border:1px solid var(--fog);border-radius:var(--r);padding:24px;box-shadow:var(--shadow-sm)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                  <div style="font-size:13px;font-weight:700;color:var(--navy)">Generated Press Release</div>
+                  <div style="display:flex;gap:8px">
+                    <button class="btn btn-outline btn-sm" onclick="prCopy()">📋 Copy</button>
+                    <button class="btn btn-primary btn-sm" onclick="prTab('distribute')">🚀 Distribute Now</button>
+                  </div>
+                </div>
+                <div id="pr-content-box" style="font-size:13px;line-height:1.85;color:var(--navy);white-space:pre-wrap;border-top:1px solid var(--fog);padding-top:16px;font-family:Georgia,serif"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DISTRIBUTE TAB ── -->
+      <div id="prpanel-distribute" style="display:none">
+        <div id="pr-dist-alert" style="display:none;background:rgba(232,98,42,0.07);border:1px solid rgba(232,98,42,0.2);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--orange);font-weight:600">
+          ⚠️ Write a press release first (or select one from My PRs) before distributing.
+        </div>
+        <div id="pr-dist-selected-bar" style="display:none;background:var(--white);border:1px solid var(--fog);border-radius:var(--r);padding:14px 18px;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--mist);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Ready to distribute</div>
+          <div style="font-size:14px;font-weight:700;color:var(--navy)" id="pr-dist-headline-label">—</div>
+        </div>
+
+        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">Choose Your Distribution Package</div>
+        <div style="font-size:13px;color:var(--mist);margin-bottom:20px">Your press release will be emailed to verified media outlets and journalists in our network. Our team confirms publications and updates your report.</div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+          <div class="pr-pkg" id="pkgcard-starter" onclick="prSelectPkg('starter')">
+            <div class="pr-pkg-name">Starter</div>
+            <div class="pr-pkg-price">RM 149</div>
+            <div class="pr-pkg-sub">10 Media Outlets · Malaysia</div>
+            <div class="pr-pkg-divider"></div>
+            <div class="pr-pkg-feat">✓ 10 guaranteed outlets</div>
+            <div class="pr-pkg-feat">✓ Malaysia-focused</div>
+            <div class="pr-pkg-feat">✓ SEO backlinks</div>
+            <div class="pr-pkg-feat">✓ Distribution report</div>
+            <div class="pr-pkg-feat" style="opacity:.4">✗ Journalist outreach</div>
+            <div class="pr-pkg-feat" style="opacity:.4">✗ SEA reach</div>
+          </div>
+          <div class="pr-pkg featured" id="pkgcard-growth" onclick="prSelectPkg('growth')" style="position:relative">
+            <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--orange);color:white;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;white-space:nowrap">Most Popular</div>
+            <div class="pr-pkg-name">Growth</div>
+            <div class="pr-pkg-price">RM 299</div>
+            <div class="pr-pkg-sub">25 Media Outlets · MY + SEA</div>
+            <div class="pr-pkg-divider"></div>
+            <div class="pr-pkg-feat">✓ 25 guaranteed outlets</div>
+            <div class="pr-pkg-feat">✓ Malaysia + Singapore + SEA</div>
+            <div class="pr-pkg-feat">✓ SEO backlinks</div>
+            <div class="pr-pkg-feat">✓ Distribution report</div>
+            <div class="pr-pkg-feat">✓ Journalist outreach</div>
+            <div class="pr-pkg-feat" style="opacity:.4">✗ Social amplification</div>
+          </div>
+          <div class="pr-pkg" id="pkgcard-enterprise" onclick="prSelectPkg('enterprise')">
+            <div class="pr-pkg-name">Enterprise</div>
+            <div class="pr-pkg-price">RM 599</div>
+            <div class="pr-pkg-sub">50+ Media Outlets · Asia Pacific</div>
+            <div class="pr-pkg-divider"></div>
+            <div class="pr-pkg-feat">✓ 50+ guaranteed outlets</div>
+            <div class="pr-pkg-feat">✓ Full Asia Pacific</div>
+            <div class="pr-pkg-feat">✓ SEO backlinks</div>
+            <div class="pr-pkg-feat">✓ Full analytics report</div>
+            <div class="pr-pkg-feat">✓ Journalist database blast</div>
+            <div class="pr-pkg-feat">✓ Social amplification</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="padding:12px 32px;font-size:14px" id="pr-dist-btn" onclick="prSubmitDist()" disabled>
+          🚀 Submit for Distribution
+        </button>
+        <div style="font-size:12px;color:var(--mist);margin-top:10px;max-width:560px">
+          Our editorial team reviews every press release before distribution. You will be contacted within 1 business day to confirm payment and timeline. Publications are tracked and added to your report.
+        </div>
+      </div>
+
+      <!-- ── HISTORY TAB ── -->
+      <div id="prpanel-history" style="display:none">
+        <div id="pr-hist-loading" style="text-align:center;padding:40px;color:var(--mist)">Loading your press releases...</div>
+        <div id="pr-hist-empty" style="display:none;text-align:center;padding:60px 24px">
+          <div style="font-size:48px;margin-bottom:12px;opacity:.3">📰</div>
+          <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">No press releases yet</div>
+          <div style="font-size:13px;color:var(--mist);margin-bottom:16px">Write your first press release to get started</div>
+          <button class="btn btn-primary" onclick="prTab('write')">✦ Write First PR</button>
+        </div>
+        <div id="pr-hist-table" style="display:none">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Headline</th><th>Company</th><th>Words</th>
+                <th>SEO</th><th>GEO</th><th>Status</th><th>Date</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="pr-hist-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div><!-- /main-area -->
 </div><!-- /app-shell -->
 
@@ -1617,7 +1825,7 @@ function goTo(page) {
   const pg=document.getElementById('page-'+page);
   if(pg) pg.classList.add('active');
   // Update title with translation
-  const titleMap={dashboard:'nav_dashboard',tools:'nav_tools',editor:'nav_tools',chat:'nav_chat',documents:'nav_documents',seo:'nav_seo',bulk:'nav_bulk',templates:'nav_templates',settings:'nav_settings'};
+  const titleMap={dashboard:'nav_dashboard',tools:'nav_tools',editor:'nav_tools',chat:'nav_chat',documents:'nav_documents',seo:'nav_seo',bulk:'nav_bulk',templates:'nav_templates',pr:'M-EasyPR AI+',settings:'nav_settings'};
   const titleEl=document.getElementById('topbar-title');
   if(titleEl) titleEl.textContent = (typeof t==='function') ? t(titleMap[page]||'nav_dashboard') : (PAGE_TITLES[page]||page);
   // Close profile menu
@@ -1656,6 +1864,9 @@ const TOOLS=[
   {id:'seo-meta',name:'SEO Meta Tags',desc:'Title tags and meta descriptions for maximum search CTR.',icon:'🔍',bg:'#EFF6FF',color:'#2563EB',cat:'seo',badge:'SEO'},
   {id:'keyword-ideas',name:'Keyword Clusters',desc:'Long-tail keywords, clusters, and intent mapping for any niche.',icon:'💡',bg:'#FEFCE8',color:'#CA8A04',cat:'seo',badge:'SEO'},
   {id:'faq-writer',name:'FAQ Generator',desc:'SEO-rich FAQ sections for any product, service, or article.',icon:'❓',bg:'#F5F3FF',color:'#6D28D9',cat:'seo',badge:''},
+  {id:'press-release',name:'Press Release',desc:'Write journalist-ready press releases optimised for media pickup, SEO, and AI citation (GEO).',icon:'📰',bg:'#EFF6FF',color:'#1D4ED8',cat:'pr',badge:'New'},
+  {id:'pr-angle',name:'PR Angle Generator',desc:'Generate 5 distinct newsworthy angles for any product launch, company milestone, or brand story.',icon:'🎯',bg:'#F0FDF4',color:'#15803D',cat:'pr',badge:''},
+  {id:'media-pitch',name:'Media Pitch Email',desc:'Write compelling pitch emails to journalists and editors that get your story covered.',icon:'✉️',bg:'#FDF4FF',color:'#9333EA',cat:'pr',badge:''},
 ];
 
 const FORMS={
@@ -1669,6 +1880,27 @@ const FORMS={
   'seo-meta':{name:'SEO Meta Generator',fields:[{id:'page',label:'Page Topic / Title',type:'input',ph:'e.g. Best CRM Software for Small Businesses in 2025'},{id:'keywords',label:'Primary Keywords',type:'input',ph:'e.g. CRM software, small business CRM'},{id:'url',label:'Page URL (optional)',type:'input',ph:'e.g. yoursite.com/best-crm-software'}],prompt:d=>`Generate SEO-optimized meta tags for: "${d.page}"\nPrimary keywords: ${d.keywords}\nURL: ${d.url||'Not provided'}\n\nDeliver:\n3 TITLE TAG OPTIONS: (50-60 chars each)\n3 META DESCRIPTION OPTIONS: (150-160 chars each)\n10 LSI/SEMANTIC KEYWORDS:\nSCHEMA MARKUP SUGGESTION:`},
   'keyword-ideas':{name:'Keyword Cluster Builder',fields:[{id:'seed',label:'Seed Keyword / Topic',type:'input',ph:'e.g. email marketing software'},{id:'industry',label:'Industry / Niche',type:'input',ph:'e.g. SaaS, e-commerce'},{id:'intent',label:'Intent Focus',type:'select',opts:['All intents','Informational','Commercial','Transactional']}],prompt:d=>`Build a keyword strategy for: "${d.seed}" in ${d.industry}.\nSearch intent: ${d.intent}\n\n1. PRIMARY KEYWORDS (10)\n2. LONG-TAIL KEYWORDS (15)\n3. QUESTION-BASED KEYWORDS (10)\n4. COMPARISON KEYWORDS (5)\n5. CONTENT ANGLE SUGGESTIONS (5 article ideas)`},
   'paraphrase':{name:'Content Rewriter',fields:[{id:'content',label:'Content to Rewrite',type:'textarea',ph:'Paste the text you want to rewrite…'},{id:'style',label:'Rewrite Style',type:'select',opts:['Standard rewrite','More professional','More casual and friendly','Simpler language','More detailed','More concise','Change to 2nd person (you)']}],prompt:d=>`Rewrite the following content in "${d.style}" style. Tone: ${activeTone}.\nCompletely rephrase — different sentence structures and wording.\n\nCONTENT TO REWRITE:\n${d.content}`},
+  'press-release':{name:'Press Release',fields:[
+    {id:'company',label:'Company / Brand Name',type:'input',ph:'e.g. Modus AI Associates Sdn Bhd'},
+    {id:'headline',label:'Headline / Announcement',type:'input',ph:'e.g. Modus AI Launches AI-Native Business OS for Malaysian SMEs'},
+    {id:'keyMessages',label:'Key Messages (3-5 points)',type:'textarea',ph:'List the key points you want journalists to know about this announcement...'},
+    {id:'quote',label:'Spokesperson Quote',type:'input',ph:'e.g. This will transform how Malaysian SMEs operate'},
+    {id:'spokesperson',label:'Spokesperson Name & Title',type:'input',ph:'e.g. Joel Tan, Founder & Director'},
+    {id:'audience',label:'Target Media',type:'select',opts:['General Business Media','Tech & Innovation Press','Industry Trade Publications','Financial & Investor Media','Consumer Media','All Media']},
+    {id:'region',label:'Distribution Region',type:'select',opts:['Malaysia Only','Malaysia + Singapore','Southeast Asia','Asia Pacific','Global']},
+    {id:'cta',label:'Call to Action',type:'input',ph:'e.g. Visit modusaiassociates.com or email admin@modusaiassociates.com'}
+  ],prompt:d=>`Write a complete professional press release for: ${d.company}\nHeadline: ${d.headline}\nKey messages: ${d.keyMessages}\nQuote: "${d.quote}" — ${d.spokesperson}\nTarget media: ${d.audience}\nRegion: ${d.region}\nCTA: ${d.cta}\nTone: ${activeTone}\n\nFormat: FOR IMMEDIATE RELEASE / [HEADLINE] / [Subheadline] / KUALA LUMPUR, Malaysia — [Opening paragraph 50-60 words: Who What When Where Why] / [Context paragraph] / [Quote paragraph: "Quote," said Name, Title at Company.] / [Details paragraph] / [Market context] / [CTA paragraph] / About ${d.company}: [2-3 sentence boilerplate] / ### / Media Contact: [placeholder]\n\nOptimise for AI citation: use named entities, specific facts, quotable statements.`},
+  'pr-angle':{name:'PR Angle Generator',fields:[
+    {id:'company',label:'Company / Brand',type:'input',ph:'e.g. Modus AI Associates'},
+    {id:'news',label:'What is the News?',type:'textarea',ph:'Describe the product launch, milestone, or company news...'},
+    {id:'industry',label:'Industry / Sector',type:'input',ph:'e.g. AI Technology, E-commerce, Fintech'}
+  ],prompt:d=>`You are a senior PR strategist with 20+ years pitching stories to journalists in Southeast Asia.\n\nGenerate 5 distinct, compelling PR angles for:\nCompany: ${d.company}\nNews: ${d.news}\nIndustry: ${d.industry}\nTone: ${activeTone}\n\nFor each angle:\n— ANGLE [N]: [Angle name]\nHEADLINE: [Specific newsworthy headline]\nPITCH: [2-3 sentences — why journalists care]\nBEST FOR: [Which media type suits this angle]\n\nMake each angle genuinely different: human interest, industry disruption, economic impact, innovation, social good.`},
+  'media-pitch':{name:'Media Pitch Email',fields:[
+    {id:'journalist',label:'Journalist / Publication',type:'input',ph:'e.g. Tech Editor at The Edge Malaysia'},
+    {id:'story',label:'Your Story (one line)',type:'input',ph:'e.g. Malaysian AI startup raises RM5M to automate SME operations'},
+    {id:'why',label:'Why Would Their Readers Care?',type:'textarea',ph:'Explain the relevance to this journalist\'s specific audience...'},
+    {id:'hook',label:'Exclusive Offer (optional)',type:'input',ph:'e.g. Exclusive CEO interview, exclusive data, product demo access'}
+  ],prompt:d=>`Write a concise media pitch email to ${d.journalist}.\nStory: ${d.story}\nReader relevance: ${d.why}\nExclusive hook: ${d.hook||'None'}\nTone: ${activeTone}\n\nSUBJECT LINE: [Under 60 characters — specific and intriguing, not generic]\n\n[Email body — MAX 150 words. Open with the hook. State the story in one sentence. Explain why their readers care in 2-3 sentences. Make the ask clear. End with contact.]\n\nBe direct, not salesy. Journalists ignore generic pitches.`},
 };
 
 // ── Tools Rendering ──────────────────────────────────────
@@ -1695,6 +1927,9 @@ function catFilter(cat,btn) { document.querySelectorAll('.cat-pill').forEach(p=>
 
 // ── Editor ───────────────────────────────────────────────
 function openTool(id) {
+  // Press Release routes to the dedicated PR module (write → distribute → report).
+  // pr-angle / media-pitch stay in the normal editor — they have their own FORMS.
+  if (id === 'press-release') { goTo('pr'); return; }
   const form=FORMS[id]||{name:TOOLS.find(t=>t.id===id)?.name||id,fields:[{id:'prompt',label:'What do you want to write?',type:'textarea',ph:'Describe what you need…'}],prompt:d=>`Write high-quality marketing content: ${d.prompt}. Tone: ${activeTone}.`};
   currentTool={id,form};
   document.getElementById('form-tool-name').textContent=form.name;
@@ -3377,6 +3612,240 @@ function initLang() {
   currentLang = saved === 'ms' ? 'bm' : saved;
   applyTranslations();
 }
+
+// ══ M-EasyPR AI+ MODULE ══════════════════════════════════════════
+let prCurrentId = null;
+let prSelectedPkg = null;
+
+function prTab(tab) {
+  ['write','distribute','history'].forEach(t => {
+    document.getElementById('prtab-'+t)?.classList.toggle('active', t===tab);
+    const panel = document.getElementById('prpanel-'+t);
+    if (panel) panel.style.display = t===tab ? 'block' : 'none';
+  });
+  if (tab === 'distribute') {
+    const hasAlert = document.getElementById('pr-dist-alert');
+    const hasBar = document.getElementById('pr-dist-selected-bar');
+    if (!prCurrentId) {
+      if (hasAlert) hasAlert.style.display = 'block';
+      if (hasBar) hasBar.style.display = 'none';
+    } else {
+      if (hasAlert) hasAlert.style.display = 'none';
+      if (hasBar) hasBar.style.display = 'block';
+    }
+  }
+  if (tab === 'history') loadPrHistory();
+}
+
+async function generatePR() {
+  const company     = document.getElementById('pr-company')?.value.trim();
+  const headline    = document.getElementById('pr-headline')?.value.trim();
+  const keyMessages = document.getElementById('pr-messages')?.value.trim();
+  if (!company || !headline || !keyMessages) { alert('Company name, headline, and key messages are required.'); return; }
+
+  document.getElementById('pr-out-empty').style.display    = 'none';
+  document.getElementById('pr-out-result').style.display   = 'none';
+  document.getElementById('pr-out-loading').style.display  = 'flex';
+  document.getElementById('pr-gen-btn').disabled = true;
+
+  try {
+    const res = await fetch('/api/pr/generate', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        company, headline, keyMessages,
+        quote:       document.getElementById('pr-quote')?.value.trim(),
+        spokesperson:document.getElementById('pr-spokesperson')?.value.trim(),
+        audience:    document.getElementById('pr-audience')?.value,
+        region:      document.getElementById('pr-region')?.value,
+        cta:         document.getElementById('pr-cta')?.value.trim(),
+        tone:        document.getElementById('pr-tone')?.value || activeTone
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Generation failed');
+
+    prCurrentId = data.prId;
+    document.getElementById('pr-s-words').textContent    = data.wordCount || '—';
+    document.getElementById('pr-s-seo').textContent      = data.seoScore  || '—';
+    document.getElementById('pr-s-geo').textContent      = data.geoScore  || '—';
+    document.getElementById('pr-s-georeason').textContent= data.geoReason || 'Score calculated';
+    document.getElementById('pr-content-box').textContent= data.text;
+    document.getElementById('pr-dist-headline-label').textContent = headline;
+
+    document.getElementById('pr-out-loading').style.display = 'none';
+    document.getElementById('pr-out-result').style.display  = 'block';
+  } catch (e) {
+    document.getElementById('pr-out-loading').style.display = 'none';
+    document.getElementById('pr-out-empty').style.display   = 'flex';
+    alert('Error generating press release: ' + e.message);
+  } finally {
+    document.getElementById('pr-gen-btn').disabled = false;
+  }
+}
+
+function prCopy() {
+  const text = document.getElementById('pr-content-box')?.textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => { alert('Press release copied to clipboard!'); });
+}
+
+function prSelectPkg(pkg) {
+  prSelectedPkg = pkg;
+  ['starter','growth','enterprise'].forEach(p => {
+    document.getElementById('pkgcard-'+p)?.classList.toggle('selected', p===pkg);
+  });
+  const btn = document.getElementById('pr-dist-btn');
+  if (btn) btn.disabled = !prCurrentId;
+}
+
+async function prSubmitDist() {
+  if (!prCurrentId) { alert('Please write or select a press release first.'); return; }
+  if (!prSelectedPkg) { alert('Please select a distribution package.'); return; }
+  const pkgPrices = { starter: 'RM149', growth: 'RM299', enterprise: 'RM599' };
+  if (!confirm(`Submit for distribution — ${pkgPrices[prSelectedPkg]} package?\n\nOur team will contact you within 1 business day to confirm payment and begin distribution.`)) return;
+
+  try {
+    const res = await fetch('/api/pr/distribute', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ prId: prCurrentId, package: prSelectedPkg })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Submission failed');
+    alert(data.message);
+    prTab('history');
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function loadPrHistory() {
+  document.getElementById('pr-hist-loading').style.display = 'block';
+  document.getElementById('pr-hist-empty').style.display   = 'none';
+  document.getElementById('pr-hist-table').style.display   = 'none';
+  try {
+    const res  = await fetch('/api/pr/releases');
+    const data = await res.json();
+    document.getElementById('pr-hist-loading').style.display = 'none';
+    if (!data.releases?.length) { document.getElementById('pr-hist-empty').style.display = 'block'; return; }
+
+    const statusColor = { draft:'var(--mist)', submitted:'var(--orange)', published:'#16a34a' };
+    const tbody = document.getElementById('pr-hist-tbody');
+    tbody.innerHTML = data.releases.map(r => `
+      <tr>
+        <td style="font-weight:600;color:var(--navy);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.headline}</td>
+        <td>${r.company_name}</td>
+        <td>${r.word_count || '—'}</td>
+        <td style="color:var(--orange);font-weight:700">${r.seo_score || '—'}</td>
+        <td style="color:#7C3AED;font-weight:700">${r.geo_score || '—'}</td>
+        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${r.status==='published'?'rgba(22,163,74,0.1)':r.status==='submitted'?'rgba(232,98,42,0.1)':'var(--cream,#f9f7f4)'};color:${statusColor[r.status]||'var(--mist)'}">${r.dist_status||r.status||'draft'}</span></td>
+        <td style="color:var(--mist);font-size:12px">${new Date(r.created_at).toLocaleDateString()}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            ${r.dist_id ? `<button class="btn btn-outline btn-sm" onclick="prViewReport(${r.dist_id})">📊 Report</button>` : `<button class="btn btn-outline btn-sm" onclick="prLoadForDist(${r.id},'${r.headline.replace(/'/g,"\\'")}')">🚀 Distribute</button>`}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+    document.getElementById('pr-hist-table').style.display = 'block';
+  } catch (e) {
+    document.getElementById('pr-hist-loading').style.display = 'none';
+    document.getElementById('pr-hist-empty').style.display = 'block';
+  }
+}
+
+function prLoadForDist(prId, headline) {
+  prCurrentId = prId;
+  document.getElementById('pr-dist-headline-label').textContent = headline;
+  prTab('distribute');
+}
+
+async function prViewReport(distId) {
+  try {
+    const res  = await fetch(`/api/pr/report/${distId}`);
+    const data = await res.json();
+    const d = data.distribution;
+    const outlets = data.outlets;
+    const totalReach = (data.totalReach || 0).toLocaleString();
+    const published = data.publishedCount || 0;
+
+    const html = `
+      <div style="margin-bottom:16px">
+        <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px">${d.headline}</div>
+        <div style="font-size:13px;color:var(--mist)">${d.company_name} · ${d.package_name} Package · ${new Date(d.submitted_at).toLocaleDateString()}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Emails Sent</div><div class="pr-score-val" style="color:var(--navy)">${d.emails_sent||0}</div></div>
+        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Published</div><div class="pr-score-val" style="color:#16a34a">${published}</div></div>
+        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Total Reach</div><div class="pr-score-val" style="color:var(--orange)">${totalReach}</div></div>
+        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Status</div><div class="pr-score-val" style="font-size:13px;color:${d.status==='published'?'#16a34a':'var(--orange)'}">${d.status}</div></div>
+      </div>
+      ${outlets.length > 0 ? `
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">Published Outlets</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Outlet</th><th>URL</th><th>Published</th><th>Est. Reach</th></tr></thead>
+        <tbody>${outlets.map(o=>`<tr>
+          <td style="font-weight:600">${o.outlet_name}</td>
+          <td><a href="${o.publication_url}" target="_blank" style="color:var(--orange)">${o.publication_url||'—'}</a></td>
+          <td style="color:var(--mist)">${o.published_at?new Date(o.published_at).toLocaleDateString():'—'}</td>
+          <td>${(o.reach_estimate||0).toLocaleString()}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>` : '<div style="color:var(--mist);font-size:13px;padding:20px 0;text-align:center">Publications being tracked — check back soon as outlets confirm.</div>'}
+    `;
+
+    // Show in a modal (reuse existing modal pattern)
+    const overlay = document.getElementById('modal-overlay') || document.createElement('div');
+    overlay.id = 'pr-report-overlay';
+    overlay.className = 'modal-overlay open';
+    overlay.innerHTML = `<div class="modal modal-lg" style="max-width:720px">
+      <button class="modal-close" onclick="document.getElementById('pr-report-overlay').remove()">✕</button>
+      <div style="font-size:13px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">📊 Distribution Report</div>
+      ${html}
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--fog);display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-outline" onclick="document.getElementById('pr-report-overlay').remove()">Close</button>
+        <button class="btn btn-primary" onclick="prDownloadReport(${JSON.stringify(data).replace(/"/g,'&quot;')})">📥 Download PDF Report</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+  } catch (e) {
+    alert('Error loading report: ' + e.message);
+  }
+}
+
+function prDownloadReport(data) {
+  // Simple print-to-PDF via browser
+  const d = data.distribution;
+  const outlets = data.outlets || [];
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>PR Report — ${d.headline}</title>
+  <style>body{font-family:Arial,sans-serif;padding:40px;color:#1e293b}h1{font-size:20px;margin-bottom:4px}
+  .meta{color:#64748b;font-size:13px;margin-bottom:24px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{border:1px solid #e2e8f0;border-radius:8px;padding:14px}.stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .stat-val{font-size:24px;font-weight:700}table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e2e8f0;font-size:11px;text-transform:uppercase}
+  td{padding:10px 12px;border-bottom:1px solid #e2e8f0}a{color:#E8622A}
+  .footer{margin-top:32px;font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:16px}
+  </style></head><body>
+  <div style="color:#E8622A;font-weight:700;font-size:12px;letter-spacing:1px;margin-bottom:8px">M-EasyPR AI+ · DISTRIBUTION REPORT</div>
+  <h1>${d.headline}</h1>
+  <div class="meta">${d.company_name} · ${d.package_name} Package · Submitted ${new Date(d.submitted_at).toLocaleDateString()}</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Emails Sent</div><div class="stat-val">${d.emails_sent||0}</div></div>
+    <div class="stat"><div class="stat-label">Published</div><div class="stat-val" style="color:#16a34a">${data.publishedCount||0}</div></div>
+    <div class="stat"><div class="stat-label">Total Reach</div><div class="stat-val" style="color:#E8622A">${(data.totalReach||0).toLocaleString()}</div></div>
+    <div class="stat"><div class="stat-label">Status</div><div class="stat-val" style="font-size:16px">${d.status}</div></div>
+  </div>
+  ${outlets.length>0?`<h2 style="font-size:15px;margin-bottom:12px">Published Outlets</h2>
+  <table><thead><tr><th>Outlet</th><th>Publication URL</th><th>Date</th><th>Est. Reach</th></tr></thead><tbody>
+  ${outlets.map(o=>`<tr><td>${o.outlet_name}</td><td><a href="${o.publication_url}">${o.publication_url||'—'}</a></td><td>${o.published_at?new Date(o.published_at).toLocaleDateString():'Pending'}</td><td>${(o.reach_estimate||0).toLocaleString()}</td></tr>`).join('')}
+  </tbody></table>`:'<p style="color:#64748b">No publications confirmed yet. Check back as outlets publish your story.</p>'}
+  <div class="footer">Generated by M-EasyPR AI+ · Modus AI Associates Sdn Bhd · modusaiassociates.com</div>
+  </body></html>`);
+  win.document.close();
+  win.print();
+}
+// ══ END M-EasyPR AI+ MODULE ══════════════════════════════════════
 
 // ── Init ──────────────────────────────────────────────────
 renderTools(TOOLS);

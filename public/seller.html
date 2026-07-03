@@ -402,6 +402,48 @@
       </div>
     </div>
 
+    <!-- PR Distributions section (collapsible) -->
+    <div class="section-block">
+      <div class="section-hd clickable" onclick="toggleSection('prdist')">
+        <div class="section-title">📰 PR Distributions</div>
+        <div class="section-right">
+          <span class="section-count" id="prdist-count"></span>
+          <span class="section-chevron" id="chevron-prdist">▼</span>
+        </div>
+      </div>
+      <div class="section-body" id="section-prdist">
+        <div class="loading-bar"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Media Outlets section (collapsible) -->
+    <div class="section-block">
+      <div class="section-hd clickable" onclick="toggleSection('outlets')">
+        <div class="section-title">Media Outlets</div>
+        <div class="section-right">
+          <span class="section-count" id="outlets-count"></span>
+          <span class="section-chevron" id="chevron-outlets">▼</span>
+        </div>
+      </div>
+      <div class="section-body" id="section-outlets">
+        <div class="loading-bar"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Journalists section (collapsible) -->
+    <div class="section-block">
+      <div class="section-hd clickable" onclick="toggleSection('journalists')">
+        <div class="section-title">Journalists</div>
+        <div class="section-right">
+          <span class="section-count" id="journalists-count"></span>
+          <span class="section-chevron" id="chevron-journalists">▼</span>
+        </div>
+      </div>
+      <div class="section-body" id="section-journalists">
+        <div class="loading-bar"><div class="spinner"></div></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -424,6 +466,7 @@ const MODULE_META = {
   sales:    { icon: '💼',  label: 'Sales Copy'      },
   aichat:   { icon: '🤖',  label: 'AI Chat'         },
   gao:      { icon: '🧠',  label: 'GAO / AI Search' },
+  pr:       { icon: '📰',  label: 'PR & Media'      },
 };
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -469,7 +512,7 @@ function doLogout() {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function loadAll() {
-  await Promise.all([loadStats(), loadUsers(1), loadModules(), loadDocuments(1), loadSubStats(), loadSubUsers()]);
+  await Promise.all([loadStats(), loadUsers(1), loadModules(), loadDocuments(1), loadSubStats(), loadSubUsers(), loadPrDistributions(), loadOutlets(), loadJournalists()]);
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -803,6 +846,167 @@ async function resetSub(userId) {
     loadSubStats();
     loadSubUsers(document.getElementById('sub-search').value);
   } catch(e) { showToast('❌ Failed to reset subscription'); }
+}
+
+// ── PR Distribution admin ─────────────────────────────────────────────────────
+async function loadPrDistributions() {
+  const el = document.getElementById('section-prdist');
+  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  try {
+    const data  = await apiFetch('/api/seller/pr/distributions');
+    const dists = data.distributions || [];
+    const totalEmails = dists.reduce((s, d) => s + (d.emails_sent || 0), 0);
+    const pending     = dists.filter(d => d.status === 'pending' || d.status === 'processing').length;
+    const published   = dists.filter(d => d.status === 'published').length;
+    document.getElementById('prdist-count').textContent = dists.length + ' total';
+
+    const statsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">Distributions</div><div class="stat-value">${dists.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value">${pending}</div></div>
+      <div class="stat-card"><div class="stat-label">Emails Sent</div><div class="stat-value">${totalEmails.toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Published</div><div class="stat-value">${published}</div></div>
+    </div>`;
+
+    if (!dists.length) {
+      el.innerHTML = statsHtml + '<div class="empty-state"><div class="empty-icon">🚀</div><p>No distributions yet.</p></div>';
+      return;
+    }
+    const statusColor = { pending: 'var(--amber)', processing: '#3b82f6', sent: 'var(--green)', published: 'var(--green)' };
+    el.innerHTML = statsHtml + `
+      <table class="docs-table">
+        <thead><tr><th>Headline</th><th>Client</th><th>Package</th><th>Emails</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead>
+        <tbody>${dists.map(d => `
+          <tr>
+            <td><div class="doc-title">${esc(d.headline)}</div><div style="font-size:10px;color:var(--muted)">${esc(d.company_name)}</div></td>
+            <td><div style="font-weight:600;font-size:12px">${esc(d.user_name)}</div><div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${esc(d.user_email)}</div></td>
+            <td><span class="meta-pill">${esc(d.package_name)} · RM${esc(d.package_price)}</span></td>
+            <td style="font-family:'DM Mono',monospace;font-size:12px">${d.emails_sent || 0}/${d.target_outlets || 0}</td>
+            <td><span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${statusColor[d.status] || 'var(--muted)'}">${esc(d.status)}</span></td>
+            <td style="font-size:11px;color:var(--muted)">${fmtDate(d.submitted_at)}</td>
+            <td><button onclick="confirmPublication(${d.id})" style="font-size:10px;padding:4px 8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--green);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Publication</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load distributions.</p></div>';
+  }
+}
+
+async function confirmPublication(distId) {
+  const outlet_name = prompt('Outlet name (match the media DB name for auto reach):');
+  if (!outlet_name) return;
+  const publication_url = prompt('Publication URL:');
+  if (!publication_url) return;
+  const reachStr = prompt('Estimated reach (blank = use the outlet default):', '');
+  const reach_estimate = reachStr ? parseInt(reachStr) : undefined;
+  try {
+    const res = await apiFetch('/api/seller/pr/confirm-publication', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ distribution_id: distId, outlet_name, publication_url, reach_estimate }),
+    });
+    if (res.error) throw new Error(res.error);
+    showToast('✅ Publication confirmed');
+    loadPrDistributions();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function loadOutlets() {
+  const el = document.getElementById('section-outlets');
+  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  try {
+    const data = await apiFetch('/api/seller/pr/outlets');
+    const outlets = data.outlets || [];
+    document.getElementById('outlets-count').textContent = outlets.length + ' outlets';
+    const addBtn = `<button onclick="addOutlet()" class="page-btn" style="margin-bottom:12px">+ Add Outlet</button>`;
+    if (!outlets.length) {
+      el.innerHTML = addBtn + '<div class="empty-state"><div class="empty-icon">📰</div><p>No outlets yet.</p></div>';
+      return;
+    }
+    el.innerHTML = addBtn + `
+      <table class="docs-table">
+        <thead><tr><th>Name</th><th>Category</th><th>Region</th><th>Tier</th><th>Reach</th><th>Email</th></tr></thead>
+        <tbody>${outlets.map(o => `
+          <tr>
+            <td style="font-weight:600;font-size:13px">${esc(o.name)}</td>
+            <td>${esc(o.category || '—')}</td>
+            <td>${esc(o.region)}</td>
+            <td><span class="meta-pill">${esc(o.tier)}</span></td>
+            <td style="font-family:'DM Mono',monospace;font-size:12px">${(o.reach_estimate || 0).toLocaleString()}</td>
+            <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${esc(o.contact_email)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load outlets.</p></div>';
+  }
+}
+
+async function addOutlet() {
+  const name = prompt('Outlet name:'); if (!name) return;
+  const website = prompt('Website (e.g. example.com):'); if (!website) return;
+  const contact_email = prompt('Contact email:'); if (!contact_email) return;
+  const category = prompt('Category:', 'General') || 'General';
+  const region = prompt('Region (Malaysia / Southeast Asia / Asia Pacific):', 'Malaysia') || 'Malaysia';
+  const tier = prompt('Tier (starter / growth / enterprise):', 'starter') || 'starter';
+  const reach_estimate = parseInt(prompt('Reach estimate:', '0')) || 0;
+  try {
+    const res = await apiFetch('/api/seller/pr/outlets', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, website, contact_email, category, region, tier, reach_estimate }),
+    });
+    if (res.error) throw new Error(res.error);
+    showToast('✅ Outlet added');
+    loadOutlets();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function loadJournalists() {
+  const el = document.getElementById('section-journalists');
+  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  try {
+    const data = await apiFetch('/api/seller/pr/journalists');
+    const journos = data.journalists || [];
+    document.getElementById('journalists-count').textContent = journos.length + ' journalists';
+    const addBtn = `<button onclick="addJournalist()" class="page-btn" style="margin-bottom:12px">+ Add Journalist</button>`;
+    if (!journos.length) {
+      el.innerHTML = addBtn + '<div class="empty-state"><div class="empty-icon">🧑‍💻</div><p>No journalists yet.</p></div>';
+      return;
+    }
+    el.innerHTML = addBtn + `
+      <table class="docs-table">
+        <thead><tr><th>Name</th><th>Outlet</th><th>Beat</th><th>Region</th><th>Tier</th><th>Email</th></tr></thead>
+        <tbody>${journos.map(j => `
+          <tr>
+            <td style="font-weight:600;font-size:13px">${esc(j.name)}</td>
+            <td>${esc(j.outlet_name || '—')}</td>
+            <td>${esc(j.beat || '—')}</td>
+            <td>${esc(j.region)}</td>
+            <td><span class="meta-pill">${esc(j.tier)}</span></td>
+            <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${esc(j.email)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load journalists.</p></div>';
+  }
+}
+
+async function addJournalist() {
+  const name = prompt('Journalist name:'); if (!name) return;
+  const email = prompt('Email:'); if (!email) return;
+  const outletIdStr = prompt('Outlet ID (optional numeric — see Media Outlets):', '');
+  const beat = prompt('Beat (e.g. Technology):', '') || null;
+  const region = prompt('Region:', 'Malaysia') || 'Malaysia';
+  const tier = prompt('Tier (starter / growth / enterprise):', 'starter') || 'starter';
+  try {
+    const res = await apiFetch('/api/seller/pr/journalists', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, outlet_id: outletIdStr ? parseInt(outletIdStr) : null, beat, region, tier }),
+    });
+    if (res.error) throw new Error(res.error);
+    showToast('✅ Journalist added');
+    loadJournalists();
+  } catch (e) { showToast('❌ ' + e.message); }
 }
 
 document.getElementById('seller-key-input').focus();

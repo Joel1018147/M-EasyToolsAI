@@ -23,6 +23,11 @@ const fs        = require('fs');
 const { pool }  = require('./db');
 const { checkSub, updateExpiredSubscriptions, sendTrialReminders } = require('./middleware/checkSub');
 const subscriptionRoutes = require('./routes/subscription');
+const { Resend } = require('resend');
+// Resend throws if constructed without a key, so only init when configured.
+// When unset, PR distribution still records but skips the email blast.
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const EMAIL_FROM = process.env.EMAIL_FROM || 'pr@modusaiassociates.com';
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -107,6 +112,7 @@ async function initDB() {
         tool_name   VARCHAR(255),
         word_count  INTEGER DEFAULT 0,
         seo_score   INTEGER DEFAULT 0,
+        geo_score   INTEGER DEFAULT 0,
         readability INTEGER DEFAULT 0,
         published_wp    BOOLEAN DEFAULT FALSE,
         published_shopify BOOLEAN DEFAULT FALSE,
@@ -126,6 +132,81 @@ async function initDB() {
         sort_order INTEGER DEFAULT 0,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS media_outlets (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        website VARCHAR(500) NOT NULL,
+        contact_email VARCHAR(255) NOT NULL,
+        category VARCHAR(100),
+        region VARCHAR(100) DEFAULT 'Malaysia',
+        tier VARCHAR(50) DEFAULT 'starter',
+        reach_estimate INTEGER DEFAULT 0,
+        language VARCHAR(20) DEFAULT 'en',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS journalists (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        outlet_id INTEGER REFERENCES media_outlets(id) ON DELETE SET NULL,
+        beat VARCHAR(255),
+        region VARCHAR(100) DEFAULT 'Malaysia',
+        tier VARCHAR(50) DEFAULT 'starter',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS pr_releases (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        doc_id INTEGER REFERENCES documents(id) ON DELETE SET NULL,
+        company_name VARCHAR(255) NOT NULL,
+        headline VARCHAR(500) NOT NULL,
+        spokesperson VARCHAR(255),
+        audience VARCHAR(100),
+        region VARCHAR(100),
+        word_count INTEGER DEFAULT 0,
+        seo_score INTEGER DEFAULT 0,
+        geo_score INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'draft',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS pr_distributions (
+        id SERIAL PRIMARY KEY,
+        pr_id INTEGER NOT NULL REFERENCES pr_releases(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        package_name VARCHAR(100) NOT NULL,
+        package_price DECIMAL(10,2) NOT NULL,
+        target_outlets INTEGER DEFAULT 0,
+        emails_sent INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'pending',
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        published_at TIMESTAMP,
+        notes TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS pr_outlet_reports (
+        id SERIAL PRIMARY KEY,
+        distribution_id INTEGER NOT NULL REFERENCES pr_distributions(id) ON DELETE CASCADE,
+        outlet_id INTEGER REFERENCES media_outlets(id) ON DELETE SET NULL,
+        outlet_name VARCHAR(255) NOT NULL,
+        publication_url TEXT,
+        published_at TIMESTAMP,
+        reach_estimate INTEGER DEFAULT 0,
+        confirmed_by VARCHAR(100) DEFAULT 'admin',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_pr_releases_user ON pr_releases(user_id);
+      CREATE INDEX IF NOT EXISTS idx_pr_distributions_pr ON pr_distributions(pr_id);
+      CREATE INDEX IF NOT EXISTS idx_pr_outlet_reports_dist ON pr_outlet_reports(distribution_id);
+      CREATE INDEX IF NOT EXISTS idx_media_outlets_tier ON media_outlets(tier, region);
+      CREATE INDEX IF NOT EXISTS idx_journalists_tier ON journalists(tier, region);
     `);
 
     await client.query(`
@@ -138,8 +219,25 @@ async function initDB() {
         ('commerce', 'M-EasyCommerce AI+',      6),
         ('sales',    'M-EasySales AI+',         7),
         ('aichat',   'M-EasyTools AI+ System',  8),
-        ('gao',      'M-EasyGAO AI+',           9)
+        ('gao',      'M-EasyGAO AI+',           9),
+        ('pr',       'M-EasyPR AI+',           10)
       ON CONFLICT (module_id) DO NOTHING;
+    `);
+
+    // Seed the Modus media database (10 real Malaysian / SEA outlets to start)
+    await client.query(`
+      INSERT INTO media_outlets (name, website, contact_email, category, region, tier, reach_estimate, language) VALUES
+        ('The Edge Malaysia', 'theedgemalaysia.com', 'newsdesk@theedge.com.my', 'Business & Finance', 'Malaysia', 'starter', 280000, 'en'),
+        ('The Star Online', 'thestar.com.my', 'star2@thestar.com.my', 'General News', 'Malaysia', 'starter', 1200000, 'en'),
+        ('Malay Mail', 'malaymail.com', 'editor@malaymail.com', 'General News', 'Malaysia', 'starter', 350000, 'en'),
+        ('Digital News Asia', 'digitalnewsasia.com', 'editor@digitalnewsasia.com', 'Technology', 'Malaysia', 'starter', 120000, 'en'),
+        ('SoyaCincau', 'soyacincau.com', 'editor@soyacincau.com', 'Technology', 'Malaysia', 'starter', 200000, 'en'),
+        ('Business Today Malaysia', 'businesstoday.com.my', 'editor@businesstoday.com.my', 'Business', 'Malaysia', 'starter', 95000, 'en'),
+        ('Tech in Asia', 'techinasia.com', 'editorial@techinasia.com', 'Technology', 'Southeast Asia', 'growth', 800000, 'en'),
+        ('e27', 'e27.co', 'editorial@e27.co', 'Startup & Tech', 'Southeast Asia', 'growth', 450000, 'en'),
+        ('Vulcan Post', 'vulcanpost.com', 'editor@vulcanpost.com', 'Startup & Tech', 'Southeast Asia', 'growth', 180000, 'en'),
+        ('KrASIA', 'kr-asia.com', 'editorial@kr-asia.com', 'Business & Tech', 'Asia Pacific', 'enterprise', 320000, 'en')
+      ON CONFLICT DO NOTHING;
     `);
 
     // Make first user admin
@@ -501,6 +599,355 @@ app.post('/api/score', requireAuth, checkSub, async (req, res) => {
     feedback: seoFeedback,
     grade: seoScore >= 80 ? 'A' : seoScore >= 60 ? 'B' : seoScore >= 40 ? 'C' : 'D'
   });
+});
+
+// ════════════════════════════════════════════════════
+//  M-EasyPR AI+ — WRITE · BLAST · REPORT (Modus is the wire service)
+// ════════════════════════════════════════════════════
+
+// WRITE — reuses generateWithGroq() for the release; adds an AI GEO score.
+app.post('/api/pr/generate', requireAuth, checkSub, apiLimiter, async (req, res) => {
+  try {
+    const { company, headline, keyMessages, quote, spokesperson, audience, region, cta, tone } = req.body;
+    if (!company?.trim() || !headline?.trim() || !keyMessages?.trim()) {
+      return res.status(400).json({ error: 'Company name, headline, and key messages are required' });
+    }
+
+    const prPrompt = `You are an expert PR writer specialising in Malaysian and Southeast Asian business press releases for distribution to journalists and media outlets across the region.
+
+Write a complete, professional press release ready for immediate distribution.
+
+COMPANY: ${company}
+HEADLINE: ${headline}
+KEY MESSAGES: ${keyMessages}
+SPOKESPERSON QUOTE: "${quote || 'No quote provided'}" — ${spokesperson || 'Company Spokesperson'}
+TARGET AUDIENCE: ${audience || 'General Business Media'}
+DISTRIBUTION REGION: ${region || 'Malaysia'}
+CALL TO ACTION: ${cta || 'Contact us for more information'}
+TONE: ${tone || 'Professional'}
+
+Write the press release in this EXACT format:
+
+FOR IMMEDIATE RELEASE
+
+[HEADLINE IN TITLE CASE — newsworthy, specific, SEO-optimized]
+
+[Compelling one-sentence subheadline]
+
+KUALA LUMPUR, Malaysia, ${new Date().toLocaleDateString('en-MY', {day:'numeric',month:'long',year:'numeric'})} — [Opening paragraph: 50-60 words answering Who, What, When, Where, Why. Lead with the most important news.]
+
+[Second paragraph: Context and industry significance. Why does this matter? What problem does it solve?]
+
+[Third paragraph — REQUIRED FORMAT: "Direct quote from the announcement," said ${spokesperson || 'Spokesperson Name'}, ${spokesperson ? 'their title' : 'Title'} at ${company}. "Continue the quote if needed."]
+
+[Fourth paragraph: Specific product, service, or initiative details. Include facts, figures, features.]
+
+[Fifth paragraph: Market context, future roadmap, or customer impact. Include a forward-looking statement.]
+
+[Sixth paragraph: Clear call to action — what should readers, investors, or journalists do next?]
+
+About ${company}
+[2-3 sentence company boilerplate: what the company does, its mission, and one key fact about reach or impact.]
+
+###
+
+Media Contact:
+${spokesperson || '[Spokesperson Name]'}
+[Title, ${company}]
+[Email]
+[Phone]
+[Website]
+
+Optimise this press release to rank in search engines AND be cited in AI-generated answers (ChatGPT, Perplexity, Google AI Overviews). Use specific named entities, quotable statistics, clear subject-predicate-object sentences, and factual claims that AI systems can reference.`;
+
+    // Reuse existing generateWithGroq function
+    const result = await generateWithGroq(req.user, prPrompt, 'press-release', 'Press Release', tone || 'Professional');
+
+    // GEO score — separate quick call, silent fallback
+    let geoScore = 0;
+    let geoReason = 'GEO score unavailable';
+    try {
+      const groqKey = req.user.groq_key || GROQ_KEY;
+      if (groqKey) {
+        const geoRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            max_tokens: 80,
+            temperature: 0.1,
+            messages: [{
+              role: 'user',
+              content: `Rate this press release 0-100 for likelihood of being cited in AI-generated answers. Consider: named entities, specific facts/numbers, quotable statements, newsworthiness, clear subject-predicate-object sentences. Return ONLY valid JSON, no other text: {"score":number,"reason":"one sentence"}\n\nPRESS RELEASE (first 1000 chars):\n${result.text.substring(0, 1000)}`
+            }]
+          })
+        });
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const raw = geoData.choices[0].message.content.trim();
+          const parsed = JSON.parse(raw);
+          geoScore = Math.min(100, Math.max(0, parseInt(parsed.score) || 0));
+          geoReason = parsed.reason || '';
+        }
+      }
+    } catch (e) { /* silent fallback */ }
+
+    // Save to pr_releases table
+    const pr = await pool.query(
+      `INSERT INTO pr_releases (user_id, doc_id, company_name, headline, spokesperson, audience, region, word_count, seo_score, geo_score, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'draft') RETURNING id`,
+      [req.user.id, result.docId, company.trim(), headline.trim(), spokesperson?.trim(), audience, region, result.wordCount, result.seoScore, geoScore]
+    );
+
+    // Update documents table with geo_score (column added above)
+    await pool.query('UPDATE documents SET geo_score=$1 WHERE id=$2', [geoScore, result.docId]);
+
+    res.json({ success: true, text: result.text, wordCount: result.wordCount, docId: result.docId, prId: pr.rows[0].id, seoScore: result.seoScore, geoScore, geoReason });
+  } catch (err) {
+    console.error('PR generate error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List this user's press releases (+ any distribution attached).
+app.get('/api/pr/releases', requireAuth, checkSub, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const releases = await pool.query(
+      `SELECT pr.id, pr.company_name, pr.headline, pr.word_count, pr.seo_score, pr.geo_score, pr.status, pr.created_at,
+              d.title AS doc_title,
+              pd.id AS dist_id, pd.package_name, pd.package_price, pd.status AS dist_status, pd.emails_sent, pd.submitted_at
+       FROM pr_releases pr
+       LEFT JOIN documents d ON d.id = pr.doc_id
+       LEFT JOIN pr_distributions pd ON pd.pr_id = pr.id
+       WHERE pr.user_id = $1
+       ORDER BY pr.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [req.user.id, parseInt(limit), offset]
+    );
+    const total = await pool.query('SELECT COUNT(*) AS c FROM pr_releases WHERE user_id=$1', [req.user.id]);
+    res.json({ releases: releases.rows, total: parseInt(total.rows[0].c) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// BLAST — match media DB by package tier/region, fire Resend emails, record distribution.
+app.post('/api/pr/distribute', requireAuth, checkSub, async (req, res) => {
+  try {
+    const { prId, package: pkg } = req.body;
+
+    const PACKAGES = {
+      starter:    { name: 'Starter',    price: 149, tiers: ['starter'],                    label: '10 Media Outlets — Malaysia' },
+      growth:     { name: 'Growth',     price: 299, tiers: ['starter','growth'],            label: '25 Media Outlets — Malaysia + SEA' },
+      enterprise: { name: 'Enterprise', price: 599, tiers: ['starter','growth','enterprise'],label: '50+ Media Outlets — Asia Pacific' }
+    };
+
+    if (!PACKAGES[pkg]) return res.status(400).json({ error: 'Invalid package' });
+    if (!prId) return res.status(400).json({ error: 'Press release ID required' });
+
+    const pkgConfig = PACKAGES[pkg];
+
+    // Verify PR belongs to user
+    const pr = await pool.query(
+      'SELECT pr.id, pr.headline, pr.company_name, pr.spokesperson, pr.region, d.content FROM pr_releases pr LEFT JOIN documents d ON d.id = pr.doc_id WHERE pr.id=$1 AND pr.user_id=$2',
+      [prId, req.user.id]
+    );
+    if (!pr.rows[0]) return res.status(404).json({ error: 'Press release not found' });
+    const prData = pr.rows[0];
+
+    // Get matching outlets and journalists
+    const outlets = await pool.query(
+      'SELECT id, name, website, contact_email, category, reach_estimate FROM media_outlets WHERE tier = ANY($1) AND is_active=TRUE ORDER BY reach_estimate DESC',
+      [pkgConfig.tiers]
+    );
+    const journalists = await pool.query(
+      'SELECT j.id, j.name, j.email, j.beat, m.name AS outlet_name FROM journalists j LEFT JOIN media_outlets m ON m.id=j.outlet_id WHERE j.tier = ANY($1) AND j.is_active=TRUE',
+      [pkgConfig.tiers]
+    );
+
+    // Create distribution record
+    const dist = await pool.query(
+      `INSERT INTO pr_distributions (pr_id, user_id, package_name, package_price, target_outlets, status)
+       VALUES ($1,$2,$3,$4,$5,'processing') RETURNING id`,
+      [prId, req.user.id, pkgConfig.name, pkgConfig.price, outlets.rows.length]
+    );
+    const distId = dist.rows[0].id;
+
+    // Update PR status
+    await pool.query("UPDATE pr_releases SET status='submitted', updated_at=NOW() WHERE id=$1", [prId]);
+
+    // Fire emails via Resend (async — don't block response)
+    const prContent = prData.content || 'Press release content not available.';
+    const prHeadline = prData.headline;
+    const prCompany = prData.company_name;
+    let emailsSent = 0;
+
+    const emailTargets = [
+      ...outlets.rows.map(o => ({ email: o.contact_email, name: o.name, type: 'outlet' })),
+      ...journalists.rows.map(j => ({ email: j.email, name: j.name, type: 'journalist', outlet: j.outlet_name, beat: j.beat }))
+    ];
+
+    // Send emails in background
+    (async () => {
+      if (!resend) {
+        console.warn(`RESEND_API_KEY not set — skipping email blast for distribution ${distId}`);
+        await pool.query('UPDATE pr_distributions SET status=$1 WHERE id=$2', ['pending', distId]);
+        return;
+      }
+      for (const target of emailTargets) {
+        try {
+          const subject = `[PRESS RELEASE] ${prHeadline} — ${prCompany}`;
+          const pitchIntro = target.type === 'journalist'
+            ? `Dear ${target.name},\n\nI'm sharing a press release from ${prCompany} that may be relevant to your coverage${target.beat ? ` of ${target.beat}` : ''}.\n\n`
+            : `Dear ${target.name} Editorial Team,\n\nPlease find below a press release from ${prCompany} for your consideration.\n\n`;
+
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: target.email,
+            subject,
+            text: `${pitchIntro}---\n\n${prContent}\n\n---\nDistributed via M-EasyPR AI+ by Modus AI Associates\nwww.modusaiassociates.com`
+          });
+          emailsSent++;
+        } catch (e) {
+          console.error(`PR email failed to ${target.email}:`, e.message);
+        }
+      }
+      // Update emails_sent count
+      await pool.query('UPDATE pr_distributions SET emails_sent=$1, status=$2 WHERE id=$3', [emailsSent, 'sent', distId]);
+    })();
+
+    res.json({
+      success: true,
+      distributionId: distId,
+      targetCount: emailTargets.length,
+      message: `Your press release is being distributed to ${emailTargets.length} media contacts. Our team will update your report as outlets publish your story.`
+    });
+  } catch (err) {
+    console.error('PR distribute error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// REPORT — publications + reach for a distribution the user owns.
+app.get('/api/pr/report/:distributionId', requireAuth, checkSub, async (req, res) => {
+  try {
+    const dist = await pool.query(
+      `SELECT pd.id, pd.package_name, pd.package_price, pd.target_outlets, pd.emails_sent, pd.status, pd.submitted_at, pd.published_at,
+              pr.headline, pr.company_name, pr.spokesperson, pr.word_count, pr.seo_score, pr.geo_score
+       FROM pr_distributions pd
+       JOIN pr_releases pr ON pr.id = pd.pr_id
+       WHERE pd.id=$1 AND pd.user_id=$2`,
+      [req.params.distributionId, req.user.id]
+    );
+    if (!dist.rows[0]) return res.status(404).json({ error: 'Distribution not found' });
+
+    const outlets = await pool.query(
+      `SELECT outlet_name, publication_url, published_at, reach_estimate
+       FROM pr_outlet_reports
+       WHERE distribution_id=$1
+       ORDER BY reach_estimate DESC`,
+      [req.params.distributionId]
+    );
+
+    const totalReach = outlets.rows.reduce((sum, o) => sum + (o.reach_estimate || 0), 0);
+
+    res.json({
+      distribution: dist.rows[0],
+      outlets: outlets.rows,
+      totalReach,
+      publishedCount: outlets.rows.filter(o => o.publication_url).length
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Seller/admin: media database + publication confirmation ─────────────────────
+app.get('/api/seller/pr/outlets', requireSeller, async (req, res) => {
+  try {
+    const outlets = await pool.query('SELECT id, name, website, contact_email, category, region, tier, reach_estimate, is_active FROM media_outlets ORDER BY tier, reach_estimate DESC');
+    res.json({ outlets: outlets.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/seller/pr/outlets', requireSeller, async (req, res) => {
+  try {
+    const { name, website, contact_email, category, region, tier, reach_estimate, language } = req.body;
+    if (!name || !website || !contact_email) return res.status(400).json({ error: 'Name, website, and email required' });
+    const outlet = await pool.query(
+      'INSERT INTO media_outlets (name, website, contact_email, category, region, tier, reach_estimate, language) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',
+      [name, website, contact_email, category || 'General', region || 'Malaysia', tier || 'starter', reach_estimate || 0, language || 'en']
+    );
+    res.json({ success: true, id: outlet.rows[0].id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/seller/pr/journalists', requireSeller, async (req, res) => {
+  try {
+    const journalists = await pool.query(
+      'SELECT j.id, j.name, j.email, j.beat, j.region, j.tier, j.is_active, m.name AS outlet_name FROM journalists j LEFT JOIN media_outlets m ON m.id=j.outlet_id ORDER BY j.tier, j.name'
+    );
+    res.json({ journalists: journalists.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/seller/pr/journalists', requireSeller, async (req, res) => {
+  try {
+    const { name, email, outlet_id, beat, region, tier } = req.body;
+    if (!name || !email) return res.status(400).json({ error: 'Name and email required' });
+    const j = await pool.query(
+      'INSERT INTO journalists (name, email, outlet_id, beat, region, tier) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+      [name, email, outlet_id || null, beat || null, region || 'Malaysia', tier || 'starter']
+    );
+    res.json({ success: true, id: j.rows[0].id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/seller/pr/distributions', requireSeller, async (req, res) => {
+  try {
+    const dists = await pool.query(
+      `SELECT pd.id, pd.package_name, pd.package_price, pd.target_outlets, pd.emails_sent, pd.status, pd.submitted_at,
+              pr.headline, pr.company_name, u.name AS user_name, u.email AS user_email
+       FROM pr_distributions pd
+       JOIN pr_releases pr ON pr.id = pd.pr_id
+       JOIN users u ON u.id = pd.user_id
+       ORDER BY pd.submitted_at DESC`
+    );
+    res.json({ distributions: dists.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/seller/pr/confirm-publication', requireSeller, async (req, res) => {
+  try {
+    const { distribution_id, outlet_name, publication_url, reach_estimate } = req.body;
+    if (!distribution_id || !outlet_name || !publication_url) return res.status(400).json({ error: 'distribution_id, outlet_name, and publication_url required' });
+
+    // Find outlet_id if it exists
+    const outlet = await pool.query('SELECT id, reach_estimate FROM media_outlets WHERE name ILIKE $1 LIMIT 1', [outlet_name]);
+    const outletId = outlet.rows[0]?.id || null;
+    const reach = reach_estimate || outlet.rows[0]?.reach_estimate || 0;
+
+    await pool.query(
+      `INSERT INTO pr_outlet_reports (distribution_id, outlet_id, outlet_name, publication_url, published_at, reach_estimate)
+       VALUES ($1,$2,$3,$4,NOW(),$5)
+       ON CONFLICT DO NOTHING`,
+      [distribution_id, outletId, outlet_name, publication_url, reach]
+    );
+
+    // Update distribution published_at if first publication
+    await pool.query(
+      "UPDATE pr_distributions SET published_at=COALESCE(published_at,NOW()), status='published' WHERE id=$1",
+      [distribution_id]
+    );
+    await pool.query(
+      "UPDATE pr_releases SET status='published', updated_at=NOW() WHERE id=(SELECT pr_id FROM pr_distributions WHERE id=$1)",
+      [distribution_id]
+    );
+
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ════════════════════════════════════════════════════
@@ -1002,6 +1449,12 @@ app.post('/api/seller/subscription/reset', requireSeller, async (req, res) => {
     await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS reminder_sent JSONB DEFAULT '{}'`);
   } catch (err) {
     console.error('reminder_sent column migration failed:', err.message);
+  }
+  // Ensure geo_score column exists on already-created documents tables
+  try {
+    await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS geo_score INTEGER DEFAULT 0`);
+  } catch (err) {
+    console.error('geo_score column migration failed:', err.message);
   }
 })();
 
