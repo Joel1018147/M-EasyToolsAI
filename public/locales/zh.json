@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "M-EasyTools AI+ — 一站式平台，九大 AI 强力系统",
+    "title": "M-EasyTools AI+ — 一个平台，十大强大系统",
     "description": "M-EasyTools AI+ 整合内容创作、社交媒体、电子邮件、广告投放、SEO 优化、电商运营、销售拓展、生产力工具及 GAO 追踪，打造企业级 AI 营销平台，驱动业务高速增长。",
     "og_locale": "zh_CN"
   },
@@ -14,7 +14,7 @@
   },
   "hero": {
     "badge": "M-EasyTools AI+ — 由 Modus AI Associates 强力驱动",
-    "title_html": "一站式平台。<br><span>九大强大</span>",
+    "title_html": "一个平台。<br><span>十大强大</span>",
     "title2": "AI+ 系统。",
     "desc": "M-EasyTools AI+ 整合内容创作、社交媒体、电子邮件营销、广告投放、SEO 优化、电商运营、销售拓展、生产力工具及 GAO 追踪功能 — 一个 AI 原生平台，驱动您的业务高速增长。",
     "cta1": "探索我们的系统 ↓",
@@ -26,10 +26,10 @@
     "stat4_label": "内容即生"
   },
   "systems": {
-    "eyebrow": "9 大 AI 驱动系统",
+    "eyebrow": "我们的10大AI系统",
     "title_html": "营销所需的一切，<br>尽在一个平台",
     "sub": "点击下方任意系统开始使用 — 注册或登录后将直接进入该系统。",
-    "note": "全部 9 个系统含在一个平台内。一次注册，畅享全部功能。",
+    "note": "所有10个系统包含在一个平台中。注册一次，访问所有内容。",
     "cta": "立即使用 →",
     "s1": {
       "tag": "内容创作模块",
@@ -165,6 +165,21 @@
       "f4d": "— 覆盖 OpenAI、Anthropic 和 Google AI",
       "f5n": "Perplexity 和 DeepSeek",
       "f5d": "— 全平台 AI 搜索监控"
+    },
+    "s10": {
+      "tag": "公关发布模块",
+      "name_html": "M-EasyPR <em>AI+</em>",
+      "desc": "用AI撰写记者级新闻稿，发送至马来西亚和东南亚50+媒体，并追踪发布情况——一站式完成。",
+      "f1n": "AI新闻稿撰写",
+      "f1d": "— 经SEO+GEO优化的记者级新闻稿",
+      "f2n": "媒体发布推送",
+      "f2d": "— 覆盖马来西亚和东南亚50+认证媒体",
+      "f3n": "记者数据库",
+      "f3d": "— 直接触达1,000+认证记者联系人",
+      "f4n": "GEO优化",
+      "f4d": "— 被ChatGPT、Perplexity和AI生成答案引用",
+      "f5n": "发布报告",
+      "f5d": "— 下载完整报告，查看哪些媒体发布了您的新闻稿"
     }
   },
   "hiw": {
@@ -176,7 +191,7 @@
     "s2_title": "设置品牌信息",
     "s2_desc": "告诉我们您的业务、风格和目标受众 — 一次设置，AI 永久记住。",
     "s3_title": "选择 AI 工具",
-    "s3_desc": "从 9 大 AI 系统中的 40+ 工具中选择 — 内容、广告、邮件、SEO 等应有尽有。",
+    "s3_desc": "从10大AI系统的40多种工具中选择——内容、广告、邮件、SEO、公关等。",
     "s4_title": "生成并发布",
     "s4_desc": "秒级生成精品内容，一键发布至 WordPress 或 Shopify。"
   },
