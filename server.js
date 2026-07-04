@@ -1459,11 +1459,13 @@ app.post('/api/seller/subscription/reset', requireSeller, async (req, res) => {
 })();
 
 // ── System landing gate ──────────────────────────────────────────────────────
-// Visiting a tool's URL (e.g. /content) while signed out shows that tool's
-// tailored landing page; "Open Tool" (?enter=1) proceeds into the module.
+// Visiting a tool's URL (e.g. /content) always shows that tool's tailored
+// landing page first — for everyone, signed in or out. "Open Tool" adds
+// ?enter=1 to proceed into the module. The /app hub is exempt so login and the
+// homepage's ?goto deep-links load the SPA directly.
 const subsystemPages = require('./routes/subsystemPages');
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.isAuthenticated() && req.query.enter === undefined) {
+  if (req.method === 'GET' && req.query.enter === undefined && req.path !== '/app') {
     const sys = subsystemPages.SYSTEMS.find(s => s.appUrl === req.path);
     if (sys) return res.send(subsystemPages.buildSystemPage(sys));
   }
