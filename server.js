@@ -1475,6 +1475,9 @@ app.get('/aichat',   checkModule('aichat'),   (req, res) => res.sendFile(path.jo
 app.get('/gao',      checkModule('gao'),      (req, res) => res.sendFile(path.join(__dirname, 'public', 'gao.html')));
 app.get('/pr',       checkModule('pr'),       (req, res) => res.redirect('/app?goto=pr'));
 
+// Public per-system landing pages (no auth)
+app.use('/systems', require('./routes/subsystemPages'));
+
 app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════╗
