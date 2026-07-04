@@ -11,8 +11,8 @@ const router = express.Router();
 
 const SYSTEMS = [
   {
-    slug: 'main', label: 'MAIN PLATFORM', icon: '🛠️', accent: [232,98,42],
-    name: 'M-EasyTools AI+', appUrl: '/app',
+    slug: 'main', label: 'PLATFORM', icon: '🛠️', accent: [232,98,42],
+    name: 'M-EasyTools AI+ Super App', appUrl: '/app',
     tagline: 'All-in-one AI marketing platform with 40+ tools, AI chat, bulk generation, a document manager and full dashboard — built for Malaysian businesses.',
     features: [
       { icon: '🧰', name: '40+ AI Tools', desc: 'Content, social, email, ads, SEO, commerce, and sales generators in one place.' },
