@@ -1458,6 +1458,18 @@ app.post('/api/seller/subscription/reset', requireSeller, async (req, res) => {
   }
 })();
 
+// ── System landing gate ──────────────────────────────────────────────────────
+// Visiting a tool's URL (e.g. /content) while signed out shows that tool's
+// tailored landing page; "Open Tool" (?enter=1) proceeds into the module.
+const subsystemPages = require('./routes/subsystemPages');
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.isAuthenticated() && req.query.enter === undefined) {
+    const sys = subsystemPages.SYSTEMS.find(s => s.appUrl === req.path);
+    if (sys) return res.send(subsystemPages.buildSystemPage(sys));
+  }
+  next();
+});
+
 // Page routes
 app.get('/app',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
 app.get('/admin',    (req, res) => res.redirect('/seller'));

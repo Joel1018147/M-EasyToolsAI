@@ -233,7 +233,7 @@ const SCRIPTS = `
 <script>
 (function(){var b=document.body,btn=document.getElementById('darkBtn');function ap(on){b.classList.toggle('dark-deeper',on);btn.textContent=on?'☀️':'🌙';}ap(localStorage.getItem('modus-theme')==='dark');window.tg=function(){var n=!b.classList.contains('dark-deeper');localStorage.setItem('modus-theme',n?'dark':'light');ap(n);};})();
 (function(){var els=document.querySelectorAll('.reveal');if(!('IntersectionObserver'in window)){els.forEach(function(e){e.classList.add('visible');});return;}var io=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});},{threshold:.15});els.forEach(function(e){io.observe(e);});})();
-function goTo(u){window.location.href=u;}
+function goTo(u){window.location.href=u+(u.indexOf('?')<0?'?enter=1':'&enter=1');}
 </script>`;
 
 function buildSystemPage(sys) {
@@ -385,3 +385,5 @@ for (const sys of SYSTEMS) {
 router.get('/', (_req, res) => res.send(buildIndexPage()));
 
 module.exports = router;
+module.exports.SYSTEMS = SYSTEMS;
+module.exports.buildSystemPage = buildSystemPage;
