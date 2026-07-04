@@ -1473,6 +1473,7 @@ app.get('/commerce', checkModule('commerce'), (req, res) => res.sendFile(path.jo
 app.get('/sales',    checkModule('sales'),    (req, res) => res.sendFile(path.join(__dirname, 'public', 'sales.html')));
 app.get('/aichat',   checkModule('aichat'),   (req, res) => res.sendFile(path.join(__dirname, 'public', 'aichat.html')));
 app.get('/gao',      checkModule('gao'),      (req, res) => res.sendFile(path.join(__dirname, 'public', 'gao.html')));
+app.get('/pr',       checkModule('pr'),       (req, res) => res.redirect('/app?goto=pr'));
 
 app.listen(PORT, () => {
   console.log(`
