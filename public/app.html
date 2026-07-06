@@ -889,12 +889,15 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
             <span id="pm-theme-label" data-i18n-pm="theme_dark">Mod Gelap</span>
             <span id="pm-theme-status" style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(232,98,42,0.2);color:#FF7A4A">ON</span>
           </button>
-          <!-- Language Toggle -->
-          <button onclick="toggleLang();event.stopPropagation();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'">
-            <span id="pm-lang-flag" style="font-size:16px">🇲🇾</span>
-            <span id="pm-lang-label">Bahasa Malaysia</span>
-            <span style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(26,143,122,0.2);color:#2BBFA0" id="pm-lang-badge">BM</span>
-          </button>
+          <!-- Language -->
+          <div style="padding:8px 12px 4px">
+            <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Language</div>
+            <div style="display:flex;gap:6px">
+              <button onclick="setLang('en');event.stopPropagation();" id="pm-lang-en" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇬🇧 English</button>
+              <button onclick="setLang('zh');event.stopPropagation();" id="pm-lang-zh" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇨🇳 中文</button>
+              <button onclick="setLang('bm');event.stopPropagation();" id="pm-lang-ms" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇲🇾 Malaysia</button>
+            </div>
+          </div>
           <!-- Settings -->
           <button onclick="goTo('settings');event.stopPropagation();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'">
             <span style="font-size:16px">⚙️</span>
@@ -1753,15 +1756,16 @@ function updateProfileMenuLabels() {
   if (themeLabel) themeLabel.textContent = isDark ? tl[0] : tl[1];
   if (themeStatus) themeStatus.textContent = isDark ? ts[0] : ts[1];
 
-  const langFlag = document.getElementById('pm-lang-flag');
-  const langLabel = document.getElementById('pm-lang-label');
-  const langBadge = document.getElementById('pm-lang-badge');
-  // Show the NEXT language in the cycle (bm→en→zh→bm)
-  const nextLangMap = { bm: ['🇬🇧', 'English', 'EN'], en: ['🇨🇳', '简体中文', 'ZH'], zh: ['🇲🇾', 'Bahasa Malaysia', 'BM'] };
-  const nl = nextLangMap[currentLang] || nextLangMap.bm;
-  if (langFlag) langFlag.textContent = nl[0];
-  if (langLabel) langLabel.textContent = nl[1];
-  if (langBadge) langBadge.textContent = nl[2];
+  // Language picker — highlight the active language (M-EasyDo-style 3-button UI)
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#E8622A';
+  ['en', 'zh', 'bm'].forEach(function (l) {
+    const btn = document.getElementById('pm-lang-' + (l === 'bm' ? 'ms' : l));
+    if (!btn) return;
+    const active = currentLang === l;
+    btn.style.background = active ? accent : 'rgba(255,255,255,0.05)';
+    btn.style.color = active ? '#fff' : 'rgba(255,255,255,0.7)';
+    btn.style.borderColor = active ? accent : 'rgba(255,255,255,0.12)';
+  });
 }
 
 // Close menu when clicking outside
@@ -3588,11 +3592,11 @@ function updateBulkPageTexts() {
   if (exportBtn) exportBtn.textContent = t('btn_export_csv');
 }
 
-function toggleLang() {
-  const cycle = { bm: 'en', en: 'zh', zh: 'bm' };
-  currentLang = cycle[currentLang] || 'en';
+function setLang(lang) {
+  if (!['en', 'zh', 'bm'].includes(lang)) lang = 'en';
+  currentLang = lang;
   // Save 'ms' for Malay to stay in sync with landing page selector
-  localStorage.setItem('msm_lang', currentLang === 'bm' ? 'ms' : currentLang);
+  localStorage.setItem('msm_lang', lang === 'bm' ? 'ms' : lang);
   applyTranslations();
   renderTools(TOOLS);
   updateProfileMenuLabels();
@@ -3604,7 +3608,13 @@ function toggleLang() {
     if (g) g.textContent = t('dash_welcome') + ', ' + currentUser.name.split(' ')[0];
   }
   const toastMsgMap = { bm: '🇲🇾 Bahasa Malaysia diaktifkan', en: '🇬🇧 English activated', zh: '🇨🇳 简体中文已启用' };
-  toast(toastMsgMap[currentLang] || '🇬🇧 English activated', 'success');
+  toast(toastMsgMap[lang] || '🇬🇧 English activated', 'success');
+}
+
+// Retained for any legacy callers/keyboard shortcuts — cycles via setLang
+function toggleLang() {
+  const cycle = { bm: 'en', en: 'zh', zh: 'bm' };
+  setLang(cycle[currentLang] || 'en');
 }
 
 function initLang() {
