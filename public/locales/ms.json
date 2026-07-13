@@ -29,7 +29,7 @@
     "eyebrow": "10 Sistem AI Kami",
     "title_html": "Semua keperluan pemasaran anda,<br>dalam satu platform",
     "sub": "Klik mana-mana sistem di bawah untuk bermula — daftar atau log masuk dan anda akan dibawa terus ke sistem tersebut.",
-    "note": "Kesemua 10 sistem disertakan dalam satu platform. Daftar sekali, akses semua.",
+    "note": "Kesemua 11 sistem disertakan dalam satu platform. Daftar sekali, akses semua.",
     "cta": "Mulakan Sekarang →",
     "s1": {
       "tag": "Modul Penciptaan Kandungan",
@@ -180,6 +180,21 @@
       "f4d": "— Disebut dalam ChatGPT, Perplexity dan jawapan AI",
       "f5n": "Laporan Pengedaran",
       "f5d": "— Muat turun laporan penuh setiap media yang menerbitkan PR anda"
+    },
+    "s11": {
+      "tag": "Modul Audiobook",
+      "name_html": "M-EasyAudiobook <em>AI+</em> Suite",
+      "desc": "Bawa buku anda dari manuskrip kepada audiobook bernarasi dan terus ke pasaran — skrip narasi, pelan produksi, adaptasi tiga bahasa dan kit pemasaran pelancaran yang lengkap.",
+      "f1n": "Penjana Skrip Bab",
+      "f1d": "— Skrip narasi dengan arahan persembahan, ditulis untuk didengar",
+      "f2n": "Perancang Produksi",
+      "f2d": "— Tempoh, nada, detik emosi dan pembuka bab demi bab",
+      "f3n": "Penyesuai Pelbagai Bahasa",
+      "f3d": "— Sesuaikan kandungan antara Bahasa Inggeris, Bahasa Malaysia dan 中文",
+      "f4n": "Sosial Pasaran China",
+      "f4d": "— Siaran sedia terbit untuk WeChat, Douyin, Xiaohongshu dan Weibo",
+      "f5n": "Kit Pemasaran Pelancaran",
+      "f5d": "— Sinopsis, bio penulis, tagline, siaran penjual semula dan tajuk e-mel"
     }
   },
   "hiw": {

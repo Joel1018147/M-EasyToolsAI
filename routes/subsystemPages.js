@@ -153,6 +153,19 @@ const SYSTEMS = [
       { icon: '📦', name: 'Tiered Packages', desc: 'Starter, Growth, and Enterprise reach.' },
     ]
   },
+  {
+    slug: 'audiobook', label: 'AUDIOBOOK', icon: '🎙️', accent: [217,119,6],
+    name: 'M-EasyAudiobook AI+ Suite', appUrl: '/audiobook',
+    tagline: 'Take a book from manuscript to narrated audiobook and into the market — narration scripts, production plans, EN/BM/中文 adaptations, China-market social content and a full launch marketing kit.',
+    features: [
+      { icon: '📖', name: 'Chapter Script Generator', desc: 'Narration scripts with [PAUSE] and [EMPHASIS] directions, written for the ear.' },
+      { icon: '🗂️', name: 'Production Planner', desc: 'Chapter-by-chapter plan with duration, tone, emotional beats and opening hooks.' },
+      { icon: '🌏', name: 'Multilingual Adapter', desc: 'Adapt any content across English, Bahasa Malaysia and 中文.' },
+      { icon: '🇨🇳', name: 'China Market Social', desc: 'Publish-ready posts for WeChat, Douyin, Xiaohongshu and Weibo.' },
+      { icon: '✨', name: 'Tone Rewriter', desc: 'Re-voice any passage while keeping every fact intact.' },
+      { icon: '📣', name: 'Marketing Kit', desc: 'Blurb, author bio, taglines, reseller broadcast and email subject lines.' },
+    ]
+  },
 ];
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}

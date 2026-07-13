@@ -29,7 +29,7 @@
     "eyebrow": "Our 10 AI-Powered Systems",
     "title_html": "Everything your marketing needs,<br>in one platform",
     "sub": "Click on any system below to get started — sign up or log in and you'll be taken directly to that system.",
-    "note": "All 10 systems are included in one platform. Sign up once, access everything.",
+    "note": "All 11 systems are included in one platform. Sign up once, access everything.",
     "cta": "Get Started →",
     "s1": {
       "tag": "Content Creation Module",
@@ -180,6 +180,21 @@
       "f4d": "— Get cited in ChatGPT, Perplexity and AI-generated answers",
       "f5n": "Distribution Report",
       "f5d": "— Download a full report of every outlet that published your PR"
+    },
+    "s11": {
+      "tag": "Audiobook Module",
+      "name_html": "M-EasyAudiobook <em>AI+</em> Suite",
+      "desc": "Take a book from manuscript to narrated audiobook and into the market — narration scripts, production plans, trilingual adaptations and a full launch marketing kit.",
+      "f1n": "Chapter Script Generator",
+      "f1d": "— Narration scripts with stage directions, written for the ear",
+      "f2n": "Production Planner",
+      "f2d": "— Duration, tone, emotional beats and hooks, chapter by chapter",
+      "f3n": "Multilingual Adapter",
+      "f3d": "— Adapt any content across English, Bahasa Malaysia and 中文",
+      "f4n": "China Market Social",
+      "f4d": "— Publish-ready posts for WeChat, Douyin, Xiaohongshu and Weibo",
+      "f5n": "Launch Marketing Kit",
+      "f5d": "— Blurb, author bio, taglines, reseller broadcast and subject lines"
     }
   },
   "hiw": {
