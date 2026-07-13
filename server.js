@@ -220,7 +220,8 @@ async function initDB() {
         ('sales',    'M-EasySales AI+',         7),
         ('aichat',   'M-EasyTools AI+ System',  8),
         ('gao',      'M-EasyGAO AI+',           9),
-        ('pr',       'M-EasyPR AI+',           10)
+        ('pr',       'M-EasyPR AI+',           10),
+        ('audiobook','M-EasyAudiobook AI+',    11)
       ON CONFLICT (module_id) DO NOTHING;
     `);
 
@@ -1287,6 +1288,15 @@ app.post('/api/seller/users/:id/toggle-active', requireSeller, async (req, res) 
 });
 
 app.get('/api/modules', async (req, res) => {
+  try {
+    const modules = await db.getAll('SELECT module_id, name, is_enabled, sort_order FROM platform_modules ORDER BY sort_order');
+    res.json({ modules });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Seller panel reads the module list from here (public /api/modules omits nothing,
+// but the panel authenticates with the seller key like every other seller route).
+app.get('/api/seller/modules', requireSeller, async (req, res) => {
   try {
     const modules = await db.getAll('SELECT module_id, name, is_enabled, sort_order FROM platform_modules ORDER BY sort_order');
     res.json({ modules });
