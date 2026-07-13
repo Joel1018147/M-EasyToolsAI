@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" data-platform="tools" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M-EasyAudiobook AI+ Suite — M-EasyTools AI</title>
+<link rel="stylesheet" href="/modus-design-system.css">
+<style>
+/* ═══════════════════════════════════════════════
+   M-EasyAudiobook AI+ Suite
+   Layout only — all components come from the
+   Modus Design System (data-platform="tools").
+   ═══════════════════════════════════════════════ */
+.ab-hero{margin-bottom:20px}
+.ab-hero-title{font-size:22px;font-weight:800;color:var(--text);margin:0 0 6px}
+.ab-hero-sub{font-size:13px;color:var(--text-2);line-height:1.6;max-width:640px}
+.ab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:18px;margin-top:20px}
+.ab-card-icon{width:34px;height:34px;border-radius:9px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.ab-card-head{display:flex;align-items:center;gap:11px;flex:1;min-width:0}
+.ab-card-desc{font-size:11px;color:var(--text-3);font-weight:500;margin-top:2px;line-height:1.45}
+.ab-out-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 6px}
+.ab-out-lbl{font-size:12px;font-weight:600;color:var(--text-2)}
+.ab-out-acts{display:flex;gap:6px}
+.ab-out{width:100%;min-height:120px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;line-height:1.65;resize:vertical;outline:none;white-space:pre-wrap;overflow:hidden}
+.ab-out:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.ab-out::placeholder{color:var(--text-3)}
+.ab-gen{width:100%;justify-content:center;margin-top:4px}
+.ab-meta{font-size:11px;color:var(--text-3);margin-top:6px;min-height:14px}
+@media (max-width:768px){
+  .ab-grid{grid-template-columns:1fr;gap:14px}
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+<!-- ════════════════ SIDEBAR ════════════════ -->
+<nav class="app-sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-brand-dot">M</div>
+    <div class="sidebar-brand">M-EasyTools <em>AI+</em></div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="sidebar-section-label">Main</div>
+    <button class="sidebar-item" onclick="window.location.href='/app'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="6" height="6" rx="1.3"/><rect x="10" y="2" width="6" height="6" rx="1.3"/><rect x="2" y="10" width="6" height="6" rx="1.3"/><rect x="10" y="10" width="6" height="6" rx="1.3"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="sidebar-item" onclick="window.location.href='/app?goto=tools'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14.5 5a3 3 0 01-4 2.83V16a1.5 1.5 0 01-3 0V7.83A3 3 0 1110 5V12a.5.5 0 001 0V5z"/></svg>
+      <span>AI Tools</span>
+      <span class="sidebar-item-badge">40+</span>
+    </button>
+    <button class="sidebar-item" onclick="window.location.href='/app?goto=chat'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M15 9c0 3.866-2.686 7-6 7a5.97 5.97 0 01-3-.8L3 16l.8-3A6 6 0 113 9c0-3.314 2.686-6 6-6s6 2.686 6 6z"/></svg>
+      <span>AI Chat</span>
+    </button>
+
+    <div class="sidebar-section-label">Content</div>
+    <button class="sidebar-item" onclick="window.location.href='/app?goto=documents'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 2H5a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V7l-4-5z"/><path d="M10 2v5h5"/></svg>
+      <span>Documents</span>
+    </button>
+    <button class="sidebar-item" onclick="window.location.href='/app?goto=seo'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="7.5" cy="7.5" r="4.5"/><path d="M13.5 13.5l-2.5-2.5"/></svg>
+      <span>SEO Suite</span>
+    </button>
+    <button class="sidebar-item" onclick="window.location.href='/gao'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2L9 6M9 12L9 16M2 9L6 9M12 9L16 9M4.5 4.5L7 7M11 11L13.5 13.5M13.5 4.5L11 7M7 11L4.5 13.5"/></svg>
+      <span>GAO Suite</span>
+    </button>
+    <button class="sidebar-item active">
+      <span class="sidebar-item-icon" style="display:flex;align-items:center;justify-content:center;font-size:13px">🎙️</span>
+      <span>Audiobook AI+</span>
+      <span class="sidebar-item-badge" style="background:var(--accent);color:white">NEW</span>
+    </button>
+    <button class="sidebar-item" onclick="window.location.href='/app?goto=pr'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="1.5"/><path d="M5 7h8M5 10h5"/></svg>
+      <span>PR &amp; Media</span>
+    </button>
+
+    <div class="sidebar-section-label">Account</div>
+    <button class="sidebar-item" onclick="window.location.href='/app?goto=settings'">
+      <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="9" r="2.5"/><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.22 4.22l1.42 1.42M12.36 12.36l1.42 1.42M4.22 13.78l1.42-1.42M12.36 5.64l1.42-1.42"/></svg>
+      <span>Settings</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ════════════════ TOPBAR ════════════════ -->
+<header class="app-topbar">
+  <div class="topbar-title">🎙️ M-EasyAudiobook AI+ Suite</div>
+  <div class="topbar-right">
+    <button class="btn btn-outline btn-sm" id="th-btn" onclick="toggleTheme()">☀️</button>
+    <a href="/app" class="btn btn-outline btn-sm">← Dashboard</a>
+    <div class="topbar-avatar" id="tb-avatar">?</div>
+  </div>
+</header>
+
+<!-- ════════════════ MAIN ════════════════ -->
+<main class="app-main">
+  <div class="ab-hero">
+    <h1 class="ab-hero-title">M-EasyAudiobook <em style="font-style:normal;color:var(--accent)">AI+</em> Suite</h1>
+    <p class="ab-hero-sub">Everything an author needs to take a book from manuscript to narrated audiobook and into the market — scripts, production plans, translations and launch copy.</p>
+  </div>
+
+  <div class="ai-insight">
+    <div class="ai-insight-header">🤖 What this suite is for</div>
+    Turn a written book into a recorded, marketed, trilingual audiobook — narration scripts, chapter production plans, EN/BM/中文 adaptations, China-market social content, tone rewrites and a full launch marketing kit, all in one place.
+  </div>
+
+  <div class="ab-grid" id="ab-grid"></div>
+</main>
+
+</div>
+
+<div class="toast" id="toast" style="display:none;position:fixed;bottom:22px;right:22px;z-index:9999;max-width:320px"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   M-EasyAudiobook AI+ Suite — 6 tools.
+   Every tool posts to the existing /api/generate
+   endpoint, which auto-saves the result to the
+   documents table via generateWithGroq().
+   ═══════════════════════════════════════════════ */
+let currentUser = null;
+
+const LANGS = {
+  'EN':  { label: 'English', instruction: 'Write the ENTIRE output in English.' },
+  'BM':  { label: 'Bahasa Malaysia', instruction: 'Tulis KESELURUHAN output dalam Bahasa Malaysia yang natural dan mesra — bukan terjemahan literal.' },
+  'ZH':  { label: '中文', instruction: '请用简体中文撰写全部输出内容，语言自然流畅，符合中文母语者的表达习惯，不要逐字翻译。' }
+};
+
+function langOpts(sel) {
+  return Object.keys(LANGS).map(k => `<option value="${k}"${k === sel ? ' selected' : ''}>${LANGS[k].label}</option>`).join('');
+}
+
+const TOOLS = [
+  {
+    id: 'audiobook_chapter_script',
+    name: 'Chapter Script Generator',
+    icon: '📖',
+    desc: 'Turn a chapter summary into a full narration script with stage directions, ready for the recording booth.',
+    defaultLang: 'EN',
+    tone: d => d.tone,
+    fields: [
+      { id: 'title',   label: 'Book Title',    type: 'input', ph: 'e.g. The Quiet Discipline', half: true },
+      { id: 'author',  label: 'Author Name',   type: 'input', ph: 'e.g. Aisyah Rahman', half: true },
+      { id: 'chapter', label: 'Chapter Title', type: 'input', ph: 'e.g. Chapter 3 — The First Setback' },
+      { id: 'summary', label: 'Chapter Summary', type: 'textarea', ph: 'What happens in this chapter? Key ideas, story beats, lessons…', rows: 5 },
+      { id: 'tone',    label: 'Tone', type: 'select', opts: ['Inspirational', 'Motivational', 'Educational', 'Storytelling'], half: true }
+    ],
+    prompt: (d, lang) => `You are a veteran audiobook script writer who has produced narration scripts for bestselling authors. You write for the EAR, not the eye.
+
+Write the complete narration script for one audiobook chapter.
+
+BOOK: ${d.title}
+AUTHOR: ${d.author}
+CHAPTER: ${d.chapter}
+CHAPTER SUMMARY: ${d.summary}
+TONE: ${d.tone}
+
+REQUIREMENTS:
+- Write it the way a professional voice actor would perform it — warm, personal, story-driven. It must sound like a person speaking to one listener, never like text being read aloud.
+- Short, breathable sentences. Natural rhythm. Contractions. Direct address to the listener.
+- Open with a hook that makes the listener lean in. Close with a line that pulls them into the next chapter.
+- Insert performance directions inline where they belong: [PAUSE] for a beat of silence, [EMPHASIS] immediately before the word or phrase to stress. Use them deliberately, not on every line.
+- Mark the chapter opening with [CHAPTER OPEN] and the ending with [CHAPTER CLOSE].
+- Do NOT include any commentary, notes, or explanation — output the script only.
+
+${LANGS[lang].instruction}`
+  },
+  {
+    id: 'audiobook_outline_planner',
+    name: 'Full Book Outline to Script Planner',
+    icon: '🗂️',
+    desc: 'Chapter-by-chapter audiobook production plan — duration, tone guidance, emotional beats and opening hooks.',
+    defaultLang: 'EN',
+    tone: () => 'Professional',
+    fields: [
+      { id: 'title',    label: 'Book Title',  type: 'input', ph: 'e.g. The Quiet Discipline', half: true },
+      { id: 'author',   label: 'Author Name', type: 'input', ph: 'e.g. Aisyah Rahman', half: true },
+      { id: 'chapters', label: 'Number of Chapters (1–20)', type: 'number', ph: '12', min: 1, max: 20, value: 10, half: true },
+      { id: 'theme',    label: 'Overall Theme / Message', type: 'textarea', ph: 'What is this book really about? What should the reader walk away believing?', rows: 4 }
+    ],
+    prompt: (d, lang) => `You are an audiobook producer who plans recording sessions for publishers. You think in listening time, emotional pacing and voice performance.
+
+Build a complete chapter-by-chapter audiobook PRODUCTION PLAN.
+
+BOOK: ${d.title}
+AUTHOR: ${d.author}
+NUMBER OF CHAPTERS: ${d.chapters}
+OVERALL THEME / MESSAGE: ${d.theme}
+
+Start with a short PRODUCTION OVERVIEW: total estimated listening time, the emotional arc across the whole book, and the narration voice you recommend.
+
+Then, for EVERY chapter from 1 to ${d.chapters}, output exactly this structure:
+
+═══ CHAPTER [n] — [Chapter Title] ═══
+ESTIMATED DURATION: [minutes, based on a 150-words-per-minute narration pace]
+TONE GUIDANCE: [how the narrator should sound in this chapter, and where the tone shifts]
+KEY EMOTIONAL BEATS: [3 beats — the moments the listener should feel something, in order]
+OPENING HOOK LINE: ["The exact first line the narrator speaks — written as spoken words, not a description."]
+
+Make each chapter genuinely different. The plan must build a real arc from chapter 1 to chapter ${d.chapters}, not repeat the same beats.
+
+${LANGS[lang].instruction}`
+  },
+  {
+    id: 'audiobook_multilingual_adapter',
+    name: 'Multilingual Content Adapter',
+    icon: '🌏',
+    desc: 'Adapt any content between EN / BM / 中文 — direct, culturally adapted, or simplified for a mass market.',
+    defaultLang: 'EN',
+    tone: () => 'Professional',
+    hideLang: true,
+    fields: [
+      { id: 'content', label: 'Content to Adapt', type: 'textarea', ph: 'Paste the chapter, post, press release or marketing copy here…', rows: 6 },
+      { id: 'source',  label: 'Source Language', type: 'select', opts: ['English', 'Bahasa Malaysia', '中文'], half: true },
+      { id: 'target',  label: 'Target Language', type: 'select', opts: ['中文', 'English', 'Bahasa Malaysia'], half: true },
+      { id: 'type',    label: 'Content Type', type: 'select', opts: ['Book Chapter', 'Social Post', 'Press Release', 'Marketing Copy'], half: true },
+      { id: 'style',   label: 'Adaptation Style', type: 'select', opts: ['Direct Translation', 'Cultural Adaptation', 'Simplified for Mass Market'], half: true }
+    ],
+    prompt: (d) => `You are a literary translator and transcreation specialist working across English, Bahasa Malaysia and Simplified Chinese. You adapt meaning and feeling, not just words.
+
+Adapt the content below from ${d.source} into ${d.target}.
+
+CONTENT TYPE: ${d.type}
+ADAPTATION STYLE: ${d.style}
+
+STYLE RULES:
+- "Direct Translation" — stay faithful to the original wording and structure; preserve the author's voice sentence by sentence.
+- "Cultural Adaptation" — keep the meaning and emotional effect, but replace idioms, references, examples and humour with ones that land naturally for a ${d.target} audience.
+- "Simplified for Mass Market" — same message, plain and immediate language, shorter sentences, accessible to a broad general readership.
+
+Output in exactly two parts:
+
+═══ ADAPTED CONTENT (${d.target}) ═══
+[the full adapted content, written entirely in ${d.target}]
+
+═══ ADAPTATION NOTES ═══
+[3–5 short bullets, in English, naming the specific cultural or linguistic choices you made and why]
+
+ORIGINAL CONTENT (${d.source}):
+${d.content}`
+  },
+  {
+    id: 'audiobook_china_social',
+    name: 'China Market Social Content Generator',
+    icon: '🇨🇳',
+    desc: 'Three publish-ready posts for WeChat, Douyin, Xiaohongshu or Weibo — each in that platform\'s native voice.',
+    defaultLang: 'ZH',
+    tone: () => 'Persuasive',
+    fields: [
+      { id: 'title',    label: 'Book Title',  type: 'input', ph: 'e.g. The Quiet Discipline', half: true },
+      { id: 'author',   label: 'Author Name', type: 'input', ph: 'e.g. Aisyah Rahman', half: true },
+      { id: 'message',  label: 'Key Message / Theme', type: 'textarea', ph: 'The one idea the book gives the reader…', rows: 3 },
+      { id: 'platform', label: 'Target Platform', type: 'select', opts: ['All Platforms', 'WeChat', 'Douyin', 'Xiaohongshu', 'Weibo'], half: true },
+      { id: 'goal',     label: 'Content Goal', type: 'select', opts: ['Drive Purchase', 'Build Awareness', 'Inspire Sharing', 'Recruit Resellers'], half: true }
+    ],
+    langs: ['ZH', 'EN'],
+    prompt: (d, lang) => `You are a China-market social media strategist who has launched books on WeChat, Douyin, Xiaohongshu and Weibo. You know exactly how each platform's audience reads, scrolls and buys.
+
+Write 3 publish-ready social media posts promoting this audiobook.
+
+BOOK: ${d.title}
+AUTHOR: ${d.author}
+KEY MESSAGE: ${d.message}
+TARGET PLATFORM: ${d.platform}
+CONTENT GOAL: ${d.goal}
+
+PLATFORM VOICE — follow it precisely:
+- WeChat (微信): longer form, 300–500 characters, warm and reflective, emojis used as section markers, ends with a clear next step.
+- Douyin (抖音): short and punchy. A hook in the first line that stops the scroll, 60–100 characters total, 3–5 trending hashtags.
+- Xiaohongshu (小红书): lifestyle-aspirational, first-person, "I read this and…", line breaks between thoughts, generous emoji use, 5–8 hashtags.
+- Weibo (微博): topical and shareable, under 140 characters, 1–2 #话题# topic tags.
+
+If the target platform is "All Platforms", write one post each for WeChat, Douyin and Xiaohongshu.
+If a single platform is named, write 3 DIFFERENT posts for that one platform — different angles, not rewrites of each other.
+
+Every post must be written for the "${d.goal}" goal and must be ready to copy and publish as-is. Label each post with its platform header.
+
+${LANGS[lang].instruction}`
+  },
+  {
+    id: 'audiobook_tone_rewriter',
+    name: 'Inspirational Tone Rewriter',
+    icon: '✨',
+    desc: 'Rewrite any passage in a new tone of voice while keeping every fact and every meaning intact.',
+    defaultLang: 'EN',
+    tone: d => d.target_tone,
+    fields: [
+      { id: 'content',      label: 'Content to Rewrite', type: 'textarea', ph: 'Paste the passage you want rewritten…', rows: 6 },
+      { id: 'current_tone', label: 'Current Tone (describe it)', type: 'input', ph: 'e.g. dry and corporate, a bit stiff' },
+      { id: 'target_tone',  label: 'Desired Output Tone', type: 'select', opts: ['Deeply Inspirational', 'Motivational & Energetic', 'Calm & Reflective', 'Storytelling & Personal', 'Professional & Authoritative'] }
+    ],
+    prompt: (d, lang) => `You are a master ghostwriter. You can take any passage and re-voice it completely while keeping every fact perfectly intact.
+
+Rewrite the content below.
+
+CURRENT TONE: ${d.current_tone}
+DESIRED OUTPUT TONE: ${d.target_tone}
+
+RULES:
+- Preserve every fact, number, name, claim and piece of meaning from the original. Invent nothing. Remove nothing.
+- Change the voice completely: rhythm, sentence length, word choice, imagery, point of view where it helps.
+- The result must fully embody "${d.target_tone}" — a reader should feel the tone, not be told about it.
+- Keep roughly the same length as the original.
+- Output the rewritten content only. No preamble, no notes.
+
+${LANGS[lang].instruction}
+
+CONTENT TO REWRITE:
+${d.content}`
+  },
+  {
+    id: 'audiobook_marketing_kit',
+    name: 'Audiobook Marketing Kit Generator',
+    icon: '📣',
+    desc: 'The complete launch kit: back-cover blurb, author bio, taglines, reseller broadcast and email subject lines.',
+    defaultLang: 'EN',
+    tone: () => 'Persuasive',
+    fields: [
+      { id: 'title',       label: 'Book Title',  type: 'input', ph: 'e.g. The Quiet Discipline', half: true },
+      { id: 'author',      label: 'Author Name', type: 'input', ph: 'e.g. Aisyah Rahman', half: true },
+      { id: 'credentials', label: 'Author Credentials', type: 'textarea', ph: 'Career, achievements, why this author is worth listening to…', rows: 3 },
+      { id: 'synopsis',    label: 'Book Synopsis', type: 'textarea', ph: 'What is the book about? What transformation does it promise?', rows: 4 },
+      { id: 'audience',    label: 'Target Audience', type: 'input', ph: 'e.g. Malaysian working parents aged 30–45 building a side business' }
+    ],
+    prompt: (d, lang) => `You are a book marketing director who has launched audiobooks into Southeast Asian and Chinese markets. You write copy that sells.
+
+Produce the complete marketing kit for this audiobook.
+
+BOOK: ${d.title}
+AUTHOR: ${d.author}
+AUTHOR CREDENTIALS: ${d.credentials}
+SYNOPSIS: ${d.synopsis}
+TARGET AUDIENCE: ${d.audience}
+
+Output all 5 sections, in this exact order, each under its own header:
+
+═══ 1. BACK-COVER BLURB ═══
+[Exactly ~150 words. Hook, promise, stakes, and a reason to start listening tonight.]
+
+═══ 2. AUTHOR SOCIAL MEDIA BIO ═══
+[One short bio (under 160 characters) for a social profile, plus a slightly longer 2-sentence version.]
+
+═══ 3. PROMOTIONAL TAGLINES ═══
+[3 taglines. Each under 12 words. Each a different angle — emotional, aspirational, direct.]
+
+═══ 4. WHATSAPP / TELEGRAM BROADCAST FOR RESELLERS ═══
+[A message a reseller can forward as-is. Personal, forwardable, with a clear call to action. Use line breaks and light emoji.]
+
+═══ 5. EMAIL SUBJECT LINES ═══
+[5 variants for the launch campaign. Each under 55 characters. Vary the approach: curiosity, benefit, urgency, story, question.]
+
+${LANGS[lang].instruction}`
+  }
+];
+
+/* ── Render ─────────────────────────────────────────────────────────────── */
+function fieldHtml(t, f) {
+  const id = `f-${t.id}-${f.id}`;
+  let input;
+  if (f.type === 'textarea') {
+    input = `<textarea id="${id}" rows="${f.rows || 4}" placeholder="${f.ph || ''}"></textarea>`;
+  } else if (f.type === 'select') {
+    input = `<select id="${id}">${f.opts.map(o => `<option>${o}</option>`).join('')}</select>`;
+  } else if (f.type === 'number') {
+    input = `<input type="number" id="${id}" min="${f.min}" max="${f.max}" value="${f.value}" placeholder="${f.ph || ''}">`;
+  } else {
+    input = `<input type="text" id="${id}" placeholder="${f.ph || ''}">`;
+  }
+  return `<div class="form-group"><label for="${id}">${f.label}</label>${input}</div>`;
+}
+
+function renderTools() {
+  document.getElementById('ab-grid').innerHTML = TOOLS.map(t => {
+    const halves = t.fields.filter(f => f.half);
+    const fulls  = t.fields.filter(f => !f.half);
+    const langChoices = t.langs || Object.keys(LANGS);
+    const langSelect = `
+      <div class="form-group" style="max-width:220px">
+        <label for="lang-${t.id}">Output Language</label>
+        <select id="lang-${t.id}">${langChoices.map(k => `<option value="${k}"${k === t.defaultLang ? ' selected' : ''}>${LANGS[k].label}</option>`).join('')}</select>
+      </div>`;
+    return `
+    <section class="card" id="card-${t.id}">
+      <div class="card-header">
+        <div class="ab-card-head">
+          <div class="ab-card-icon">${t.icon}</div>
+          <div style="min-width:0">
+            <h2 class="card-title">${t.name}</h2>
+            <div class="ab-card-desc">${t.desc}</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        ${fulls.map(f => fieldHtml(t, f)).join('')}
+        ${halves.length ? `<div class="form-grid">${halves.map(f => fieldHtml(t, f)).join('')}</div>` : ''}
+        ${t.hideLang ? '' : langSelect}
+        <button class="btn btn-primary ab-gen" id="gen-${t.id}" onclick="generate('${t.id}')">🤖 Generate</button>
+        <div class="ab-out-head">
+          <span class="ab-out-lbl">Output</span>
+          <div class="ab-out-acts">
+            <button class="btn btn-outline btn-sm" onclick="copyOut('${t.id}', this)">📋 Copy</button>
+            <button class="btn btn-outline btn-sm" onclick="saveOut('${t.id}')">💾 Save to Library</button>
+          </div>
+        </div>
+        <textarea class="ab-out" id="out-${t.id}" placeholder="Your generated content will appear here..." oninput="autoGrow(this)"></textarea>
+        <div class="ab-meta" id="meta-${t.id}"></div>
+      </div>
+    </section>`;
+  }).join('');
+}
+
+/* ── Generate ───────────────────────────────────────────────────────────── */
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.max(120, el.scrollHeight + 2) + 'px';
+}
+
+async function generate(toolId) {
+  const tool = TOOLS.find(t => t.id === toolId);
+  const data = {};
+  tool.fields.forEach(f => {
+    const el = document.getElementById(`f-${tool.id}-${f.id}`);
+    if (el) data[f.id] = el.value.trim();
+  });
+
+  const firstField = tool.fields[0];
+  if (!data[firstField.id]) {
+    toast(`Please fill in "${firstField.label}"`, 'err');
+    return;
+  }
+
+  const langEl = document.getElementById(`lang-${tool.id}`);
+  const lang = langEl ? langEl.value : tool.defaultLang;
+  const prompt = tool.prompt(data, lang);
+  const tone = tool.tone(data) || 'Professional';
+
+  const btn  = document.getElementById(`gen-${tool.id}`);
+  const out  = document.getElementById(`out-${tool.id}`);
+  const meta = document.getElementById(`meta-${tool.id}`);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Generating…';
+  meta.textContent = '';
+
+  try {
+    const r = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, toolId: tool.id, toolName: tool.name, tone })
+    });
+    const result = await r.json();
+    if (!r.ok) throw new Error(result.error || 'Generation failed');
+    out.value = result.text || '';
+    autoGrow(out);
+    meta.textContent = `${result.wordCount} words · saved to your library (document #${result.docId})`;
+    toast('Content generated ✓', 'ok');
+  } catch (err) {
+    toast(err.message || 'Generation failed', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🤖 Generate';
+  }
+}
+
+/* ── Output actions ─────────────────────────────────────────────────────── */
+function copyOut(toolId, btn) {
+  const text = document.getElementById(`out-${toolId}`).value;
+  if (!text.trim()) { toast('Nothing to copy yet', 'err'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    const revert = () => { btn.textContent = '📋 Copy'; btn.removeEventListener('mouseleave', revert); };
+    btn.addEventListener('mouseleave', revert);
+  });
+}
+
+async function saveOut(toolId) {
+  const tool = TOOLS.find(t => t.id === toolId);
+  const content = document.getElementById(`out-${toolId}`).value;
+  if (!content.trim()) { toast('Nothing to save yet', 'err'); return; }
+  const title = `${tool.name} — ${new Date().toLocaleDateString('en-GB')}`;
+  try {
+    const r = await fetch('/api/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, content, tool_id: tool.id, tool_name: tool.name })
+    });
+    if (!r.ok) throw new Error('Save failed');
+    toast('Saved to your library ✓', 'ok');
+  } catch (err) {
+    toast(err.message || 'Save failed', 'err');
+  }
+}
+
+/* ── Shell ──────────────────────────────────────────────────────────────── */
+function toggleTheme() {
+  const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('theme', t);
+  document.getElementById('th-btn').textContent = t === 'dark' ? '🌙' : '☀️';
+}
+
+let toastAnim = null;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type === 'err' ? 'toast-error' : 'toast-success');
+  el.style.display = 'flex';
+  if (toastAnim) toastAnim.cancel();
+  toastAnim = el.animate(
+    [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none', offset: 0.08 },
+     { opacity: 1, transform: 'none', offset: 0.9 }, { opacity: 0, transform: 'translateY(12px)' }],
+    { duration: 3200, easing: 'ease' }
+  );
+  toastAnim.onfinish = () => { el.style.display = 'none'; };
+}
+
+async function init() {
+  try {
+    const r = await fetch('/api/auth/me');
+    if (!r.ok) { window.location = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+    currentUser = await r.json();
+    document.getElementById('tb-avatar').textContent = currentUser.name[0].toUpperCase();
+  } catch {
+    window.location = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+    return;
+  }
+  const th = localStorage.getItem('theme') || 'light';
+  document.documentElement.dataset.theme = th;
+  document.getElementById('th-btn').textContent = th === 'dark' ? '🌙' : '☀️';
+  renderTools();
+}
+
+init();
+</script>
+</body>
+</html>

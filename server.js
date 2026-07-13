@@ -1488,6 +1488,7 @@ app.get('/sales',    checkModule('sales'),    (req, res) => res.sendFile(path.jo
 app.get('/aichat',   checkModule('aichat'),   (req, res) => res.sendFile(path.join(__dirname, 'public', 'aichat.html')));
 app.get('/gao',      checkModule('gao'),      (req, res) => res.sendFile(path.join(__dirname, 'public', 'gao.html')));
 app.get('/pr',       checkModule('pr'),       (req, res) => res.redirect('/app?goto=pr'));
+app.get('/audiobook', checkModule('audiobook'), (req, res) => res.sendFile(path.join(__dirname, 'public', 'audiobook.html')));
 
 // Public per-system landing pages (no auth)
 app.use('/systems', require('./routes/subsystemPages'));

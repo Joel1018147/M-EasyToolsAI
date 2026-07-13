@@ -852,6 +852,11 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
     <span data-i18n="nav_gao">GAO Suite</span>
     <span class="sidebar-item-badge" style="background:var(--teal);color:white">NEW</span>
   </button>
+  <button class="sidebar-item" onclick="window.location.href='/audiobook'">
+    <span class="sidebar-item-icon" style="display:flex;align-items:center;justify-content:center;font-size:13px">🎙️</span>
+    <span data-i18n="nav_audiobook">Audiobook AI+</span>
+    <span class="sidebar-item-badge" style="background:var(--orange);color:white">NEW</span>
+  </button>
   <button class="sidebar-item" onclick="goTo('pr')">
     <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="1.5"/><path d="M5 7h8M5 10h5"/></svg>
     PR &amp; Media
@@ -2499,7 +2504,7 @@ const TRANSLATIONS = {
     nav_main: 'Main', nav_dashboard: 'Dashboard', nav_tools: 'AI Tools',
     nav_chat: 'AI Chat', nav_content: 'Content', nav_documents: 'Documents',
     nav_seo: 'SEO Suite',
-    nav_gao: 'GAO Suite', nav_bulk: 'Bulk Generate', nav_templates: 'Templates',
+    nav_gao: 'GAO Suite', nav_audiobook: 'Audiobook AI+', nav_bulk: 'Bulk Generate', nav_templates: 'Templates',
     nav_account: 'Account', nav_settings: 'Settings', 
     signout_label: 'Sign out',
 
@@ -2777,7 +2782,7 @@ const TRANSLATIONS = {
     nav_main: 'Utama', nav_dashboard: 'Papan Pemuka', nav_tools: 'Alat AI',
     nav_chat: 'Sembang AI', nav_content: 'Kandungan', nav_documents: 'Dokumen',
     nav_seo: 'Suite SEO',
-    nav_gao: 'Suite GAO', nav_bulk: 'Jana Pukal', nav_templates: 'Templat',
+    nav_gao: 'Suite GAO', nav_audiobook: 'Audiobook AI+', nav_bulk: 'Jana Pukal', nav_templates: 'Templat',
     nav_account: 'Akaun', nav_settings: 'Tetapan', 
     signout_label: 'Log keluar',
 
@@ -3055,7 +3060,7 @@ const TRANSLATIONS = {
     nav_main: '主页', nav_dashboard: '仪表板', nav_tools: 'AI工具',
     nav_chat: 'AI聊天', nav_content: '内容', nav_documents: '文档',
     nav_seo: 'SEO套件',
-    nav_gao: 'GAO套件', nav_bulk: '批量生成', nav_templates: '模板',
+    nav_gao: 'GAO套件', nav_audiobook: '有声书 AI+', nav_bulk: '批量生成', nav_templates: '模板',
     nav_account: '账户', nav_settings: '设置',
     signout_label: '退出登录',
 
