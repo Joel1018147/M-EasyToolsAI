@@ -1501,16 +1501,15 @@ app.get('/pr',       checkModule('pr'),       (req, res) => res.redirect('/app?g
 app.get('/audiobook', checkModule('audiobook'), (req, res) => res.sendFile(path.join(__dirname, 'public', 'audiobook.html')));
 
 // Public per-system landing pages (no auth)
-app.use('/systems', require('./routes/subsystemPages'));
-
-// Ecosystem-consistent alias: every Modus platform answers /modules/<slug>.
-// Canonical per-system pages live at /systems; these redirect there so shared
-// /modules links resolve. Slug guarded to a single safe segment.
-app.get('/modules', (_req, res) => res.redirect(302, '/systems'));
-app.get('/modules/:slug', (req, res) => {
+// /modules/<slug> is the canonical per-system marketing URL, standardized across
+// every Modus platform. The old /systems paths 301 to /modules so existing
+// links, bookmarks and search results keep working.
+app.use('/modules', require('./routes/subsystemPages'));
+app.get('/systems', (_req, res) => res.redirect(301, '/modules'));
+app.get('/systems/:slug', (req, res) => {
   const slug = req.params.slug;
-  if (!/^[a-z0-9-]+$/.test(slug)) return res.redirect(302, '/systems');
-  res.redirect(302, '/systems/' + slug);
+  if (!/^[a-z0-9-]+$/.test(slug)) return res.redirect(301, '/modules');
+  res.redirect(301, '/modules/' + slug);
 });
 
 app.listen(PORT, () => {

@@ -273,11 +273,11 @@ ${HEAD_FONTS}
   <a href="/" class="nav-logo"><div class="logo-dot">M</div>M-EasyTools AI+</a>
   <div class="nav-links">
     <a href="#features">Features</a>
-    <a href="/systems">All Tools</a>
+    <a href="/modules">All Tools</a>
     <a href="/login">Sign In</a>
   </div>
   <div class="nav-right">
-    <div class="crumb"><a href="/systems">All Tools</a><span class="sep">/</span><span>${esc(sys.label)}</span></div>
+    <div class="crumb"><a href="/modules">All Tools</a><span class="sep">/</span><span>${esc(sys.label)}</span></div>
     <a class="nav-cta" onclick="goTo('${sys.appUrl}')">Open Tool →</a>
   </div>
 </nav>
@@ -291,7 +291,7 @@ ${HEAD_FONTS}
     <p class="hero-sub">${esc(sys.tagline)}</p>
     <div class="hero-ctas">
       <button class="btn-primary" onclick="goTo('${sys.appUrl}')">Open Tool →</button>
-      <a class="btn-sec" href="/systems">← All Tools</a>
+      <a class="btn-sec" href="/modules">← All Tools</a>
     </div>
     <div class="stat-strip">
       <div class="stat-item"><div class="stat-num">${sys.features.length} Tools</div><div class="stat-lbl">Included</div></div>
@@ -322,7 +322,7 @@ ${HEAD_FONTS}
 <footer>
   <span class="footer-brand">M-EasyTools AI+ · ${esc(sys.label)}</span>
   <div class="footer-links">
-    <a href="/systems">All Tools</a>
+    <a href="/modules">All Tools</a>
     <a href="/login">Sign In</a>
     <a href="/privacy">Privacy</a>
     <a href="/terms">Terms</a>
@@ -338,7 +338,7 @@ function buildIndexPage() {
   const cards = SYSTEMS.map(s => {
     const [r,g,b] = s.accent;
     return `
-      <a class="ix-card" href="/systems/${s.slug}" style="--r:${r};--g:${g};--b:${b}">
+      <a class="ix-card" href="/modules/${s.slug}" style="--r:${r};--g:${g};--b:${b}">
         <div class="ix-head"><div class="ix-icon">${s.icon}</div>
           <div><div class="ix-label">${esc(s.label)}</div><div class="ix-name">${esc(s.name)}</div></div>
         </div>
