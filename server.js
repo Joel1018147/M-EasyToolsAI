@@ -1503,6 +1503,16 @@ app.get('/audiobook', checkModule('audiobook'), (req, res) => res.sendFile(path.
 // Public per-system landing pages (no auth)
 app.use('/systems', require('./routes/subsystemPages'));
 
+// Ecosystem-consistent alias: every Modus platform answers /modules/<slug>.
+// Canonical per-system pages live at /systems; these redirect there so shared
+// /modules links resolve. Slug guarded to a single safe segment.
+app.get('/modules', (_req, res) => res.redirect(302, '/systems'));
+app.get('/modules/:slug', (req, res) => {
+  const slug = req.params.slug;
+  if (!/^[a-z0-9-]+$/.test(slug)) return res.redirect(302, '/systems');
+  res.redirect(302, '/systems/' + slug);
+});
+
 app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════╗
