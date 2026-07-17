@@ -9,20 +9,10 @@ const router = express.Router();
 // Sans body, animated hero, feature grid, "Open Tool" CTA into the module.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// NOTE: the super app itself is NOT listed here. Its home is the landing page's
+// #ecosystem section (/#ecosystem) — there is no /modules/main page. server.js
+// 301s /modules/main there. Only real subsystems belong in this array.
 const SYSTEMS = [
-  {
-    slug: 'main', label: 'PLATFORM', icon: '🛠️', accent: [232,98,42],
-    name: 'M-EasyTools AI+ Super App', appUrl: '/app',
-    tagline: 'All-in-one AI marketing platform with 40+ tools, AI chat, bulk generation, a document manager and full dashboard — built for Malaysian businesses.',
-    features: [
-      { icon: '🧰', name: '40+ AI Tools', desc: 'Content, social, email, ads, SEO, commerce, and sales generators in one place.' },
-      { icon: '💬', name: 'AI Chat Assistant', desc: 'Always-on marketing assistant for ideas and copy on demand.' },
-      { icon: '⚡', name: 'Bulk Generation', desc: 'Generate many variants at once and export in seconds.' },
-      { icon: '📄', name: 'Document Manager', desc: 'Every generated asset saved, scored, and searchable.' },
-      { icon: '🔌', name: 'WordPress & Shopify', desc: 'Publish generated content straight to your site.' },
-      { icon: '🔑', name: 'Developer API', desc: 'Programmatic access to every generator with your own API key.' },
-    ]
-  },
   {
     slug: 'content', label: 'CONTENT', icon: '✍️', accent: [232,98,42],
     name: 'M-EasyContent AI+ Tools', appUrl: '/content',

@@ -1504,6 +1504,9 @@ app.get('/audiobook', checkModule('audiobook'), (req, res) => res.sendFile(path.
 // /modules/<slug> is the canonical per-system marketing URL, standardized across
 // every Modus platform. The old /systems paths 301 to /modules so existing
 // links, bookmarks and search results keep working.
+// The super app is the landing page's #ecosystem section, not a page of its own.
+// The retired /modules/main overview permanently points there.
+app.get('/modules/main', (_req, res) => res.redirect(301, '/#ecosystem'));
 app.use('/modules', require('./routes/subsystemPages'));
 app.get('/systems', (_req, res) => res.redirect(301, '/modules'));
 app.get('/systems/:slug', (req, res) => {
