@@ -1485,8 +1485,9 @@ app.use((req, res, next) => {
 // Page routes
 app.get('/app',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
 app.get('/admin',    (req, res) => res.redirect('/seller'));
-app.get('/login',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
-app.get('/signup',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'signup.html')));
+app.get('/login',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'auth.html')));
+app.get('/signup',   (req, res) => res.redirect('/login?tab=register'));
+app.get('/register', (req, res) => res.redirect('/login?tab=register'));
 app.get('/seller',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'seller.html')));
 app.get('/content',  checkModule('content'),  (req, res) => res.sendFile(path.join(__dirname, 'public', 'content.html')));
 app.get('/social',   checkModule('social'),   (req, res) => res.sendFile(path.join(__dirname, 'public', 'social.html')));

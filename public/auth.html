@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" data-platform="tools" data-theme="light" id="html-root">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M-EasyTools AI+ — Sign in</title>
+<link rel="stylesheet" href="/modus-design-system.css" />
+<style>
+  /* ── Self-contained design tokens (works with or without the shared CSS) ──── */
+  :root{
+    --accent:#E8622A;--accent-2:#C44E1E;
+    --accent-bg:rgba(232,98,42,0.08);--accent-glow:rgba(232,98,42,0.20);
+    --bg:#f8f9fa;--bg-soft:#f0f2f5;--surface:#ffffff;--surface-2:#f5f7fa;
+    --border:#e2e8f0;--border-2:#cbd5e1;--text:#1e293b;--text-2:#475569;
+    --muted:#94a3b8;--brand:#0f172a;--brand-2:#1e293b;
+  }
+  html[data-platform="tools"]{
+    --accent:#E8622A;--accent-2:#C44E1E;--accent-bg:rgba(232,98,42,0.08);--accent-glow:rgba(232,98,42,0.20);
+  }
+  html[data-theme="dark"]{
+    --bg:#0f172a;--bg-soft:#1e293b;--surface:#1e293b;--surface-2:#263348;
+    --border:#334155;--border-2:#475569;--text:#e2e8f0;--text-2:#94a3b8;
+    --muted:#64748b;--brand:#020817;--brand-2:#0f172a;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
+  }
+  .auth-shell{display:flex;min-height:100vh;width:100%}
+
+  /* LEFT PANEL */
+  .auth-left{
+    position:relative;flex:0 0 40%;max-width:40%;background:var(--brand);color:#fff;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:space-between;padding:48px 44px;
+  }
+  .orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;
+    background:radial-gradient(circle at 30% 30%, var(--accent), transparent 70%);pointer-events:none}
+  .orb-1{width:460px;height:460px;top:-120px;right:-140px;animation:float1 14s ease-in-out infinite}
+  .orb-2{width:360px;height:360px;bottom:-120px;left:-100px;opacity:.35;
+    background:radial-gradient(circle at 30% 30%, var(--accent-2), transparent 70%);animation:float2 18s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-24px,26px) scale(1.08)}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-22px) scale(1.12)}}
+
+  .brand-mark{display:inline-flex;align-items:center;gap:11px;position:relative;z-index:2}
+  .brand-dot{width:38px;height:38px;border-radius:11px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 20px var(--accent-glow)}
+  .brand-dot svg{width:20px;height:20px;display:block}
+  .brand-word{font-size:17px;font-weight:800;letter-spacing:-.3px;color:#fff}
+
+  .left-mid{position:relative;z-index:2}
+  .platform-name{font-size:40px;font-weight:800;letter-spacing:-1.2px;line-height:1.05;margin-bottom:14px}
+  .platform-name .plus{color:var(--accent)}
+  .tagline{font-size:16px;line-height:1.55;color:rgba(255,255,255,.72);max-width:360px;margin-bottom:40px}
+
+  .feature{display:flex;align-items:flex-start;gap:14px;min-height:56px;opacity:0;transition:opacity .5s ease}
+  .feature.active{opacity:1}
+  .feature-carousel{position:relative;min-height:64px;margin-bottom:8px}
+  .feature-carousel .feature{position:absolute;inset:0}
+  .feature-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;
+    background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);
+    display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--accent)}
+  .feature-text{font-size:15px;font-weight:600;line-height:1.4;color:rgba(255,255,255,.94);padding-top:6px}
+  .dots{display:flex;gap:7px;margin-top:6px}
+  .dot{width:22px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:background .4s}
+  .dot.active{background:var(--accent)}
+
+  .trust-row{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:8px 16px;
+    font-size:12.5px;color:rgba(255,255,255,.6);font-weight:500}
+  .trust-row span{white-space:nowrap}
+
+  /* RIGHT PANEL */
+  .auth-right{flex:1 1 60%;background:var(--surface);display:flex;align-items:center;justify-content:center;padding:40px 24px}
+  .form-wrap{width:100%;max-width:400px}
+  .mobile-brand{display:none}
+
+  .form-head{margin-bottom:26px}
+  .form-head h1{font-size:26px;font-weight:800;letter-spacing:-.6px;color:var(--text);margin-bottom:6px}
+  .form-head p{font-size:14.5px;color:var(--text-2)}
+
+  .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
+    padding:12px 18px;background:var(--surface);color:var(--text);border:1.5px solid var(--border-2);border-radius:10px;
+    font-size:14.5px;font-weight:600;font-family:inherit;text-decoration:none;cursor:pointer;
+    transition:box-shadow .15s,border-color .15s,transform .06s}
+  .btn-google:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent)}
+  .btn-google:active{transform:scale(.99)}
+
+  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12.5px;margin:20px 0}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+  .tabs{display:flex;gap:6px;background:var(--surface-2);border-radius:11px;padding:5px;margin-bottom:22px}
+  .tab{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;
+    font-family:inherit;font-size:14px;font-weight:600;color:var(--text-2);cursor:pointer;
+    transition:background .18s,color .18s,box-shadow .18s}
+  .tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+  .panel{display:none;animation:fade .2s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+  .field-optional{color:var(--muted);font-weight:500}
+  .field-note{font-size:12px;color:var(--muted);margin-top:6px}
+  .input-wrap{position:relative}
+  input,select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;
+    font-family:inherit;font-size:14px;color:var(--text);background:var(--surface);
+    outline:none;transition:border-color .18s,box-shadow .18s}
+  select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+  .input-wrap input{padding-right:44px}
+  .toggle-pw{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;padding:8px;color:var(--muted);
+    display:flex;align-items:center;justify-content:center}
+  .toggle-pw:hover{color:var(--text-2)}
+  .toggle-pw svg{width:18px;height:18px}
+
+  .field.error input{border-color:#dc2626;animation:shake .32s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+  .field-error{display:none;font-size:12.5px;color:#dc2626;margin-top:5px}
+  .field.error .field-error{display:block}
+
+  .row-between{display:flex;justify-content:space-between;align-items:center;margin-top:-2px;margin-bottom:6px}
+  .link{font-size:13px;color:var(--accent);text-decoration:none;font-weight:600}
+  .link:hover{text-decoration:underline}
+
+  .strength{display:flex;gap:5px;margin-top:8px}
+  .strength .seg{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .25s}
+  .strength-label{font-size:12px;color:var(--muted);margin-top:5px;min-height:15px}
+
+  .terms{display:flex;align-items:flex-start;gap:9px;margin:6px 0 18px}
+  .terms input[type=checkbox]{width:16px;height:16px;margin-top:2px;flex-shrink:0;accent-color:var(--accent)}
+  .terms label{font-size:12.5px;color:var(--text-2);line-height:1.5;font-weight:500}
+  .terms a{color:var(--accent);text-decoration:none}
+
+  .btn-primary{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:10px;
+    font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,transform .06s}
+  .btn-primary:hover{background:var(--accent-2)}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-primary[data-loading="true"]{pointer-events:none;opacity:.85}
+  .btn-primary[data-loading="true"] .btn-label{opacity:.6}
+  .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  .btn-primary[data-loading="true"] .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .form-alert{display:none;background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.3);
+    color:#dc2626;padding:10px 13px;border-radius:9px;font-size:13px;margin-bottom:16px}
+  .form-alert.show{display:block}
+  .form-success{display:none;align-items:center;gap:9px;background:rgba(22,163,74,.1);
+    border:1px solid rgba(22,163,74,.3);color:#16a34a;
+    padding:11px 13px;border-radius:9px;font-size:13.5px;font-weight:600;margin-bottom:16px}
+  .form-success.show{display:flex}
+
+  .copyright{text-align:center;font-size:12px;color:var(--muted);margin-top:26px}
+
+  @media (max-width:768px){
+    .auth-shell{flex-direction:column}
+    .auth-left{display:none}
+    .mobile-brand{display:flex;align-items:center;gap:10px;justify-content:center;background:var(--brand);color:#fff;padding:16px;width:100%}
+    .mobile-brand .brand-dot{width:32px;height:32px}
+    .mobile-brand .brand-word{font-size:15px}
+    .auth-right{flex:1;padding:32px 20px;align-items:flex-start}
+    .form-wrap{padding-top:8px}
+  }
+</style>
+</head>
+<body>
+  <div class="mobile-brand">
+    <span class="brand-dot" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#fff"/><circle cx="12" cy="12" r="3.4" fill="var(--accent)"/></svg>
+    </span>
+    <span class="brand-word">Modus AI</span>
+  </div>
+
+  <div class="auth-shell">
+    <aside class="auth-left">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+
+      <div class="brand-mark">
+        <span class="brand-dot" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#fff"/><circle cx="12" cy="12" r="3.4" fill="var(--accent)"/></svg>
+        </span>
+        <span class="brand-word">Modus AI</span>
+      </div>
+
+      <div class="left-mid">
+        <div class="platform-name">M-EasyTools <span class="plus">AI+</span></div>
+        <p class="tagline">96+ AI content tools in one workspace — write, design, publish, and get seen.</p>
+
+        <div class="feature-carousel" id="carousel">
+          <div class="feature active"><span class="feature-icon">✦</span><span class="feature-text">96+ AI content tools in one place</span></div>
+          <div class="feature"><span class="feature-icon">✦</span><span class="feature-text">WordPress & Shopify direct publish</span></div>
+          <div class="feature"><span class="feature-icon">✦</span><span class="feature-text">M-EasyPR AI+ for press & media</span></div>
+        </div>
+        <div class="dots" id="dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+      </div>
+
+      <div class="trust-row">
+        <span>🔒 SOC 2 Ready</span><span>·</span><span>🇲🇾 Malaysian SME</span><span>·</span><span>🤖 AI-Native</span>
+      </div>
+    </aside>
+
+    <main class="auth-right">
+      <div class="form-wrap">
+        <div class="form-head">
+          <h1 id="head-title">Welcome back</h1>
+          <p id="head-sub">Sign in to your M-EasyTools workspace</p>
+        </div>
+
+        <a href="/auth/google" class="btn-google">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </a>
+
+        <div class="divider">or continue with email</div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" id="tab-login" role="tab" onclick="switchTab('login')">Sign in</button>
+          <button class="tab" id="tab-register" role="tab" onclick="switchTab('register')">Create account</button>
+        </div>
+
+        <section class="panel active" id="panel-login">
+          <div class="form-alert" id="login-alert"></div>
+          <div class="form-success" id="login-success"><span>✓</span><span>Success — redirecting…</span></div>
+          <form id="login-form" novalidate>
+            <div class="field" id="lf-email">
+              <label for="l-email">Email</label>
+              <input id="l-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required />
+              <div class="field-error">Please enter a valid email.</div>
+            </div>
+            <div class="field" id="lf-password">
+              <div class="row-between">
+                <label for="l-password" style="margin:0">Password</label>
+                <a class="link" href="#" onclick="return false" title="Contact your administrator to reset your password">Forgot password?</a>
+              </div>
+              <div class="input-wrap">
+                <input id="l-password" name="password" type="password" autocomplete="current-password" placeholder="Your password" required />
+                <button type="button" class="toggle-pw" aria-label="Show password" onclick="togglePw('l-password',this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <div class="field-error">Please enter your password.</div>
+            </div>
+            <button type="submit" class="btn-primary" id="login-btn"><span class="spinner"></span><span class="btn-label">Sign in</span></button>
+          </form>
+        </section>
+
+        <section class="panel" id="panel-register">
+          <div class="form-alert" id="register-alert"></div>
+          <div class="form-success" id="register-success"><span>✓</span><span>Account created — redirecting…</span></div>
+          <form id="register-form" novalidate>
+            <div class="field" id="rf-name">
+              <label for="r-name">Full name</label>
+              <input id="r-name" name="name" type="text" autocomplete="name" placeholder="Your full name" required />
+              <div class="field-error">Please enter your name.</div>
+            </div>
+            <div class="field" id="rf-email">
+              <label for="r-email">Email</label>
+              <input id="r-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required />
+              <div class="field-error">Please enter a valid email.</div>
+            </div>
+            <div class="field" id="rf-org">
+              <label for="r-org">Company name <span class="field-optional">(optional)</span></label>
+              <input id="r-org" name="company" type="text" autocomplete="organization" placeholder="Company name" />
+            </div>
+
+            <div class="field" id="rf-password">
+              <label for="r-password">Password</label>
+              <div class="input-wrap">
+                <input id="r-password" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required oninput="scoreStrength(this.value)" />
+                <button type="button" class="toggle-pw" aria-label="Show password" onclick="togglePw('r-password',this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <div class="strength" id="strength"><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+              <div class="strength-label" id="strength-label"></div>
+              <div class="field-error">Password must be at least 8 characters.</div>
+            </div>
+            <div class="field" id="rf-confirm">
+              <label for="r-confirm">Confirm password</label>
+              <div class="input-wrap">
+                <input id="r-confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Re-enter password" required />
+                <button type="button" class="toggle-pw" aria-label="Show password" onclick="togglePw('r-confirm',this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <div class="field-error">Passwords do not match.</div>
+            </div>
+            <div class="terms" id="rf-terms">
+              <input id="r-terms" type="checkbox" />
+              <label for="r-terms">By creating an account you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+            </div>
+            <div class="field-error" id="terms-error" style="margin-top:-10px;margin-bottom:12px">Please accept the terms to continue.</div>
+            <button type="submit" class="btn-primary" id="register-btn"><span class="spinner"></span><span class="btn-label">Create account</span></button>
+          </form>
+        </section>
+
+        <div class="copyright">© 2026 Modus AI Associates. All rights reserved.</div>
+      </div>
+    </main>
+  </div>
+
+<script>
+  (function(){
+    try{ if(localStorage.getItem('modus-theme') === 'dark') document.getElementById('html-root').setAttribute('data-theme','dark'); }catch(e){}
+  })();
+
+  (function(){
+    var feats = document.querySelectorAll('#carousel .feature');
+    var dots  = document.querySelectorAll('#dots .dot');
+    if(!feats.length) return;
+    var i = 0;
+    setInterval(function(){
+      feats[i].classList.remove('active'); dots[i].classList.remove('active');
+      i = (i + 1) % feats.length;
+      feats[i].classList.add('active'); dots[i].classList.add('active');
+    }, 3000);
+  })();
+
+  function switchTab(mode){
+    var isReg = mode === 'register';
+    document.getElementById('tab-login').classList.toggle('active', !isReg);
+    document.getElementById('tab-register').classList.toggle('active', isReg);
+    document.getElementById('panel-login').classList.toggle('active', !isReg);
+    document.getElementById('panel-register').classList.toggle('active', isReg);
+    document.getElementById('head-title').textContent = isReg ? 'Create account' : 'Welcome back';
+    document.getElementById('head-sub').textContent = isReg
+      ? 'Start your M-EasyTools workspace in seconds'
+      : 'Sign in to your M-EasyTools workspace';
+    document.title = 'M-EasyTools AI+ — ' + (isReg ? 'Create account' : 'Sign in');
+  }
+  window.switchTab = switchTab;
+
+  function togglePw(id, btn){
+    var el = document.getElementById(id);
+    var show = el.type === 'password';
+    el.type = show ? 'text' : 'password';
+    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    btn.innerHTML = show
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  }
+  window.togglePw = togglePw;
+
+  function scoreStrength(pw){
+    var score = 0;
+    if(pw.length >= 8) score++;
+    if(/[A-Z]/.test(pw)) score++;
+    if(/[0-9]/.test(pw)) score++;
+    if(/[^A-Za-z0-9]/.test(pw)) score++;
+    if(pw.length === 0) score = 0;
+    var colors = ['','#dc2626','#f59e0b','#eab308','#16a34a'];
+    var labels = ['','Weak','Fair','Good','Strong'];
+    var segs = document.querySelectorAll('#strength .seg');
+    segs.forEach(function(s, idx){ s.style.background = idx < score ? colors[score] : 'var(--border)'; });
+    document.getElementById('strength-label').textContent = pw.length ? labels[score] + ' password' : '';
+  }
+  window.scoreStrength = scoreStrength;
+
+  function setErr(fieldId, msg){
+    var f = document.getElementById(fieldId); if(!f) return;
+    f.classList.add('error');
+    if(msg){ var e = f.querySelector('.field-error'); if(e) e.textContent = msg; }
+  }
+  function clearErr(fieldId){ var f = document.getElementById(fieldId); if(f) f.classList.remove('error'); }
+  function showAlert(id, msg){ var a = document.getElementById(id); a.textContent = msg; a.classList.add('show'); }
+  function hideAlert(id){ document.getElementById(id).classList.remove('show'); }
+  function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+  function setLoading(btnId, on){ document.getElementById(btnId).setAttribute('data-loading', on ? 'true' : 'false'); }
+  function looksTaken(status, data, msg){ return status === 409 || (data && data.field === 'email') || /exist|already|registered|in use|taken/i.test(msg || ''); }
+
+  document.getElementById('login-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    hideAlert('login-alert'); clearErr('lf-email'); clearErr('lf-password');
+    var email = document.getElementById('l-email').value.trim();
+    var password = document.getElementById('l-password').value;
+    var ok = true;
+    if(!isEmail(email)){ setErr('lf-email'); ok = false; }
+    if(!password){ setErr('lf-password'); ok = false; }
+    if(!ok) return;
+    setLoading('login-btn', true);
+    try{
+      var res = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email, password: password }) });
+      var data = {}; try{ data = await res.json(); }catch(_){}
+      if(res.ok && (data.success === true || data.user || data.id)){
+        document.getElementById('login-success').classList.add('show');
+        setTimeout(function(){ window.location.href = data.redirect || '/app'; }, 500);
+      }else{
+        setLoading('login-btn', false);
+        showAlert('login-alert', data.error || 'Invalid email or password.');
+      }
+    }catch(err){ setLoading('login-btn', false); showAlert('login-alert', 'Network error. Please try again.'); }
+  });
+
+  document.getElementById('register-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    hideAlert('register-alert');
+    ['rf-name','rf-email','rf-password','rf-confirm','rf-org'].forEach(clearErr);
+    document.getElementById('terms-error').style.display = 'none';
+
+    var name = document.getElementById('r-name').value.trim();
+    var email = document.getElementById('r-email').value.trim();
+    var password = document.getElementById('r-password').value;
+    var confirm = document.getElementById('r-confirm').value;
+    var terms = document.getElementById('r-terms').checked;
+    var orgInput = document.getElementById('r-org');
+    var ok = true;
+    if(!name){ setErr('rf-name'); ok = false; }
+    if(!isEmail(email)){ setErr('rf-email'); ok = false; }
+    if(orgInput && orgInput.required && !orgInput.value.trim()){ setErr('rf-org'); ok = false; }
+    if(password.length < 8){ setErr('rf-password'); ok = false; }
+    if(confirm !== password){ setErr('rf-confirm'); ok = false; }
+    if(!terms){ document.getElementById('terms-error').style.display = 'block'; ok = false; }
+    if(!ok) return;
+
+    var body = {};
+    new FormData(e.target).forEach(function(v, k){ if(k !== 'confirm') body[k] = v; });
+
+    setLoading('register-btn', true);
+    try{
+      var res = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      var data = {}; try{ data = await res.json(); }catch(_){}
+      if(res.ok && (data.success === true || data.user || data.id)){
+        document.getElementById('register-success').classList.add('show');
+        setTimeout(function(){ window.location.href = data.redirect || '/app'; }, 500);
+      }else{
+        setLoading('register-btn', false);
+        var msg = data.error || 'Unable to create account.';
+        if(looksTaken(res.status, data, msg)){ setErr('rf-email', msg); }
+        else { showAlert('register-alert', msg); }
+      }
+    }catch(err){ setLoading('register-btn', false); showAlert('register-alert', 'Network error. Please try again.'); }
+  });
+
+  (function(){
+    var params = new URLSearchParams(window.location.search);
+    if(params.get('tab') === 'register') switchTab('register');
+    var err = params.get('error');
+    if(err === 'auth_failed' || err === 'google' || err === 'google_cancelled') showAlert('login-alert', 'Google sign-in failed. Please try again.');
+  })();
+</script>
+</body>
+</html>
