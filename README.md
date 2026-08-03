@@ -58,7 +58,7 @@ That's it! The SQLite database is created automatically on first run.
 3. Copy key (starts with `gsk_`)
 4. Paste into `.env` as `GROQ_API_KEY`
 
-**Groq is completely free** — no billing required. It uses LLaMA 3 and responds in under 1 second.
+**Groq is completely free** — no billing required. It uses `qwen/qwen3.6-27b` and responds in under 1 second.
 
 ### Anthropic API Key (for content generation tools)
 1. Go to **console.anthropic.com**

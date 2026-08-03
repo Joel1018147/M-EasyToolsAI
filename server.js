@@ -476,16 +476,61 @@ app.post('/api/auth/regenerate-key', requireAuth, async (req, res) => {
 // ════════════════════════════════════════════════════
 //  AI CHAT — Groq
 // ════════════════════════════════════════════════════
+
+// Ecosystem canonical model. Groq decommissions llama-3.3-70b-versatile and
+// llama-3.1-8b-instant on 2026-08-16; every platform is standardised on this.
+//
+// Groq serves qwen/qwen3.6-27b on its PREVIEW tier, so it can be rate-limited,
+// degraded or withdrawn with little notice. GROQ_MODEL overrides it without a
+// code change — set it on Railway and redeploy. Documented fallback:
+// openai/gpt-oss-120b. See .env.example and CLAUDE.md.
+const DEFAULT_GROQ_MODEL = 'qwen/qwen3.6-27b';
+const GROQ_MODEL = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
+
+// POST /api/chat lets an API-key holder name a model, and that name is
+// published in public/api-docs.html — so there are external integrations out
+// there with a now-dead model string hardcoded, and no way for them to know
+// until every request starts returning model_decommissioned. Map the known-dead
+// names onto the current model instead of forwarding a guaranteed 400.
+// An unrecognised model is still passed through untouched: this is a
+// compatibility shim, not a whitelist, and silently rewriting a model somebody
+// deliberately chose would be worse than letting Groq answer for itself.
+const DEPRECATED_MODELS = new Set([
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'llama3-70b-8192',
+]);
+function normaliseModel(requested) {
+  if (!requested || DEPRECATED_MODELS.has(requested)) return GROQ_MODEL;
+  return requested;
+}
+
+// `reasoning_effort` / `reasoning_format` are supported by qwen/qwen3.6-* ONLY.
+// Sending them to any other model risks a 400 — and /api/chat accepts a
+// caller-supplied model, so the gate is checked against the model actually
+// being sent. Ported verbatim from Dragon-Ginseng-CS-AI.
+function supportsReasoningEffortNone(model) {
+  return /^qwen\/qwen3\.6/.test(model);
+}
+function withReasoning(body) {
+  if (supportsReasoningEffortNone(body.model)) {
+    body.reasoning_effort = 'none';   // marketing copy, nothing to reason about
+    body.reasoning_format = 'hidden'; // and never emit a reasoning block
+  }
+  return body;
+}
+
 app.post('/api/chat', requireApiKey, apiLimiter, async (req, res) => {
   try {
-    const { messages, model = 'llama-3.3-70b-versatile' } = req.body;
+    const { messages, model: requestedModel } = req.body;
+    const model = normaliseModel(requestedModel);
     if (!Array.isArray(messages)) return res.status(400).json({ error: 'Messages array required' });
     const groqKey = req.user.groq_key || GROQ_KEY;
     if (!groqKey) return res.status(400).json({ error: 'Groq API key not configured' });
     const systemPrompt = `You are M-EasyTools AI, an expert marketing strategist and copywriter. Help with content creation, SEO, email marketing, social media, ad campaigns, and brand strategy. Be specific and actionable. User brand: ${req.user.brand_name || 'Not set'}. Tone: ${req.user.brand_tone || 'Professional'}.`;
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, max_tokens: 1024, temperature: 0.7, messages: [{ role: 'system', content: systemPrompt }, ...messages.slice(-20)] })
+      body: JSON.stringify(withReasoning({ model, max_tokens: 1024, temperature: 0.7, messages: [{ role: 'system', content: systemPrompt }, ...messages.slice(-20)] }))
     });
     if (!response.ok) { const e = await response.json(); throw new Error(e.error?.message || 'Groq error'); }
     const data = await response.json();
@@ -508,7 +553,7 @@ async function generateWithGroq(user, prompt, toolId, toolName, tone, variants =
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 2500, temperature: 0.75, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullPrompt }] })
+    body: JSON.stringify(withReasoning({ model: GROQ_MODEL, max_tokens: 2500, temperature: 0.75, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullPrompt }] }))
   });
 
   if (!response.ok) { const e = await response.json(); throw new Error(e.error?.message || 'Groq error'); }
@@ -673,15 +718,15 @@ Optimise this press release to rank in search engines AND be cited in AI-generat
         const geoRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+          body: JSON.stringify(withReasoning({
+            model: GROQ_MODEL,
             max_tokens: 80,
             temperature: 0.1,
             messages: [{
               role: 'user',
               content: `Rate this press release 0-100 for likelihood of being cited in AI-generated answers. Consider: named entities, specific facts/numbers, quotable statements, newsworthiness, clear subject-predicate-object sentences. Return ONLY valid JSON, no other text: {"score":number,"reason":"one sentence"}\n\nPRESS RELEASE (first 1000 chars):\n${result.text.substring(0, 1000)}`
             }]
-          })
+          }))
         });
         if (geoRes.ok) {
           const geoData = await geoRes.json();

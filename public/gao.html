@@ -818,7 +818,11 @@ Format with clear headers and be specific to ${brand} in the ${industry || 'give
     const res = await fetch('/api/chat', {
       method:'POST',
       headers:authH(),
-      body:JSON.stringify({messages:[{role:'user',content:userPrompt}],model:'llama-3.3-70b-versatile'})
+      // No `model` field on purpose: /api/chat falls back to the server's
+      // GROQ_MODEL when the caller does not name one. Hardcoding the model here
+      // would make this page ignore a GROQ_MODEL switch on Railway — the whole
+      // point of the env override is that an incident needs no code push.
+      body:JSON.stringify({messages:[{role:'user',content:userPrompt}]})
     });
     const data = await res.json();
     if(!res.ok) throw new Error(data.error||'Analysis failed');
