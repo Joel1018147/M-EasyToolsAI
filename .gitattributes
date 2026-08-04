@@ -1,0 +1,30 @@
+# Line endings: LF, deliberately.
+#
+# This app deploys to Linux, so LF is what actually runs. git's
+# core.autocrlf=true — the Windows default, and set on the machine this repo is
+# developed from — otherwise hands a fresh clone CRLF, leaving the working copy
+# different from production for no reason anyone chose.
+#
+# This is HYGIENE, not a fix for a defect in this repo. An audit on 2026-08-04
+# checked every file under test/ that reads real source:
+#   test/negative-control-gate3.js PREPENDS its plant (PLANT_LINE + original).
+#   There is no anchor to break.
+# Nothing here is currently CRLF-fragile.
+#
+# The reason it is pinned anyway: the sibling platform Dragon-Ginseng-CS-AI lost
+# 21 of 88 negative-control plants to CRLF, silently, and only found out on a
+# fresh clone. Its harnesses match MULTI-LINE anchors, which is the fragile
+# shape; this repo's do not. Pinning LF keeps that true if a future harness is
+# written the other way, rather than relying on nobody writing one.
+
+* text=auto eol=lf
+
+# Never touch these, whatever they contain.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
