@@ -9,7 +9,7 @@
        served at  /css/modus-design-system.css
 
    Usage:
-     <html data-platform="do|tools|commerce|halal|school|member|mall|campus|dgcs"
+     <html data-platform="do|tools|commerce|halal|school|member|mall|campus|dgcs|esg"
            data-theme="light|dark">
      <link rel="stylesheet" href="/css/modus-design-system.css">
 
@@ -23,6 +23,7 @@
      mall      M-EasyMall AI+ Super App                #D97706  amber
      campus    The Campus Sport Center Super App AI+   #DC2626  crimson
      dgcs      Dragon Ginseng CS AI+                   #7C2D12  brown
+     esg       Modus ESG Super App AI+                 #4D7C0F  moss green
 
    v2.0 changes (2026-08-05):
      + 4 missing platform accents added (member, mall, campus, dgcs).
@@ -209,6 +210,19 @@
   --accent-contrast: #ffffff;
 }
 
+[data-platform="esg"] {
+  /* Modus ESG Super App AI+. Values taken from ESG's own
+     public/css/modus-design-system.css:229 per §2b — the README says the
+     same thing, but the README is not the source of truth. ESG chose these
+     itself and shipped them before the master knew it existed.            */
+  --accent: #4D7C0F;
+  --accent-2: #3F6212;
+  --accent-bg: rgba(77,124,15,0.08);
+  --accent-glow: rgba(77,124,15,0.20);
+  --accent-light: #E4EFD1;
+  --accent-contrast: #ffffff;
+}
+
 [data-platform="dgcs"] {
   /* #7C2D12, NOT #C2410C. Dragon Ginseng has shipped this brown since its
      first commit (4c19d49) and test/harness.js:187 asserts it. v2.0 briefly
@@ -267,6 +281,7 @@
 [data-theme="dark"][data-platform="member"]   { --accent-light: rgba(124,58,237,0.22); }
 [data-theme="dark"][data-platform="mall"]     { --accent-light: rgba(217,119,6,0.22); }
 [data-theme="dark"][data-platform="campus"]   { --accent-light: rgba(220,38,38,0.22); }
+[data-theme="dark"][data-platform="esg"]      { --accent-light: rgba(77,124,15,0.22); }
 [data-theme="dark"][data-platform="dgcs"]     { --accent-light: rgba(124,45,18,0.22); }
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
