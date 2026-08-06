@@ -1,21 +1,52 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   MODUS AI ECOSYSTEM — Unified Design System v1.0
+   MODUS AI ECOSYSTEM — Unified Design System v2.0
    ─────────────────────────────────────────────────────────────────────────
-   Single source of truth for all MODUS AI platforms.
+   THE single source of truth for all MODUS AI platforms.
    Load this file FIRST, before any platform-specific styles.
 
-   Usage:
-     <html data-platform="do|tools|commerce" data-theme="light|dark">
-     <link rel="stylesheet" href="/modus-design-system.css">
+   CANONICAL PATH — every repo, no exceptions:
+       public/css/modus-design-system.css
+       served at  /css/modus-design-system.css
 
-   Platforms:
-     do        M-EasyDo AI+       accent: #1a73e8 (blue)
-     tools     M-EasyTools AI+    accent: #E8622A (orange)
-     commerce  M-EasyCommerce AI+ accent: #16A34A (green)
+   Usage:
+     <html data-platform="do|tools|commerce|halal|school|member|mall|campus|dgcs"
+           data-theme="light|dark">
+     <link rel="stylesheet" href="/css/modus-design-system.css">
+
+   Platforms — the ONLY difference between systems is the accent:
+     do        M-EasyDo AI+ Super App                  #1a73e8  blue
+     tools     M-EasyTools AI+ Super App               #E8622A  orange
+     commerce  M-EasyCommerce AI+ Super App            #16A34A  green
+     halal     M-EasyHalal AI+ Super App               #0D9488  teal
+     school    M-EasySchool AI+ Super App              #1E40AF  royal blue
+     member    M-EasyMember AI+ Super App              #7C3AED  purple
+     mall      M-EasyMall AI+ Super App                #D97706  amber
+     campus    The Campus Sport Center Super App AI+   #DC2626  crimson
+     dgcs      Dragon Ginseng CS AI+                   #7C2D12  brown
+
+   v2.0 changes (2026-08-05):
+     + 4 missing platform accents added (member, mall, campus, dgcs).
+       Before this, those 4 lived only in per-repo FORKS. Halal and School
+       had the same problem and Halal was rendering in M-EasyDo's blue on
+       every page except its login screen.
+     + --accent-light and --accent-contrast now defined for ALL 9 platforms.
+       Previously only "school" declared --accent-light, so any other
+       platform using it rendered transparent and threw nothing.
+     + Dark-mode accent parity for all 9.
+     + §48 AUTH LAYER — login / register / forgot / OTP. The design system
+       never defined an auth surface, which is exactly why every platform's
+       login portal was built differently.
+     + §49 SETTINGS LAYER — the settings shell every platform must use.
+     + §50 responsive rules for both new layers.
+
+   RULE: this file is edited in ONE place and copied byte-identical to all
+   9 repos. A per-repo fork of this file is a defect, not a customisation.
+   If a platform needs something this file does not have, it is added HERE.
 ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. GOOGLE FONTS ──────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&display=swap');
 
 /* ── 2. CSS VARIABLES — LIGHT MODE DEFAULTS ──────────────────────────── */
 :root {
@@ -50,6 +81,10 @@
   /* Status palette */
   --red: #ef4444;
   --red-bg: rgba(239,68,68,0.08);
+  /* Aliases — --danger is the name people reach for. Both were used in
+     M-EasyHalal's modus-widget.js and resolved to nothing.             */
+  --danger: var(--red);
+  --danger-bg: var(--red-bg);
   --green: #16a34a;
   --green-bg: rgba(22,163,74,0.08);
   --amber: #d97706;
@@ -75,29 +110,46 @@
   --topbar-h: 58px;
 
   /* Typography */
+  /* Two fonts, two jobs. Inter for everything you READ, Outfit for
+     everything you SCAN. Never introduce a third.                       */
   --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Mono', monospace;
 }
 
 /* ── 3. PLATFORM ACCENT OVERRIDES ────────────────────────────────────── */
+/* Every platform declares the SAME six tokens. No platform may declare an
+   accent token that the others do not. Adding a 10th platform means adding
+   one block here — nothing else in this file changes.                     */
+
 [data-platform="do"] {
   --accent: #1a73e8;
   --accent-2: #1557b0;
   --accent-bg: rgba(26,115,232,0.08);
   --accent-glow: rgba(26,115,232,0.20);
+  --accent-light: #D6E4FA;
+  --accent-contrast: #ffffff;
 }
+
 [data-platform="tools"] {
   --accent: #E8622A;
   --accent-2: #C44E1E;
   --accent-bg: rgba(232,98,42,0.08);
   --accent-glow: rgba(232,98,42,0.20);
+  --accent-light: #FBE2D8;
+  --accent-contrast: #ffffff;
 }
+
 [data-platform="commerce"] {
   --accent: #16A34A;
   --accent-2: #0f7a37;
   --accent-bg: rgba(22,163,74,0.08);
   --accent-glow: rgba(22,163,74,0.20);
-  /* Backward-compat aliases for existing inline styles in route files */
+  --accent-light: #D7F0E1;
+  --accent-contrast: #ffffff;
+  /* Backward-compat aliases for existing inline styles in route files.
+     DEPRECATED — do not use in new code. Delete once Commerce route files
+     are cleaned of inline colour styles.                                  */
   --brown-dark: #3D1F0A;
   --brown-mid: #5C3317;
   --brown-light: #8B5E3C;
@@ -110,6 +162,65 @@
   --gray-600: var(--text-2);
   --gray-800: var(--text);
   --orange: var(--amber);
+}
+
+[data-platform="halal"] {
+  --accent: #0D9488;
+  --accent-2: #0F766E;
+  --accent-bg: rgba(13,148,136,0.08);
+  --accent-glow: rgba(13,148,136,0.20);
+  --accent-light: #D2EDEA;
+  --accent-contrast: #ffffff;
+}
+
+[data-platform="school"] {
+  --accent: #1E40AF;
+  --accent-2: #1E3A8A;
+  --accent-bg: rgba(30,64,175,0.08);
+  --accent-glow: rgba(30,64,175,0.20);
+  --accent-light: #DBEAFE;
+  --accent-contrast: #ffffff;
+}
+
+[data-platform="member"] {
+  --accent: #7C3AED;
+  --accent-2: #6D28D9;
+  --accent-bg: rgba(124,58,237,0.08);
+  --accent-glow: rgba(124,58,237,0.20);
+  --accent-light: #E9DDFD;
+  --accent-contrast: #ffffff;
+}
+
+[data-platform="mall"] {
+  --accent: #D97706;
+  --accent-2: #B45309;
+  --accent-bg: rgba(217,119,6,0.08);
+  --accent-glow: rgba(217,119,6,0.20);
+  --accent-light: #FBEBD5;
+  --accent-contrast: #ffffff;
+}
+
+[data-platform="campus"] {
+  --accent: #DC2626;
+  --accent-2: #B91C1C;
+  --accent-bg: rgba(220,38,38,0.08);
+  --accent-glow: rgba(220,38,38,0.20);
+  --accent-light: #FBDBDB;
+  --accent-contrast: #ffffff;
+}
+
+[data-platform="dgcs"] {
+  /* #7C2D12, NOT #C2410C. Dragon Ginseng has shipped this brown since its
+     first commit (4c19d49) and test/harness.js:187 asserts it. v2.0 briefly
+     carried #C2410C because AUDIT_REPORT_CURRENT.md recorded that value and
+     it was copied here without checking the code. Verify accents against
+     the repo, never against a document.                                    */
+  --accent: #7C2D12;
+  --accent-2: #5C1F0C;
+  --accent-bg: rgba(124,45,18,0.08);
+  --accent-glow: rgba(124,45,18,0.20);
+  --accent-light: #FEF0E7;
+  --accent-contrast: #ffffff;
 }
 
 /* ── 4. DARK MODE ────────────────────────────────────────────────────── */
@@ -141,6 +252,22 @@
   --gray-600: var(--text-2);
   --gray-800: var(--text);
 }
+
+[data-theme="dark"][data-platform="school"] {
+  --accent-light: rgba(30,64,175,0.25);
+}
+
+/* Dark-mode accent parity — --accent-light must not stay a light tint on a
+   dark surface. One rule per platform, same shape for all 9.              */
+[data-theme="dark"][data-platform="do"]       { --accent-light: rgba(26,115,232,0.22); }
+[data-theme="dark"][data-platform="tools"]    { --accent-light: rgba(232,98,42,0.22); }
+[data-theme="dark"][data-platform="commerce"] { --accent-light: rgba(22,163,74,0.22); }
+[data-theme="dark"][data-platform="halal"]    { --accent-light: rgba(13,148,136,0.22); }
+[data-theme="dark"][data-platform="school"]   { --accent-light: rgba(30,64,175,0.28); }
+[data-theme="dark"][data-platform="member"]   { --accent-light: rgba(124,58,237,0.22); }
+[data-theme="dark"][data-platform="mall"]     { --accent-light: rgba(217,119,6,0.22); }
+[data-theme="dark"][data-platform="campus"]   { --accent-light: rgba(220,38,38,0.22); }
+[data-theme="dark"][data-platform="dgcs"]     { --accent-light: rgba(124,45,18,0.22); }
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
 *, *::before, *::after {
@@ -2450,3 +2577,798 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 @media (max-width: 1024px) {
   .hide-tablet { display: none !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   48. AUTH LAYER — login / register / forgot password / OTP
+   ──────────────────────────────────────────────────────────────────────
+   Every platform's auth portal is THIS markup. The only difference
+   permitted between platforms is data-platform on <html> and the strings
+   in .auth-brand-title / .auth-brand-tagline / .auth-brand-features.
+   No platform may invent its own login layout.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* --- 48.1 shell ---------------------------------------------------- */
+.auth-body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.auth-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* --- 48.2 brand panel (left) --------------------------------------- */
+.auth-brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-2) 55%, var(--accent-2) 210%);
+  color: #f1f5f9;
+  overflow: hidden;
+}
+.auth-brand::after {
+  content: '';
+  position: absolute;
+  right: -140px;
+  bottom: -140px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: var(--accent-glow);
+  filter: blur(80px);
+  pointer-events: none;
+}
+.auth-brand > * { position: relative; z-index: 1; }
+
+.auth-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.auth-brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+  flex-shrink: 0;
+}
+
+.auth-brand-body { max-width: 460px; }
+.auth-brand-title {
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+  color: #fff;
+}
+.auth-brand-tagline {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 30px;
+}
+.auth-brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  list-style: none;
+}
+.auth-brand-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 13.5px;
+  color: #e2e8f0;
+}
+.auth-brand-feature-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.auth-brand-footer {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+/* --- 48.3 form panel (right) --------------------------------------- */
+.auth-panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+.auth-panel-top {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+}
+.auth-card-boxed {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  padding: 32px;
+}
+
+.auth-logo-mobile {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 26px;
+}
+
+.auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.auth-subtitle {
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-bottom: 26px;
+}
+
+/* --- 48.4 sign in / register tab switch ---------------------------- */
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 24px;
+}
+.auth-tab {
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: all .18s ease;
+}
+.auth-tab:hover { color: var(--text); }
+.auth-tab.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- 48.5 form ----------------------------------------------------- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.auth-form .form-group { margin-bottom: 0; }
+
+.auth-submit {
+  width: 100%;
+  justify-content: center;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: -2px;
+}
+.auth-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  user-select: none;
+  cursor: pointer;
+}
+.auth-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  transition: opacity .15s ease;
+}
+.auth-link:hover { opacity: .78; text-decoration: underline; }
+
+.auth-alt {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.auth-alt a { color: var(--accent); font-weight: 600; }
+.auth-alt a:hover { text-decoration: underline; }
+
+/* --- 48.6 OAuth ---------------------------------------------------- */
+.auth-oauth {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-oauth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all .18s ease;
+}
+.btn-oauth:hover {
+  background: var(--surface-2);
+  border-color: var(--muted);
+}
+.btn-oauth:disabled { opacity: .5; cursor: not-allowed; }
+.btn-oauth svg,
+.btn-oauth img { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* Region gate: China deployments must hide Google OAuth (it does not
+   resolve behind the GFW). Set data-region="cn" on <html>.               */
+[data-region="cn"] .oauth-google { display: none !important; }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* --- 48.7 password field ------------------------------------------- */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 44px; }
+.pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  transition: all .15s ease;
+}
+.pw-toggle:hover { color: var(--text); background: var(--surface-2); }
+
+.pw-strength { margin-top: 9px; }
+.pw-strength-track {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.pw-strength-seg {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background .25s ease;
+}
+.pw-strength-label {
+  margin-top: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pw-strength[data-score="1"] .pw-strength-seg:nth-child(-n+1) { background: var(--red); }
+.pw-strength[data-score="2"] .pw-strength-seg:nth-child(-n+2) { background: var(--amber); }
+.pw-strength[data-score="3"] .pw-strength-seg:nth-child(-n+3) { background: var(--blue); }
+.pw-strength[data-score="4"] .pw-strength-seg { background: var(--green); }
+.pw-strength[data-score="1"] .pw-strength-label { color: var(--red); }
+.pw-strength[data-score="2"] .pw-strength-label { color: var(--amber); }
+.pw-strength[data-score="3"] .pw-strength-label { color: var(--blue); }
+.pw-strength[data-score="4"] .pw-strength-label { color: var(--green); }
+
+/* --- 48.8 legal consent -------------------------------------------- */
+.auth-legal {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.auth-legal input { margin-top: 2px; flex-shrink: 0; }
+.auth-legal a { color: var(--accent); font-weight: 600; }
+.auth-legal a:hover { text-decoration: underline; }
+
+/* --- 48.9 OTP / verification code ---------------------------------- */
+.otp-group {
+  display: flex;
+  gap: 9px;
+  justify-content: space-between;
+}
+.otp-input {
+  flex: 1;
+  min-width: 0;
+  height: 54px;
+  text-align: center;
+  font-size: 21px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  transition: all .15s ease;
+}
+.otp-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.otp-resend {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* --- 48.10 language switch (trilingual EN / BM / 中文) --------------- */
+.lang-switch {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.lang-switch-btn {
+  padding: 5px 11px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: all .18s ease;
+}
+.lang-switch-btn:hover { color: var(--text); }
+.lang-switch-btn.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-footer {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   49. SETTINGS LAYER
+   ──────────────────────────────────────────────────────────────────────
+   Every platform's settings page is THIS shell with THIS section set.
+   Platform-specific settings are added as ADDITIONAL sections at the end
+   of the nav — they never replace or reorder the mandatory ten.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* --- 49.1 settings nav --------------------------------------------- */
+.settings-nav {
+  position: sticky;
+  top: calc(var(--topbar-h) + 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-nav-group-label {
+  padding: 14px 12px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.settings-nav-group-label:first-child { padding-top: 0; }
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-align: left;
+  width: 100%;
+  transition: all .16s ease;
+}
+.settings-nav-item:hover { background: var(--surface-2); color: var(--text); }
+.settings-nav-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+.settings-nav-item-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  opacity: .85;
+}
+.settings-nav-item-danger { color: var(--red); }
+.settings-nav-item-danger:hover { background: var(--red-bg); color: var(--red); }
+
+/* --- 49.2 settings content ----------------------------------------- */
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.settings-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.settings-section-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.settings-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-section-desc {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.settings-section-body { padding: 6px 22px; }
+.settings-section-foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* --- 49.3 settings row (label left, control right) ------------------ */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-stacked { align-items: flex-start; flex-direction: column; gap: 10px; }
+
+.settings-row-main { min-width: 0; flex: 1; }
+.settings-row-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.settings-row-desc {
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.settings-row-control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-row-control .form-group { margin-bottom: 0; }
+.settings-row-control input,
+.settings-row-control select { min-width: 200px; }
+.settings-row-stacked .settings-row-control { width: 100%; }
+.settings-row-stacked .settings-row-control input,
+.settings-row-stacked .settings-row-control select,
+.settings-row-stacked .settings-row-control textarea { width: 100%; }
+
+/* --- 49.4 avatar row ------------------------------------------------ */
+.settings-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-avatar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* --- 49.5 choice cards (theme / language / density) ----------------- */
+.settings-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.settings-choice-opt {
+  position: relative;
+  padding: 13px 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .18s ease;
+}
+.settings-choice-opt:hover { border-color: var(--border-2); color: var(--text); }
+.settings-choice-opt.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.settings-choice-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.settings-choice-swatch {
+  display: block;
+  height: 34px;
+  border-radius: var(--r-sm);
+  margin-bottom: 9px;
+  border: 1px solid var(--border);
+}
+.settings-choice-swatch-light { background: linear-gradient(135deg, #ffffff 50%, #f0f2f5 50%); }
+.settings-choice-swatch-dark  { background: linear-gradient(135deg, #1e293b 50%, #0f172a 50%); }
+.settings-choice-swatch-auto  { background: linear-gradient(135deg, #ffffff 50%, #0f172a 50%); }
+
+/* --- 49.6 secret / API key display ---------------------------------- */
+.settings-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.settings-key-value {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- 49.7 integration rows ------------------------------------------ */
+.settings-integration {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-integration:last-child { border-bottom: none; }
+.settings-integration-logo {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 17px;
+}
+
+/* --- 49.8 danger zone ----------------------------------------------- */
+.settings-danger {
+  border-color: var(--red);
+  box-shadow: none;
+}
+.settings-danger .settings-section-head {
+  background: var(--red-bg);
+  border-bottom-color: var(--red);
+}
+.settings-danger .settings-section-title { color: var(--red); }
+
+/* --- 49.9 sticky save bar -------------------------------------------- */
+.settings-savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+}
+.settings-savebar-msg { font-size: 12.5px; color: var(--text-2); }
+.settings-savebar[hidden] { display: none; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   50. RESPONSIVE — AUTH + SETTINGS
+   ══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 980px) {
+  .auth-split { grid-template-columns: 1fr; }
+  .auth-brand { display: none; }
+  .auth-logo-mobile { display: flex; }
+  .auth-panel { min-height: 100vh; min-height: 100dvh; align-items: flex-start; padding-top: 64px; }
+}
+
+@media (max-width: 640px) {
+  .auth-panel { padding: 56px 18px 34px; }
+  .auth-card-boxed { padding: 22px; border-radius: var(--r); }
+  .auth-title { font-size: 21px; }
+  .otp-input { height: 48px; font-size: 19px; }
+  .auth-row { gap: 8px; }
+}
+
+@media (max-width: 1024px) {
+  .settings-layout { grid-template-columns: 1fr; gap: 18px; }
+  .settings-nav {
+    position: static;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .settings-nav::-webkit-scrollbar { display: none; }
+  .settings-nav-group-label { display: none; }
+  .settings-nav-item {
+    width: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .settings-nav-item.active { border-color: var(--accent); }
+}
+
+@media (max-width: 640px) {
+  .settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .settings-row-control { width: 100%; }
+  .settings-row-control input,
+  .settings-row-control select { min-width: 0; width: 100%; }
+  .settings-section-head,
+  .settings-section-body,
+  .settings-section-foot { padding-left: 16px; padding-right: 16px; }
+  .settings-savebar { flex-direction: column; align-items: stretch; }
+  .settings-savebar .btn { justify-content: center; }
+}
+
+/* Bottom nav is 64px tall on mobile — settings save bar must clear it. */
+@media (max-width: 768px) {
+  .settings-savebar { bottom: 72px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   51. DISPLAY TYPEFACE
+   ──────────────────────────────────────────────────────────────────────
+   Outfit is the display face; Inter is the reading face. Applied to
+   headings and figures only — never to body copy, labels, table cells,
+   form inputs or help text, where Inter reads better at small sizes.
+
+   Before v2.0 this split existed only in M-EasyHalal and M-EasySchool
+   (74 pages), applied per-page and undeclared in the design system.
+   It is now a token, and it applies to all 9 platforms identically.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.page-title,
+.section-title,
+.card-title,
+.modal-title,
+.topbar-title,
+.sidebar-logo,
+.stat-value,
+.auth-brand-title,
+.auth-title,
+.settings-section-title,
+.h-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Opt out on a case-by-case basis if a heading must match body copy. */
+.font-body { font-family: var(--font) !important; }
+
+/* narrow numeric input — SST rate, percentages, quantities */
+.w-narrow { min-width: 100px; max-width: 140px; }
