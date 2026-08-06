@@ -341,9 +341,28 @@ function safeUser(u) {
   };
 }
 
+// UI CONTRACT §4.3e. This used to ask `req.accepts('json')`, which is the
+// wrong question: a browser sends
+//   Accept: text/html,application/xhtml+xml,…,*/*;q=0.8
+// and the wildcard makes that return 'json'. Every page navigation by a
+// logged-out visitor was answered with a raw JSON 401 instead of the login
+// screen — nobody was ever redirected to /login.
+//
+// The /api/ path prefix is the primary signal, because fetch() sends
+// Accept: */* by default and content negotiation alone misclassifies most
+// API calls. req.xhr and an explicit Accept are secondary, and
+// req.accepts(['html','json']) asks which the client PREFERS, so text/html
+// wins when a request advertises both.
+function wantsJson(req) {
+  if (req.originalUrl && req.originalUrl.startsWith('/api/')) return true;
+  if (req.path && req.path.startsWith('/api/')) return true;
+  if (req.xhr) return true;
+  return req.accepts(['html', 'json']) === 'json';
+}
+
 function requireAuth(req, res, next) {
   if (req.isAuthenticated()) return next();
-  if (req.accepts('json')) return res.status(401).json({ error: 'Please log in' });
+  if (wantsJson(req)) return res.status(401).json({ error: 'Please log in' });
   res.redirect('/login');
 }
 
