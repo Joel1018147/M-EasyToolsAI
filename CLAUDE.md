@@ -47,7 +47,7 @@ external integration hardcodes. Two consequences:
 
 4. "DONE" MEANS THE THREE-STAGE GATE, NOT JUST ACTIVE ON RAILWAY. Compile (ACTIVE)
    is a floor, not a finish line. A prompt isn't complete until Verify (live smoke
-   test against real-shaped data) and Structure (audit against the known failure
-   classes: setTimeout outside the job runner, \b regex on CJK-capable text,
-   un-parsed NUMERIC columns, nullable UNIQUE constraints, unsigned webhooks) both
-   pass. See Modus-Agent-OS/skills/three-stage-deploy-gate.md.
+   test against real-shaped data) and Structure (audit against
+   Modus-Agent-OS/skills/recurring-bugs-checklist.md, which is canonical) both
+   pass. Gate 0, the pre-deploy env-var diff, runs before all three. See
+   Modus-Agent-OS/skills/three-stage-deploy-gate.md.
