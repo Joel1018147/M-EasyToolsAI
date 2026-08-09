@@ -22,7 +22,9 @@
       "dashboard": "仪表板",
       "inbox": "收件箱",
       "billing": "账单",
-      "settings": "设置"
+      "settings": "设置",
+      "members": "会员",
+      "tasks": "任务"
     },
     "signOut": "退出登录"
   },
@@ -349,7 +351,8 @@
       "group": {
         "platform": "平台",
         "preferences": "偏好设置",
-        "danger": "危险操作"
+        "danger": "危险操作",
+        "thisPlatform": "本平台"
       },
       "profile": "个人资料",
       "security": "账户与安全",
@@ -360,7 +363,8 @@
       "team": "团队与角色",
       "integrations": "集成",
       "billing": "账单",
-      "danger": "危险区域"
+      "danger": "危险区域",
+      "business": "商户与渠道"
     },
     "profile": {
       "section": {

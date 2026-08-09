@@ -22,7 +22,9 @@
       "dashboard": "Papan Pemuka",
       "inbox": "Peti Masuk",
       "billing": "Pengebilan",
-      "settings": "Tetapan"
+      "settings": "Tetapan",
+      "members": "Ahli",
+      "tasks": "Tugasan"
     },
     "signOut": "Log Keluar"
   },
@@ -349,7 +351,8 @@
       "group": {
         "platform": "Platform",
         "preferences": "Keutamaan",
-        "danger": "Bahaya"
+        "danger": "Bahaya",
+        "thisPlatform": "Platform ini"
       },
       "profile": "Profil",
       "security": "Akaun & Keselamatan",
@@ -360,7 +363,8 @@
       "team": "Pasukan & Peranan",
       "integrations": "Integrasi",
       "billing": "Pengebilan",
-      "danger": "Zon Bahaya"
+      "danger": "Zon Bahaya",
+      "business": "Perniagaan & saluran"
     },
     "profile": {
       "section": {

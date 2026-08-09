@@ -22,7 +22,9 @@
       "dashboard": "Dashboard",
       "inbox": "Inbox",
       "billing": "Billing",
-      "settings": "Settings"
+      "settings": "Settings",
+      "members": "Members",
+      "tasks": "Tasks"
     },
     "signOut": "Sign out"
   },
@@ -349,7 +351,8 @@
       "group": {
         "platform": "Platform",
         "preferences": "Preferences",
-        "danger": "Danger"
+        "danger": "Danger",
+        "thisPlatform": "This platform"
       },
       "profile": "Profile",
       "security": "Account & Security",
@@ -360,7 +363,8 @@
       "team": "Team & Roles",
       "integrations": "Integrations",
       "billing": "Billing",
-      "danger": "Danger Zone"
+      "danger": "Danger Zone",
+      "business": "Business & channels"
     },
     "profile": {
       "section": {
