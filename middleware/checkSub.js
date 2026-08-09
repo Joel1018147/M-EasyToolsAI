@@ -1,6 +1,7 @@
 'use strict';
 
 const { pool } = require('../db');
+const { wantsJson } = require('../helpers/wantsJson');
 
 async function checkSub(req, res, next) {
   try {
@@ -67,7 +68,13 @@ async function checkSub(req, res, next) {
     }
 
     // ── HARD LOCKED (expired or grace elapsed) ───────────────────────────────────
-    if (req.accepts('json') || req.xhr) {
+    // §4.3e. This asked `req.accepts('json') || req.xhr`, and the wildcard in a
+    // browser's Accept header makes the first half true for an ordinary page
+    // navigation — so a lapsed user clicking a link to /seo got a raw JSON 402
+    // rendered as text instead of the billing page that would let them fix it.
+    // Same root cause as the guard in server.js, which was fixed on its own in
+    // 7732d91; this copy was missed. Both now call one function.
+    if (wantsJson(req)) {
       return res.status(402).json({
         error:    'subscription_expired',
         message:  'Your subscription has expired. Please renew at /billing.',

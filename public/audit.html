@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-platform="tools" lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -190,7 +190,7 @@ function missingTable(title, missing, enKeys) {
 }
 
 async function auditHardcoded() {
-  const pages = ['index.html','app.html','gao.html','login.html','signup.html','admin.html'];
+  const pages = ['index.html','app.html','gao.html','auth.html','seller.html'];
   const results = [];
   for (const page of pages) {
     try {
@@ -199,7 +199,7 @@ async function auditHardcoded() {
       const dataI18nCount = (html.match(/data-i18n=/g) || []).length;
       const dataI18nHtmlCount = (html.match(/data-i18n-html=/g) || []).length;
       const total = dataI18nCount + dataI18nHtmlCount;
-      const status = page === 'admin.html' ? '(admin - optional)' : total > 50 ? '✓ Good coverage' : total > 10 ? '⚠ Partial' : '❌ Needs work';
+      const status = page === 'seller.html' ? '(seller panel - optional)' : total > 50 ? '✓ Good coverage' : total > 10 ? '⚠ Partial' : '❌ Needs work';
       results.push(`<strong>${page}</strong>: ${total} translated nodes — ${status}`);
     } catch(e) {
       results.push(`<strong>${page}</strong>: Could not scan (${e.message})`);

@@ -9,7 +9,10 @@
     "test:gate3": "node test/gate3-structure.js",
     "test:gate3-negative": "node test/negative-control-gate3.js",
     "test:auth-guard": "node test/auth-guard-test.js",
-    "test": "npm run test:gate3 && npm run test:gate3-negative && npm run test:auth-guard"
+    "test:auth-contract": "node test/auth-contract.js",
+    "test:ui-contract": "node test/ui-contract.js",
+    "test:negative-ui": "node test/negative-control-ui.js",
+    "test": "npm run test:gate3 && npm run test:gate3-negative && npm run test:auth-guard && npm run test:auth-contract && npm run test:ui-contract && npm run test:negative-ui"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

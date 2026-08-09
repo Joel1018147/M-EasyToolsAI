@@ -3833,7 +3833,7 @@ function prDownloadReport(data) {
   const d = data.distribution;
   const outlets = data.outlets || [];
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>PR Report — ${d.headline}</title>
+  win.document.write(`<!DOCTYPE html><html data-platform="tools"><head><title>PR Report — ${d.headline}</title>
   <style>body{font-family:Arial,sans-serif;padding:40px;color:#1e293b}h1{font-size:20px;margin-bottom:4px}
   .meta{color:#64748b;font-size:13px;margin-bottom:24px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
   .stat{border:1px solid #e2e8f0;border-radius:8px;padding:14px}.stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}

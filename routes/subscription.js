@@ -102,7 +102,7 @@ async function checkoutHandler(req, res) {
     const backendURL  = `${APP_URL}/payment/backend`;
 
     res.send(`<!DOCTYPE html>
-<html lang="en">
+<html data-platform="tools" lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -385,7 +385,7 @@ async function sendTrialReminder(user, daysLeft) {
   const name = user.name || 'there';
 
   const html = `<!DOCTYPE html>
-<html>
+<html data-platform="tools">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">

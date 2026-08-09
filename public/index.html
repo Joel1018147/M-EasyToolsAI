@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-platform="tools" lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1137,7 +1137,7 @@ async function cwSend() {
     typingEl.querySelector('.cw-bubble').innerHTML = responseText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   } catch (err) {
-    typingEl.querySelector('.cw-bubble').innerHTML = "I'm having trouble connecting right now. Please <a href='https://m-easytools-ai-production.up.railway.app/login.html' style='color:#FF7A45'>sign in</a> to chat with the full AI assistant! 🚀";
+    typingEl.querySelector('.cw-bubble').innerHTML = "I'm having trouble connecting right now. Please <a href='https://m-easytools-ai-production.up.railway.app/login' style='color:#FF7A45'>sign in</a> to chat with the full AI assistant! 🚀";
   }
 
   document.getElementById('cw-send-btn').disabled = false;

@@ -10,7 +10,21 @@
     "why": "为何选择我们",
     "signin": "登录",
     "start": "免费开始 →",
-    "lang_label": "选择语言"
+    "lang_label": "选择语言",
+    "bottom": {
+      "home": "首页"
+    },
+    "group": {
+      "account": "账户",
+      "workspace": "工作空间"
+    },
+    "sidebar": {
+      "dashboard": "仪表板",
+      "inbox": "收件箱",
+      "billing": "账单",
+      "settings": "设置"
+    },
+    "signOut": "退出登录"
   },
   "hero": {
     "badge": "M-EasyTools AI+ Super App — 由 Modus AI Associates 强力驱动",
@@ -245,7 +259,8 @@
     "dashboard": "控制台",
     "privacy": "隐私政策",
     "terms": "服务条款",
-    "contact": "联系我们"
+    "contact": "联系我们",
+    "support": "需要帮助？请联系"
   },
   "chat": {
     "tooltip": "AI 助手 — 点击向我提问！",
@@ -257,5 +272,373 @@
     "q3": "AI 工具",
     "placeholder": "随时向我提问关于营销的问题…",
     "powered": "由"
+  },
+  "brand": {
+    "title": "十一款 AI 营销工具，一个工作空间。",
+    "copyright": "© 2026 Modus AI Associates. 版权所有。",
+    "legal": "马来西亚 · 符合 PDPA · 数据存放于本区域"
+  },
+  "tab": {
+    "signin": "登录",
+    "register": "注册"
+  },
+  "login": {
+    "title": "欢迎回来",
+    "subtitle": "登录以继续前往您的工作空间。",
+    "remember": "保持登录状态",
+    "forgot": "忘记密码？",
+    "submit": "登录",
+    "noAccount": "还没有账户？"
+  },
+  "register": {
+    "title": "创建您的账户",
+    "subtitle": "免费开始，无需信用卡。",
+    "submit": "创建账户",
+    "hasAccount": "已有账户？",
+    "consentPre": "我同意",
+    "terms": "服务条款",
+    "and": "和",
+    "privacy": "隐私政策"
+  },
+  "forgot": {
+    "title": "重置您的密码",
+    "subtitle": "输入您的电子邮件，我们将发送重置链接。",
+    "submit": "发送重置链接",
+    "back": "← 返回登录"
+  },
+  "otp": {
+    "title": "输入验证码",
+    "subtitle": "我们已将 6 位验证码发送至您的邮箱。",
+    "submit": "验证",
+    "resend": "重新发送验证码",
+    "noCode": "没有收到？"
+  },
+  "field": {
+    "name": "姓名",
+    "email": "电子邮件地址",
+    "password": "密码",
+    "phone": "手机号码",
+    "phoneHint": "用于 WhatsApp 通知，选填。",
+    "accountType": "我的注册身份是",
+    "accountTypeHint": "员工账户由管理员创建。"
+  },
+  "oauth": {
+    "google": "使用 Google 继续",
+    "googleUp": "使用 Google 注册"
+  },
+  "divider": {
+    "or": "或"
+  },
+  "pw": {
+    "enter": "至少 8 个字符"
+  },
+  "common": {
+    "skipToContent": "跳至内容"
+  },
+  "page": {
+    "settings": {
+      "subtitle": "管理您的个人资料、安全设置，以及本平台的运作方式。"
+    }
+  },
+  "settings": {
+    "savebar": {
+      "msg": "您有未保存的更改。",
+      "discard": "放弃"
+    },
+    "nav": {
+      "group": {
+        "platform": "平台",
+        "preferences": "偏好设置",
+        "danger": "危险操作"
+      },
+      "profile": "个人资料",
+      "security": "账户与安全",
+      "appearance": "外观",
+      "language": "语言与地区",
+      "notifications": "通知",
+      "ai": "AI 与 Asha",
+      "team": "团队与角色",
+      "integrations": "集成",
+      "billing": "账单",
+      "danger": "危险区域"
+    },
+    "profile": {
+      "section": {
+        "desc": "您在本平台上的显示方式。"
+      },
+      "profilePhoto": {
+        "label": "头像",
+        "desc": "JPG 或 PNG，最大 2 MB。方形图片效果最佳。",
+        "upload": "上传",
+        "remove": "移除"
+      },
+      "name": {
+        "label": "姓名",
+        "desc": "显示给您的团队，并出现在您生成的文档上。"
+      },
+      "email": {
+        "label": "电子邮件地址",
+        "desc": "用于登录和系统通知。"
+      },
+      "verified": "已验证",
+      "phone": {
+        "label": "手机号码",
+        "desc": "WhatsApp 通知的接收号码。"
+      },
+      "timezone": {
+        "label": "时区",
+        "desc": "所有时间戳和计划任务均使用此时区。",
+        "opt": {
+          "asiaKuala": "亚洲/吉隆坡 (GMT+8)",
+          "asiaSingapore": "亚洲/新加坡 (GMT+8)",
+          "asiaShanghai": "亚洲/上海 (GMT+8)",
+          "asiaDubai": "亚洲/迪拜 (GMT+4)"
+        }
+      },
+      "saveChanges": "保存更改",
+      "cancel": "取消"
+    },
+    "security": {
+      "section": {
+        "desc": "密码、双重验证，以及您已登录的设备。"
+      },
+      "password": {
+        "label": "修改密码",
+        "desc": "至少 8 个字符。您在本设备上将保持登录状态。",
+        "currentLabel": "当前密码",
+        "newLabel": "新密码"
+      },
+      "twofa": {
+        "label": "双重验证",
+        "desc": "每次新登录时要求输入邮箱收到的 6 位验证码。"
+      },
+      "googleAccount": {
+        "label": "Google 账户",
+        "desc": "使用 Google 登录，无需密码。",
+        "disconnect": "断开连接"
+      },
+      "connected": "已连接",
+      "activeSessions": {
+        "label": "活动会话",
+        "desc": "当前登录您账户的设备。"
+      },
+      "col": {
+        "device": "设备",
+        "location": "位置",
+        "lastActive": "最后活动"
+      }
+    },
+    "appearance": {
+      "section": {
+        "desc": "仅适用于此浏览器。强调色由平台设定，无法更改。"
+      },
+      "theme": {
+        "label": "主题",
+        "desc": "保存在此设备上，键名为"
+      },
+      "sidebarCollapsed": {
+        "label": "侧边栏",
+        "desc": "在桌面端默认收起。移动端始终使用底部导航栏。"
+      },
+      "platformAccent": {
+        "label": "平台强调色",
+        "desc": "各平台固定。这是 Modus 各系统之间唯一的差异。"
+      },
+      "accent": "强调色"
+    },
+    "language": {
+      "section": {
+        "desc": "默认三语。税务设置将影响此后的每一笔交易。"
+      },
+      "lang": {
+        "label": "界面语言",
+        "desc": "无论此设置为何，Asha 都会以客户使用的语言回复。"
+      },
+      "currency": {
+        "label": "货币",
+        "desc": "所有金额的显示货币。",
+        "opt": {
+          "myrMalaysian": "MYR — 马来西亚令吉 (RM)",
+          "sgdSingapore": "SGD — 新加坡元",
+          "usdUs": "USD — 美元",
+          "cnyChinese": "CNY — 人民币 (¥)"
+        }
+      },
+      "dateFormat": {
+        "label": "日期格式",
+        "desc": "马来西亚惯例是日期在前。",
+        "opt": {
+          "ddMm": "DD/MM/YYYY",
+          "mmDd": "MM/DD/YYYY",
+          "yyyyMm": "YYYY-MM-DD"
+        }
+      },
+      "sstRate": {
+        "label": "SST 税率",
+        "desc": "销售与服务税（SST），非 GST。该税率存储于"
+      }
+    },
+    "notifications": {
+      "section": {
+        "desc": "选择您想接收的内容和接收方式。"
+      },
+      "email": {
+        "label": "电子邮件"
+      },
+      "notifyEmail": {
+        "label": "电子邮件",
+        "desc": "系统警报、每周摘要和账单通知。"
+      },
+      "notifyWhatsapp": {
+        "label": "WhatsApp",
+        "desc": "紧急警报和 Asha 转接通知将发送至您的手机号码。"
+      },
+      "notifyInApp": {
+        "label": "应用内",
+        "desc": "使用平台时弹出的提示通知。"
+      },
+      "digest": {
+        "label": "摘要频率",
+        "desc": "由计划任务发送，而非浏览器定时器。",
+        "opt": {
+          "never": "从不",
+          "dailyAt": "每天上午 8:00",
+          "weeklyOn": "每周一"
+        }
+      }
+    },
+    "ai": {
+      "section": {
+        "title": "🤖 AI 与 Asha",
+        "desc": "本平台 AI 层的运作方式。"
+      },
+      "insight": {
+        "title": "🤖 当前使用的模型",
+        "body": "运行时解析自"
+      },
+      "activeModel": {
+        "label": "当前模型",
+        "desc": "只读。通过 Railway 环境变量更改，而非在此处。"
+      },
+      "locked": "已锁定",
+      "ashaTone": {
+        "label": "Asha 语气",
+        "desc": "应用于 WhatsApp、Telegram 和 Messenger 上面向客户的回复。",
+        "opt": {
+          "professional": "专业",
+          "friendly": "友好",
+          "concise": "简洁"
+        }
+      },
+      "trilingualAutoDetect": {
+        "label": "三语自动识别",
+        "desc": "逐条识别 EN / BM / 中文 并以相同语言回复。"
+      },
+      "escalationPhone": {
+        "label": "转接联系人",
+        "desc": "Asha 将对话转交给真人的联系方式。"
+      },
+      "humanEscalation": {
+        "label": "转接真人",
+        "desc": "始终可用，无需模型配合即可触达。无法关闭。"
+      },
+      "aiUsageThis": {
+        "label": "本月 AI 用量",
+        "desc": "记录于"
+      }
+    },
+    "team": {
+      "section": {
+        "desc": "谁拥有访问权限，以及他们能做什么。"
+      },
+      "3Members": "3 位成员",
+      "inviteMember": "邀请成员",
+      "col": {
+        "member": "成员",
+        "role": "角色",
+        "status": "状态"
+      }
+    },
+    "integrations": {
+      "section": {
+        "desc": "已连接到本平台的外部服务。"
+      },
+      "notConnected": "未连接",
+      "pendingApproval": "待审批",
+      "whatsappBusinessApi": {
+        "label": "WhatsApp Business API",
+        "desc": "Asha 在 WhatsApp 上回复客户。需要",
+        "configure": "配置"
+      },
+      "telegramBot": {
+        "label": "Telegram 机器人",
+        "desc": "Asha 在 Telegram 上回复客户。",
+        "connect": "连接"
+      },
+      "paymentGateway": {
+        "label": "支付网关",
+        "desc": "iPay88、Fiuu、SenangPay 或 FPX。"
+      },
+      "myinvoisLhdnE": {
+        "label": "MyInvois（LHDN 电子发票）",
+        "desc": "马来西亚电子发票合规。"
+      },
+      "apiKey": {
+        "label": "API 密钥",
+        "desc": "用于移动应用和第三方集成。轮换后旧密钥立即失效。",
+        "reveal": "显示",
+        "copy": "复制",
+        "rotate": "轮换"
+      }
+    },
+    "billing": {
+      "section": {
+        "desc": "您的套餐、已启用的功能和发票。"
+      },
+      "currentPlan": {
+        "label": "当前套餐",
+        "desc": "按已启用功能逐月计费。",
+        "changePlan": "更改套餐"
+      },
+      "growth": "Growth",
+      "enabledFeatures": {
+        "label": "已启用功能",
+        "desc": "每项功能每月 RM100。"
+      },
+      "paymentMethod": {
+        "label": "支付方式",
+        "desc": "每月 1 日扣款。",
+        "update": "更新"
+      },
+      "invoices": {
+        "label": "发票",
+        "desc": "所示税额为开具每张发票时记录的 SST 税率。"
+      },
+      "col": {
+        "date": "日期",
+        "amount": "金额",
+        "sst": "SST"
+      }
+    },
+    "danger": {
+      "section": {
+        "title": "⚠ 危险区域",
+        "desc": "这些操作不可撤销，请仔细阅读。"
+      },
+      "exportAllData": {
+        "label": "导出全部数据",
+        "desc": "作为后台任务排队处理。归档就绪后您将收到电子邮件。",
+        "requestExport": "申请导出"
+      },
+      "transferOwnership": {
+        "label": "转让所有权",
+        "desc": "将此工作空间移交给其他成员。您将保留管理员权限。",
+        "transfer": "转让"
+      },
+      "deleteAccount": {
+        "label": "删除账户",
+        "desc": "所有数据将在 30 天宽限期后永久删除。此操作无法撤销。"
+      }
+    }
   }
 }

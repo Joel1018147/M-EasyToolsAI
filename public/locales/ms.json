@@ -10,7 +10,21 @@
     "why": "Mengapa Kami",
     "signin": "Log Masuk",
     "start": "Mulakan Percuma →",
-    "lang_label": "Pilih bahasa"
+    "lang_label": "Pilih bahasa",
+    "bottom": {
+      "home": "Utama"
+    },
+    "group": {
+      "account": "Akaun",
+      "workspace": "Ruang Kerja"
+    },
+    "sidebar": {
+      "dashboard": "Papan Pemuka",
+      "inbox": "Peti Masuk",
+      "billing": "Pengebilan",
+      "settings": "Tetapan"
+    },
+    "signOut": "Log Keluar"
   },
   "hero": {
     "badge": "M-EasyTools AI+ Super App — Dikuasakan oleh Modus AI Associates",
@@ -245,7 +259,8 @@
     "dashboard": "Papan Pemuka",
     "privacy": "Dasar Privasi",
     "terms": "Terma Perkhidmatan",
-    "contact": "Hubungi Kami"
+    "contact": "Hubungi Kami",
+    "support": "Perlu bantuan? Hubungi"
   },
   "chat": {
     "tooltip": "Pembantu AI — Klik untuk tanya saya apa sahaja!",
@@ -257,5 +272,373 @@
     "q3": "Alatan AI",
     "placeholder": "Tanya saya apa sahaja tentang pemasaran…",
     "powered": "Dikuasakan oleh"
+  },
+  "brand": {
+    "title": "Sebelas alat pemasaran AI. Satu ruang kerja.",
+    "copyright": "© 2026 Modus AI Associates. Hak cipta terpelihara.",
+    "legal": "Malaysia · Mematuhi PDPA · Data dihoskan dalam rantau"
+  },
+  "tab": {
+    "signin": "Log Masuk",
+    "register": "Daftar"
+  },
+  "login": {
+    "title": "Selamat kembali",
+    "subtitle": "Log masuk untuk meneruskan ke ruang kerja anda.",
+    "remember": "Kekalkan saya log masuk",
+    "forgot": "Lupa kata laluan?",
+    "submit": "Log Masuk",
+    "noAccount": "Tiada akaun?"
+  },
+  "register": {
+    "title": "Buat akaun anda",
+    "subtitle": "Percuma untuk bermula. Tiada kad diperlukan.",
+    "submit": "Buat Akaun",
+    "hasAccount": "Sudah ada akaun?",
+    "consentPre": "Saya bersetuju dengan",
+    "terms": "Terma Perkhidmatan",
+    "and": "dan",
+    "privacy": "Dasar Privasi"
+  },
+  "forgot": {
+    "title": "Set semula kata laluan anda",
+    "subtitle": "Masukkan e-mel anda dan kami akan menghantar pautan set semula.",
+    "submit": "Hantar pautan set semula",
+    "back": "← Kembali ke log masuk"
+  },
+  "otp": {
+    "title": "Masukkan kod pengesahan",
+    "subtitle": "Kami telah menghantar kod 6 digit ke e-mel anda.",
+    "submit": "Sahkan",
+    "resend": "Hantar semula kod",
+    "noCode": "Tidak menerimanya?"
+  },
+  "field": {
+    "name": "Nama penuh",
+    "email": "Alamat E-mel",
+    "password": "Kata Laluan",
+    "phone": "Nombor telefon bimbit",
+    "phoneHint": "Digunakan untuk notifikasi WhatsApp. Pilihan.",
+    "accountType": "Saya mendaftar sebagai",
+    "accountTypeHint": "Akaun kakitangan dibuat oleh pentadbir anda."
+  },
+  "oauth": {
+    "google": "Teruskan dengan Google",
+    "googleUp": "Daftar dengan Google"
+  },
+  "divider": {
+    "or": "atau"
+  },
+  "pw": {
+    "enter": "Minimum 8 aksara"
+  },
+  "common": {
+    "skipToContent": "Langkau ke kandungan"
+  },
+  "page": {
+    "settings": {
+      "subtitle": "Urus profil, keselamatan dan cara platform ini berkelakuan."
+    }
+  },
+  "settings": {
+    "savebar": {
+      "msg": "Anda mempunyai perubahan yang belum disimpan.",
+      "discard": "Buang"
+    },
+    "nav": {
+      "group": {
+        "platform": "Platform",
+        "preferences": "Keutamaan",
+        "danger": "Bahaya"
+      },
+      "profile": "Profil",
+      "security": "Akaun & Keselamatan",
+      "appearance": "Penampilan",
+      "language": "Bahasa & Wilayah",
+      "notifications": "Pemberitahuan",
+      "ai": "AI & Asha",
+      "team": "Pasukan & Peranan",
+      "integrations": "Integrasi",
+      "billing": "Pengebilan",
+      "danger": "Zon Bahaya"
+    },
+    "profile": {
+      "section": {
+        "desc": "Bagaimana anda dipaparkan di seluruh platform ini."
+      },
+      "profilePhoto": {
+        "label": "Foto profil",
+        "desc": "JPG atau PNG, sehingga 2 MB. Imej segi empat sama kelihatan paling baik.",
+        "upload": "Muat Naik",
+        "remove": "Buang"
+      },
+      "name": {
+        "label": "Nama penuh",
+        "desc": "Dipaparkan kepada pasukan anda dan pada dokumen yang anda jana."
+      },
+      "email": {
+        "label": "Alamat e-mel",
+        "desc": "Digunakan untuk log masuk dan pemberitahuan sistem."
+      },
+      "verified": "Disahkan",
+      "phone": {
+        "label": "Nombor telefon bimbit",
+        "desc": "Ke mana pemberitahuan WhatsApp dihantar."
+      },
+      "timezone": {
+        "label": "Zon waktu",
+        "desc": "Semua cap masa dan kerja berjadual menggunakan zon ini.",
+        "opt": {
+          "asiaKuala": "Asia/Kuala_Lumpur (GMT+8)",
+          "asiaSingapore": "Asia/Singapore (GMT+8)",
+          "asiaShanghai": "Asia/Shanghai (GMT+8)",
+          "asiaDubai": "Asia/Dubai (GMT+4)"
+        }
+      },
+      "saveChanges": "Simpan perubahan",
+      "cancel": "Batal"
+    },
+    "security": {
+      "section": {
+        "desc": "Kata laluan, pengesahan dua faktor dan tempat anda log masuk."
+      },
+      "password": {
+        "label": "Tukar kata laluan",
+        "desc": "Minimum 8 aksara. Anda akan kekal log masuk pada peranti ini.",
+        "currentLabel": "Kata laluan semasa",
+        "newLabel": "Kata laluan baharu"
+      },
+      "twofa": {
+        "label": "Pengesahan dua faktor",
+        "desc": "Wajibkan kod 6 digit dari e-mel anda pada setiap log masuk baharu."
+      },
+      "googleAccount": {
+        "label": "Akaun Google",
+        "desc": "Log masuk dengan Google dan bukan kata laluan.",
+        "disconnect": "Putuskan sambungan"
+      },
+      "connected": "Bersambung",
+      "activeSessions": {
+        "label": "Sesi aktif",
+        "desc": "Peranti yang sedang log masuk ke akaun anda."
+      },
+      "col": {
+        "device": "Peranti",
+        "location": "Lokasi",
+        "lastActive": "Terakhir aktif"
+      }
+    },
+    "appearance": {
+      "section": {
+        "desc": "Terpakai pada pelayar ini sahaja. Warna aksen anda ditetapkan oleh platform dan tidak boleh diubah."
+      },
+      "theme": {
+        "label": "Tema",
+        "desc": "Disimpan pada peranti ini sebagai"
+      },
+      "sidebarCollapsed": {
+        "label": "Bar sisi",
+        "desc": "Mula dalam keadaan terkuncup pada desktop. Mudah alih sentiasa menggunakan bar bawah."
+      },
+      "platformAccent": {
+        "label": "Aksen platform",
+        "desc": "Tetap bagi setiap platform. Inilah satu-satunya perbezaan antara sistem Modus."
+      },
+      "accent": "Aksen"
+    },
+    "language": {
+      "section": {
+        "desc": "Tiga bahasa secara lalai. Tetapan cukai mempengaruhi setiap transaksi akan datang."
+      },
+      "lang": {
+        "label": "Bahasa antara muka",
+        "desc": "Asha membalas dalam bahasa yang digunakan pelanggan, tanpa mengira tetapan ini."
+      },
+      "currency": {
+        "label": "Mata wang",
+        "desc": "Mata wang paparan untuk semua jumlah.",
+        "opt": {
+          "myrMalaysian": "MYR — Ringgit Malaysia (RM)",
+          "sgdSingapore": "SGD — Dolar Singapura",
+          "usdUs": "USD — Dolar Amerika Syarikat",
+          "cnyChinese": "CNY — Yuan China (¥)"
+        }
+      },
+      "dateFormat": {
+        "label": "Format tarikh",
+        "desc": "Konvensyen Malaysia meletakkan hari dahulu.",
+        "opt": {
+          "ddMm": "DD/MM/YYYY",
+          "mmDd": "MM/DD/YYYY",
+          "yyyyMm": "YYYY-MM-DD"
+        }
+      },
+      "sstRate": {
+        "label": "Kadar SST",
+        "desc": "Cukai Jualan & Perkhidmatan, bukan GST. Kadar ini disimpan"
+      }
+    },
+    "notifications": {
+      "section": {
+        "desc": "Pilih apa yang sampai kepada anda dan di mana."
+      },
+      "email": {
+        "label": "E-mel"
+      },
+      "notifyEmail": {
+        "label": "E-mel",
+        "desc": "Amaran sistem, ringkasan mingguan dan notis pengebilan."
+      },
+      "notifyWhatsapp": {
+        "label": "WhatsApp",
+        "desc": "Amaran mendesak dan eskalasi Asha ke nombor telefon bimbit anda."
+      },
+      "notifyInApp": {
+        "label": "Dalam aplikasi",
+        "desc": "Pemberitahuan ringkas semasa anda menggunakan platform."
+      },
+      "digest": {
+        "label": "Kekerapan ringkasan",
+        "desc": "Dihantar oleh kerja berjadual, bukan pemasa pelayar.",
+        "opt": {
+          "never": "Tidak pernah",
+          "dailyAt": "Setiap hari pada 8:00 pagi",
+          "weeklyOn": "Mingguan pada hari Isnin"
+        }
+      }
+    },
+    "ai": {
+      "section": {
+        "title": "🤖 AI & Asha",
+        "desc": "Bagaimana lapisan AI berkelakuan pada platform ini."
+      },
+      "insight": {
+        "title": "🤖 Model yang digunakan",
+        "body": "Ditentukan semasa runtime daripada"
+      },
+      "activeModel": {
+        "label": "Model aktif",
+        "desc": "Baca sahaja. Diubah melalui persekitaran Railway, bukan di sini."
+      },
+      "locked": "Dikunci",
+      "ashaTone": {
+        "label": "Nada Asha",
+        "desc": "Digunakan untuk balasan kepada pelanggan di WhatsApp, Telegram dan Messenger.",
+        "opt": {
+          "professional": "Profesional",
+          "friendly": "Mesra",
+          "concise": "Ringkas"
+        }
+      },
+      "trilingualAutoDetect": {
+        "label": "Pengesanan automatik tiga bahasa",
+        "desc": "Mengesan EN / BM / 中文 bagi setiap mesej dan membalas dalam bahasa yang sama."
+      },
+      "escalationPhone": {
+        "label": "Hubungan eskalasi",
+        "desc": "Ke mana Asha menyerahkan perbualan kepada manusia."
+      },
+      "humanEscalation": {
+        "label": "Eskalasi kepada manusia",
+        "desc": "Sentiasa tersedia dan boleh dihubungi tanpa memerlukan kerjasama model. Tidak boleh dimatikan."
+      },
+      "aiUsageThis": {
+        "label": "Penggunaan AI bulan ini",
+        "desc": "Direkodkan ke"
+      }
+    },
+    "team": {
+      "section": {
+        "desc": "Siapa yang mempunyai akses dan apa yang boleh mereka lakukan."
+      },
+      "3Members": "3 ahli",
+      "inviteMember": "Jemput ahli",
+      "col": {
+        "member": "Ahli",
+        "role": "Peranan",
+        "status": "Status"
+      }
+    },
+    "integrations": {
+      "section": {
+        "desc": "Perkhidmatan luaran yang bersambung ke platform ini."
+      },
+      "notConnected": "Tidak bersambung",
+      "pendingApproval": "Menunggu kelulusan",
+      "whatsappBusinessApi": {
+        "label": "WhatsApp Business API",
+        "desc": "Asha membalas pelanggan di WhatsApp. Memerlukan",
+        "configure": "Konfigurasi"
+      },
+      "telegramBot": {
+        "label": "Bot Telegram",
+        "desc": "Asha membalas pelanggan di Telegram.",
+        "connect": "Sambung"
+      },
+      "paymentGateway": {
+        "label": "Get pembayaran",
+        "desc": "iPay88, Fiuu, SenangPay atau FPX."
+      },
+      "myinvoisLhdnE": {
+        "label": "MyInvois (e-Invois LHDN)",
+        "desc": "Pematuhan e-penginvoisan Malaysia."
+      },
+      "apiKey": {
+        "label": "Kunci API",
+        "desc": "Untuk aplikasi mudah alih dan integrasi pihak ketiga. Penggiliran membatalkan kunci lama serta-merta.",
+        "reveal": "Dedahkan",
+        "copy": "Salin",
+        "rotate": "Gilir"
+      }
+    },
+    "billing": {
+      "section": {
+        "desc": "Pelan anda, ciri yang diaktifkan dan invois."
+      },
+      "currentPlan": {
+        "label": "Pelan semasa",
+        "desc": "Dibilkan bulanan bagi setiap ciri yang diaktifkan.",
+        "changePlan": "Tukar pelan"
+      },
+      "growth": "Growth",
+      "enabledFeatures": {
+        "label": "Ciri yang diaktifkan",
+        "desc": "RM100 bagi setiap ciri sebulan."
+      },
+      "paymentMethod": {
+        "label": "Kaedah pembayaran",
+        "desc": "Dicaj pada 1 haribulan setiap bulan.",
+        "update": "Kemas kini"
+      },
+      "invoices": {
+        "label": "Invois",
+        "desc": "Cukai yang dipaparkan ialah kadar SST yang direkodkan pada masa setiap invois."
+      },
+      "col": {
+        "date": "Tarikh",
+        "amount": "Jumlah",
+        "sst": "SST"
+      }
+    },
+    "danger": {
+      "section": {
+        "title": "⚠ Zon Bahaya",
+        "desc": "Tindakan ini adalah kekal. Baca dengan teliti."
+      },
+      "exportAllData": {
+        "label": "Eksport semua data",
+        "desc": "Dibaris gilirkan sebagai kerja latar belakang. Anda akan menerima e-mel apabila arkib sedia.",
+        "requestExport": "Minta eksport"
+      },
+      "transferOwnership": {
+        "label": "Pindah milik",
+        "desc": "Serahkan ruang kerja ini kepada ahli lain. Anda kekal mempunyai akses pengurus.",
+        "transfer": "Pindah"
+      },
+      "deleteAccount": {
+        "label": "Padam akaun",
+        "desc": "Semua data dipadam secara kekal selepas tempoh tangguh 30 hari. Ini tidak boleh dibatalkan."
+      }
+    }
   }
 }

@@ -1,452 +1,724 @@
 <!DOCTYPE html>
-<html lang="en" data-platform="tools" data-theme="light" id="html-root">
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  MODUS AI ECOSYSTEM — CANONICAL AUTH PORTAL  (reference template v2.0)
+  ───────────────────────────────────────────────────────────────────────────
+  Drop this in as  public/auth.html  in EVERY platform.
+
+  THE ONLY THINGS A PLATFORM MAY CHANGE:
+    1. data-platform on <html>                    ← the accent
+    2. the three PLATFORM strings in <script>     ← name, tagline, features
+    3. data-region="cn"  if the deployment is behind the GFW (hides Google)
+
+  DO NOT change: the layout, the class names, the field order, the copy
+  structure, the OAuth button, the divider, the tab switch, the footer.
+  If a platform needs a new auth element, it goes in the design system
+  first and then into THIS file — never into one repo's local copy.
+
+  Backend contract (identical on all 9 platforms):
+    POST /auth/login        { email, password, remember }  -> 200 {redirect} | 401 {error}
+    POST /auth/register     { name, email, password, phone, consent } -> 201 | 409 | 422
+    POST /auth/forgot       { email }                       -> 200 (always, no enumeration)
+    GET  /auth/google                                       -> passport redirect
+    GET  /auth/me                                           -> 200 {user} | 401
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en" data-platform="tools" data-theme="light">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>M-EasyTools AI+ — Sign in</title>
-<link rel="stylesheet" href="/css/modus-design-system.css" />
-<style>
-  /* ── Self-contained design tokens (works with or without the shared CSS) ──── */
-  :root{
-    --accent:#E8622A;--accent-2:#C44E1E;
-    --accent-bg:rgba(232,98,42,0.08);--accent-glow:rgba(232,98,42,0.20);
-    --bg:#f8f9fa;--bg-soft:#f0f2f5;--surface:#ffffff;--surface-2:#f5f7fa;
-    --border:#e2e8f0;--border-2:#cbd5e1;--text:#1e293b;--text-2:#475569;
-    --muted:#94a3b8;--brand:#0f172a;--brand-2:#1e293b;
-  }
-  html[data-platform="tools"]{
-    --accent:#E8622A;--accent-2:#C44E1E;--accent-bg:rgba(232,98,42,0.08);--accent-glow:rgba(232,98,42,0.20);
-  }
-  html[data-theme="dark"]{
-    --bg:#0f172a;--bg-soft:#1e293b;--surface:#1e293b;--surface-2:#263348;
-    --border:#334155;--border-2:#475569;--text:#e2e8f0;--text-2:#94a3b8;
-    --muted:#64748b;--brand:#020817;--brand-2:#0f172a;
-  }
-
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{
-    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
-  }
-  .auth-shell{display:flex;min-height:100vh;width:100%}
-
-  /* LEFT PANEL */
-  .auth-left{
-    position:relative;flex:0 0 40%;max-width:40%;background:var(--brand);color:#fff;overflow:hidden;
-    display:flex;flex-direction:column;justify-content:space-between;padding:48px 44px;
-  }
-  .orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;
-    background:radial-gradient(circle at 30% 30%, var(--accent), transparent 70%);pointer-events:none}
-  .orb-1{width:460px;height:460px;top:-120px;right:-140px;animation:float1 14s ease-in-out infinite}
-  .orb-2{width:360px;height:360px;bottom:-120px;left:-100px;opacity:.35;
-    background:radial-gradient(circle at 30% 30%, var(--accent-2), transparent 70%);animation:float2 18s ease-in-out infinite}
-  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-24px,26px) scale(1.08)}}
-  @keyframes float2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-22px) scale(1.12)}}
-
-  .brand-mark{display:inline-flex;align-items:center;gap:11px;position:relative;z-index:2}
-  .brand-dot{width:38px;height:38px;border-radius:11px;background:var(--accent);
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 20px var(--accent-glow)}
-  .brand-dot svg{width:20px;height:20px;display:block}
-  .brand-word{font-size:17px;font-weight:800;letter-spacing:-.3px;color:#fff}
-
-  .left-mid{position:relative;z-index:2}
-  .platform-name{font-size:40px;font-weight:800;letter-spacing:-1.2px;line-height:1.05;margin-bottom:14px}
-  .platform-name .plus{color:var(--accent)}
-  .tagline{font-size:16px;line-height:1.55;color:rgba(255,255,255,.72);max-width:360px;margin-bottom:40px}
-
-  .feature{display:flex;align-items:flex-start;gap:14px;min-height:56px;opacity:0;transition:opacity .5s ease}
-  .feature.active{opacity:1}
-  .feature-carousel{position:relative;min-height:64px;margin-bottom:8px}
-  .feature-carousel .feature{position:absolute;inset:0}
-  .feature-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;
-    background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);
-    display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--accent)}
-  .feature-text{font-size:15px;font-weight:600;line-height:1.4;color:rgba(255,255,255,.94);padding-top:6px}
-  .dots{display:flex;gap:7px;margin-top:6px}
-  .dot{width:22px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:background .4s}
-  .dot.active{background:var(--accent)}
-
-  .trust-row{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:8px 16px;
-    font-size:12.5px;color:rgba(255,255,255,.6);font-weight:500}
-  .trust-row span{white-space:nowrap}
-
-  /* RIGHT PANEL */
-  .auth-right{flex:1 1 60%;background:var(--surface);display:flex;align-items:center;justify-content:center;padding:40px 24px}
-  .form-wrap{width:100%;max-width:400px}
-  .mobile-brand{display:none}
-
-  .form-head{margin-bottom:26px}
-  .form-head h1{font-size:26px;font-weight:800;letter-spacing:-.6px;color:var(--text);margin-bottom:6px}
-  .form-head p{font-size:14.5px;color:var(--text-2)}
-
-  .btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
-    padding:12px 18px;background:var(--surface);color:var(--text);border:1.5px solid var(--border-2);border-radius:10px;
-    font-size:14.5px;font-weight:600;font-family:inherit;text-decoration:none;cursor:pointer;
-    transition:box-shadow .15s,border-color .15s,transform .06s}
-  .btn-google:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent)}
-  .btn-google:active{transform:scale(.99)}
-
-  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12.5px;margin:20px 0}
-  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-
-  .tabs{display:flex;gap:6px;background:var(--surface-2);border-radius:11px;padding:5px;margin-bottom:22px}
-  .tab{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;
-    font-family:inherit;font-size:14px;font-weight:600;color:var(--text-2);cursor:pointer;
-    transition:background .18s,color .18s,box-shadow .18s}
-  .tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.08)}
-
-  .panel{display:none;animation:fade .2s ease}
-  .panel.active{display:block}
-  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-
-  .field{margin-bottom:15px}
-  .field label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px}
-  .field-optional{color:var(--muted);font-weight:500}
-  .field-note{font-size:12px;color:var(--muted);margin-top:6px}
-  .input-wrap{position:relative}
-  input,select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;
-    font-family:inherit;font-size:14px;color:var(--text);background:var(--surface);
-    outline:none;transition:border-color .18s,box-shadow .18s}
-  select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
-  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
-  .input-wrap input{padding-right:44px}
-  .toggle-pw{position:absolute;right:6px;top:50%;transform:translateY(-50%);
-    background:none;border:none;cursor:pointer;padding:8px;color:var(--muted);
-    display:flex;align-items:center;justify-content:center}
-  .toggle-pw:hover{color:var(--text-2)}
-  .toggle-pw svg{width:18px;height:18px}
-
-  .field.error input{border-color:#dc2626;animation:shake .32s}
-  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
-  .field-error{display:none;font-size:12.5px;color:#dc2626;margin-top:5px}
-  .field.error .field-error{display:block}
-
-  .row-between{display:flex;justify-content:space-between;align-items:center;margin-top:-2px;margin-bottom:6px}
-  .link{font-size:13px;color:var(--accent);text-decoration:none;font-weight:600}
-  .link:hover{text-decoration:underline}
-
-  .strength{display:flex;gap:5px;margin-top:8px}
-  .strength .seg{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .25s}
-  .strength-label{font-size:12px;color:var(--muted);margin-top:5px;min-height:15px}
-
-  .terms{display:flex;align-items:flex-start;gap:9px;margin:6px 0 18px}
-  .terms input[type=checkbox]{width:16px;height:16px;margin-top:2px;flex-shrink:0;accent-color:var(--accent)}
-  .terms label{font-size:12.5px;color:var(--text-2);line-height:1.5;font-weight:500}
-  .terms a{color:var(--accent);text-decoration:none}
-
-  .btn-primary{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:10px;
-    font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,transform .06s}
-  .btn-primary:hover{background:var(--accent-2)}
-  .btn-primary:active{transform:scale(.98)}
-  .btn-primary[data-loading="true"]{pointer-events:none;opacity:.85}
-  .btn-primary[data-loading="true"] .btn-label{opacity:.6}
-  .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
-  .btn-primary[data-loading="true"] .spinner{display:block}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  .form-alert{display:none;background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.3);
-    color:#dc2626;padding:10px 13px;border-radius:9px;font-size:13px;margin-bottom:16px}
-  .form-alert.show{display:block}
-  .form-success{display:none;align-items:center;gap:9px;background:rgba(22,163,74,.1);
-    border:1px solid rgba(22,163,74,.3);color:#16a34a;
-    padding:11px 13px;border-radius:9px;font-size:13.5px;font-weight:600;margin-bottom:16px}
-  .form-success.show{display:flex}
-
-  .copyright{text-align:center;font-size:12px;color:var(--muted);margin-top:26px}
-
-  @media (max-width:768px){
-    .auth-shell{flex-direction:column}
-    .auth-left{display:none}
-    .mobile-brand{display:flex;align-items:center;gap:10px;justify-content:center;background:var(--brand);color:#fff;padding:16px;width:100%}
-    .mobile-brand .brand-dot{width:32px;height:32px}
-    .mobile-brand .brand-word{font-size:15px}
-    .auth-right{flex:1;padding:32px 20px;align-items:flex-start}
-    .form-wrap{padding-top:8px}
-  }
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Sign in — Modus AI</title>
+<link rel="stylesheet" href="/css/modus-design-system.css">
 </head>
-<body>
-  <div class="mobile-brand">
-    <span class="brand-dot" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#fff"/><circle cx="12" cy="12" r="3.4" fill="var(--accent)"/></svg>
-    </span>
-    <span class="brand-word">Modus AI</span>
-  </div>
 
-  <div class="auth-shell">
-    <aside class="auth-left">
-      <div class="orb orb-1"></div>
-      <div class="orb orb-2"></div>
+<body class="auth-body">
+<a href="#auth-main" class="skip-link">Skip to content</a>
 
-      <div class="brand-mark">
-        <span class="brand-dot" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#fff"/><circle cx="12" cy="12" r="3.4" fill="var(--accent)"/></svg>
-        </span>
-        <span class="brand-word">Modus AI</span>
+<div class="auth-split">
+
+  <!-- ══ LEFT: BRAND PANEL ══════════════════════════════════════════════ -->
+  <aside class="auth-brand">
+    <div class="auth-brand-logo">
+      <span class="auth-brand-dot"></span>
+      <span data-bind="platformName">M-EasyDo AI+ Super App</span>
+    </div>
+
+    <div class="auth-brand-body">
+      <h1 class="auth-brand-title" data-i18n="brand.title">
+        The AI-native operating system for your business.
+      </h1>
+      <p class="auth-brand-tagline" data-bind="platformTagline"></p>
+
+      <ul class="auth-brand-features" data-bind="platformFeatures"></ul>
+    </div>
+
+    <div class="auth-brand-footer">
+      <span data-i18n="brand.copyright">&copy; 2026 Modus AI Associates. All rights reserved.</span><br>
+      <span data-i18n="brand.legal">Malaysia · PDPA compliant · Data hosted in-region</span>
+    </div>
+  </aside>
+
+  <!-- ══ RIGHT: FORM PANEL ══════════════════════════════════════════════ -->
+  <main class="auth-panel" id="auth-main">
+
+    <div class="auth-panel-top">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button class="lang-switch-btn active" data-lang="en" type="button">EN</button>
+        <button class="lang-switch-btn"        data-lang="ms" type="button">BM</button>
+        <button class="lang-switch-btn"        data-lang="zh" type="button">中文</button>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">🌙</button>
+    </div>
+
+    <div class="auth-card">
+
+      <div class="auth-logo-mobile">
+        <span class="auth-brand-dot"></span>
+        <span data-bind="platformName"></span>
       </div>
 
-      <div class="left-mid">
-        <div class="platform-name">M-EasyTools <span class="plus">AI+</span></div>
-        <p class="tagline">96+ AI content tools in one workspace — write, design, publish, and get seen.</p>
+      <!-- alert region: every auth error and success renders HERE -->
+      <div id="authAlert" class="mb-4" role="alert" aria-live="polite" hidden></div>
 
-        <div class="feature-carousel" id="carousel">
-          <div class="feature active"><span class="feature-icon">✦</span><span class="feature-text">96+ AI content tools in one place</span></div>
-          <div class="feature"><span class="feature-icon">✦</span><span class="feature-text">WordPress & Shopify direct publish</span></div>
-          <div class="feature"><span class="feature-icon">✦</span><span class="feature-text">M-EasyPR AI+ for press & media</span></div>
+      <!-- ── SIGN IN / REGISTER SWITCH ── -->
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab active" role="tab" data-view="login"    type="button" data-i18n="tab.signin">Sign in</button>
+        <button class="auth-tab"        role="tab" data-view="register" type="button" data-i18n="tab.register">Register</button>
+      </div>
+
+      <!-- ═══ VIEW: LOGIN ═══════════════════════════════════════════════ -->
+      <section data-view-panel="login">
+        <h2 class="auth-title"    data-i18n="login.title">Welcome back</h2>
+        <p  class="auth-subtitle" data-i18n="login.subtitle">Sign in to continue to your workspace.</p>
+
+        <div class="auth-oauth">
+          <button class="btn-oauth oauth-google" type="button" onclick="location.href='/auth/google'">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.57c2.08-1.92 3.27-4.74 3.27-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.05l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+            <span data-i18n="oauth.google">Continue with Google</span>
+          </button>
         </div>
-        <div class="dots" id="dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
-      </div>
 
-      <div class="trust-row">
-        <span>🔒 SOC 2 Ready</span><span>·</span><span>🇲🇾 Malaysian SME</span><span>·</span><span>🤖 AI-Native</span>
-      </div>
-    </aside>
+        <div class="auth-divider oauth-google" data-i18n="divider.or">or</div>
 
-    <main class="auth-right">
-      <div class="form-wrap">
-        <div class="form-head">
-          <h1 id="head-title">Welcome back</h1>
-          <p id="head-sub">Sign in to your M-EasyTools workspace</p>
+        <form class="auth-form" id="loginForm" novalidate>
+          <div class="form-group">
+            <label for="loginEmail" data-i18n="field.email">Email address</label>
+            <input id="loginEmail" name="email" type="email" autocomplete="username"
+                   required placeholder="you@company.com">
+            <div class="field-error" hidden></div>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword" data-i18n="field.password">Password</label>
+            <div class="pw-wrap">
+              <input id="loginPassword" name="password" type="password"
+                     autocomplete="current-password" required placeholder="••••••••">
+              <button class="pw-toggle" type="button" data-pw-toggle="loginPassword"
+                      aria-label="Show password">👁</button>
+            </div>
+            <div class="field-error" hidden></div>
+          </div>
+
+          <div class="auth-row">
+            <label class="auth-remember">
+              <input type="checkbox" name="remember" class="checkbox" checked>
+              <span data-i18n="login.remember">Keep me signed in</span>
+            </label>
+            <a class="auth-link" href="#" data-view-link="forgot" data-i18n="login.forgot">Forgot password?</a>
+          </div>
+
+          <button class="btn btn-primary auth-submit" type="submit">
+            <span data-i18n="login.submit">Sign in</span>
+          </button>
+        </form>
+
+        <p class="auth-alt">
+          <span data-i18n="login.noAccount">Don't have an account?</span>
+          <a href="#" data-view-link="register" data-i18n="tab.register">Register</a>
+        </p>
+      </section>
+
+      <!-- ═══ VIEW: REGISTER ════════════════════════════════════════════ -->
+      <section data-view-panel="register" hidden>
+        <h2 class="auth-title"    data-i18n="register.title">Create your account</h2>
+        <p  class="auth-subtitle" data-i18n="register.subtitle">Free to start. No card required.</p>
+
+        <div class="auth-oauth">
+          <button class="btn-oauth oauth-google" type="button" onclick="location.href='/auth/google'">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.57c2.08-1.92 3.27-4.74 3.27-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.05l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+            <span data-i18n="oauth.googleUp">Sign up with Google</span>
+          </button>
         </div>
 
-        <a href="/auth/google" class="btn-google">
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          Continue with Google
-        </a>
+        <div class="auth-divider oauth-google" data-i18n="divider.or">or</div>
 
-        <div class="divider">or continue with email</div>
+        <form class="auth-form" id="registerForm" novalidate>
+          <div class="form-group">
+            <label for="regName" data-i18n="field.name">Full name</label>
+            <input id="regName" name="name" type="text" autocomplete="name" required placeholder="Ahmad bin Ali">
+            <div class="field-error" hidden></div>
+          </div>
 
-        <div class="tabs" role="tablist">
-          <button class="tab active" id="tab-login" role="tab" onclick="switchTab('login')">Sign in</button>
-          <button class="tab" id="tab-register" role="tab" onclick="switchTab('register')">Create account</button>
-        </div>
+          <div class="form-group">
+            <label for="regEmail" data-i18n="field.email">Email address</label>
+            <input id="regEmail" name="email" type="email" autocomplete="username" required placeholder="you@company.com">
+            <div class="field-error" hidden></div>
+          </div>
 
-        <section class="panel active" id="panel-login">
-          <div class="form-alert" id="login-alert"></div>
-          <div class="form-success" id="login-success"><span>✓</span><span>Success — redirecting…</span></div>
-          <form id="login-form" novalidate>
-            <div class="field" id="lf-email">
-              <label for="l-email">Email</label>
-              <input id="l-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required />
-              <div class="field-error">Please enter a valid email.</div>
+          <!-- Account type. Rendered ONLY when PLATFORM.selfServiceRoles is a
+               non-empty array. §4.1c: these are self-service roles only —
+               never a role that reaches another user's records. The server
+               re-validates against its own allowlist and NEVER trusts this. -->
+          <div class="form-group" id="regRoleGroup" hidden>
+            <label for="regRole" data-i18n="field.accountType">I am signing up as</label>
+            <select id="regRole" name="role"></select>
+            <div class="field-hint" data-i18n="field.accountTypeHint">Staff accounts are created by your administrator.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="regPhone" data-i18n="field.phone">Mobile number</label>
+            <input id="regPhone" name="phone" type="tel" autocomplete="tel" placeholder="+60 12-345 6789">
+            <div class="field-hint" data-i18n="field.phoneHint">Used for WhatsApp notifications. Optional.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="regPassword" data-i18n="field.password">Password</label>
+            <div class="pw-wrap">
+              <input id="regPassword" name="password" type="password" autocomplete="new-password"
+                     required minlength="8" placeholder="••••••••">
+              <button class="pw-toggle" type="button" data-pw-toggle="regPassword" aria-label="Show password">👁</button>
             </div>
-            <div class="field" id="lf-password">
-              <div class="row-between">
-                <label for="l-password" style="margin:0">Password</label>
-                <a class="link" href="#" onclick="return false" title="Contact your administrator to reset your password">Forgot password?</a>
+            <div class="pw-strength" data-score="0">
+              <div class="pw-strength-track">
+                <span class="pw-strength-seg"></span><span class="pw-strength-seg"></span>
+                <span class="pw-strength-seg"></span><span class="pw-strength-seg"></span>
               </div>
-              <div class="input-wrap">
-                <input id="l-password" name="password" type="password" autocomplete="current-password" placeholder="Your password" required />
-                <button type="button" class="toggle-pw" aria-label="Show password" onclick="togglePw('l-password',this)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-              </div>
-              <div class="field-error">Please enter your password.</div>
+              <div class="pw-strength-label" data-i18n="pw.enter">Minimum 8 characters</div>
             </div>
-            <button type="submit" class="btn-primary" id="login-btn"><span class="spinner"></span><span class="btn-label">Sign in</span></button>
-          </form>
-        </section>
+            <div class="field-error" hidden></div>
+          </div>
 
-        <section class="panel" id="panel-register">
-          <div class="form-alert" id="register-alert"></div>
-          <div class="form-success" id="register-success"><span>✓</span><span>Account created — redirecting…</span></div>
-          <form id="register-form" novalidate>
-            <div class="field" id="rf-name">
-              <label for="r-name">Full name</label>
-              <input id="r-name" name="name" type="text" autocomplete="name" placeholder="Your full name" required />
-              <div class="field-error">Please enter your name.</div>
-            </div>
-            <div class="field" id="rf-email">
-              <label for="r-email">Email</label>
-              <input id="r-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required />
-              <div class="field-error">Please enter a valid email.</div>
-            </div>
-            <div class="field" id="rf-org">
-              <label for="r-org">Company name <span class="field-optional">(optional)</span></label>
-              <input id="r-org" name="company" type="text" autocomplete="organization" placeholder="Company name" />
-            </div>
+          <!-- §4.1e gate field. Rendered only when PLATFORM.registration
+               is 'gated' and gateWhen is satisfied. The server re-validates
+               the key; this field is a convenience, never an authorisation. -->
+          <div class="form-group" id="regGateGroup" hidden>
+            <label for="regGate" id="regGateLabel"></label>
+            <input id="regGate" type="text" autocomplete="off">
+            <div class="field-hint" id="regGateHint"></div>
+            <div class="field-error" hidden></div>
+          </div>
 
-            <div class="field" id="rf-password">
-              <label for="r-password">Password</label>
-              <div class="input-wrap">
-                <input id="r-password" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required oninput="scoreStrength(this.value)" />
-                <button type="button" class="toggle-pw" aria-label="Show password" onclick="togglePw('r-password',this)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-              </div>
-              <div class="strength" id="strength"><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
-              <div class="strength-label" id="strength-label"></div>
-              <div class="field-error">Password must be at least 8 characters.</div>
-            </div>
-            <div class="field" id="rf-confirm">
-              <label for="r-confirm">Confirm password</label>
-              <div class="input-wrap">
-                <input id="r-confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Re-enter password" required />
-                <button type="button" class="toggle-pw" aria-label="Show password" onclick="togglePw('r-confirm',this)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-              </div>
-              <div class="field-error">Passwords do not match.</div>
-            </div>
-            <div class="terms" id="rf-terms">
-              <input id="r-terms" type="checkbox" />
-              <label for="r-terms">By creating an account you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
-            </div>
-            <div class="field-error" id="terms-error" style="margin-top:-10px;margin-bottom:12px">Please accept the terms to continue.</div>
-            <button type="submit" class="btn-primary" id="register-btn"><span class="spinner"></span><span class="btn-label">Create account</span></button>
-          </form>
-        </section>
+          <label class="auth-legal">
+            <input type="checkbox" name="consent" class="checkbox" required>
+            <span>
+              <span data-i18n="register.consentPre">I agree to the</span>
+              <a href="/legal/terms" target="_blank" rel="noopener" data-i18n="register.terms">Terms of Service</a>
+              <span data-i18n="register.and">and</span>
+              <a href="/legal/privacy" target="_blank" rel="noopener" data-i18n="register.privacy">Privacy Policy</a>.
+            </span>
+          </label>
 
-        <div class="copyright">© 2026 Modus AI Associates. All rights reserved.</div>
-      </div>
-    </main>
-  </div>
+          <button class="btn btn-primary auth-submit" type="submit">
+            <span data-i18n="register.submit">Create account</span>
+          </button>
+        </form>
+
+        <p class="auth-alt">
+          <span data-i18n="register.hasAccount">Already have an account?</span>
+          <a href="#" data-view-link="login" data-i18n="tab.signin">Sign in</a>
+        </p>
+      </section>
+
+      <!-- ═══ VIEW: FORGOT PASSWORD ═════════════════════════════════════ -->
+      <section data-view-panel="forgot" hidden>
+        <h2 class="auth-title"    data-i18n="forgot.title">Reset your password</h2>
+        <p  class="auth-subtitle" data-i18n="forgot.subtitle">Enter your email and we'll send you a reset link.</p>
+
+        <form class="auth-form" id="forgotForm" novalidate>
+          <div class="form-group">
+            <label for="fpEmail" data-i18n="field.email">Email address</label>
+            <input id="fpEmail" name="email" type="email" autocomplete="username" required placeholder="you@company.com">
+            <div class="field-error" hidden></div>
+          </div>
+          <button class="btn btn-primary auth-submit" type="submit">
+            <span data-i18n="forgot.submit">Send reset link</span>
+          </button>
+        </form>
+
+        <p class="auth-alt">
+          <a href="#" data-view-link="login" data-i18n="forgot.back">← Back to sign in</a>
+        </p>
+      </section>
+
+      <!-- ═══ VIEW: OTP ═════════════════════════════════════════════════ -->
+      <section data-view-panel="otp" hidden>
+        <h2 class="auth-title"    data-i18n="otp.title">Enter verification code</h2>
+        <p  class="auth-subtitle" data-i18n="otp.subtitle">We sent a 6-digit code to your email.</p>
+
+        <form class="auth-form" id="otpForm" novalidate>
+          <div class="otp-group" id="otpGroup">
+            <input class="otp-input" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1">
+            <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Digit 2">
+            <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Digit 3">
+            <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Digit 4">
+            <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Digit 5">
+            <input class="otp-input" inputmode="numeric" maxlength="1" aria-label="Digit 6">
+          </div>
+          <button class="btn btn-primary auth-submit" type="submit">
+            <span data-i18n="otp.submit">Verify</span>
+          </button>
+        </form>
+
+        <p class="otp-resend">
+          <span data-i18n="otp.noCode">Didn't get it?</span>
+          <a class="auth-link" href="#" id="otpResend" data-i18n="otp.resend">Resend code</a>
+        </p>
+      </section>
+
+      <p class="auth-footer">
+        <span data-i18n="footer.support">Need help? Contact</span>
+        <a class="auth-link" href="mailto:support@modusaiassociates.com">support@modusaiassociates.com</a>
+      </p>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PLATFORM EXTENSION 1 of 2 (M-EasyTools) — the i18n engine and its adapter.
+     Loaded BEFORE the shared block, because the shared block calls the engine
+     while it is parsing and an adapter defined afterwards would be too late.
+
+     WHY AN ADAPTER EXISTS AT ALL. §4.2e says repo engines differ and the
+     caller must PROBE — setLang(code), apply(…), translate(code) — inside a
+     try. The master settings.html does exactly that. The master auth.html
+     does not: it calls window.i18n.apply(code) and nothing else. This repo's
+     engine is window.I18n (capital I) with setLang(code), so the canonical
+     switcher would have set localStorage, restyled three buttons and
+     translated nothing — a dead control under §4.3c, on the sign-in page.
+
+     Adapting the repo to the contract's interface here is the reversible
+     option and keeps auth.html byte-comparable with the other platforms. The
+     real fix is upstream: auth.html should carry settings.html's probe.
+     Reported as a master defect.
+     ══════════════════════════════════════════════════════════════════════ -->
+<script src="/js/i18n.js"></script>
+<script>
+(function () {
+  'use strict';
+  // §4.4 — the ecosystem's shared keys are `modus-theme` and `modus-lang`, so
+  // a user who picks 中文 in M-EasyCommerce gets it here too. This repo's
+  // engine predates that and reads `msm_lang` on twenty-odd other pages.
+  // Dual-write rather than a rename: renaming is a twenty-page change with no
+  // way back, and a reader of either key must not see a stale answer.
+  var SHARED = 'modus-lang', LOCAL = 'msm_lang';
+  try {
+    var shared = localStorage.getItem(SHARED);
+    var local  = localStorage.getItem(LOCAL);
+    // 'bm' was the legacy login page's code for Malay; the engine and the
+    // contract both say 'ms'. Fold it, or the engine rejects it and silently
+    // falls back to English for everyone who last used the old page.
+    if (local === 'bm') local = 'ms';
+    if (shared) localStorage.setItem(LOCAL, shared === 'bm' ? 'ms' : shared);
+    else if (local) localStorage.setItem(SHARED, local);
+  } catch (e) {}
+
+  // The interface the canonical portal expects, in front of the one this repo
+  // has. Both names are exposed so a future master that probes finds either.
+  window.i18n = window.i18n || {
+    setLang: function (code) { return this.apply(code); },
+    apply: function (code) {
+      try {
+        if (typeof code === 'string') {
+          localStorage.setItem(SHARED, code);
+          if (window.I18n && typeof window.I18n.setLang === 'function') {
+            return window.I18n.setLang(code);
+          }
+        }
+      } catch (e) {}   // §4.2e: fail quietly, never break the sign-in page
+    }
+  };
+})();
+</script>
 
 <script>
-  (function(){
-    try{ if(localStorage.getItem('modus-theme') === 'dark') document.getElementById('html-root').setAttribute('data-theme','dark'); }catch(e){}
-  })();
+/* ═══════════════════════════════════════════════════════════════════════
+   PLATFORM BLOCK — the ONLY part a platform edits.
+   ═══════════════════════════════════════════════════════════════════════ */
+const PLATFORM = {
+  name:     'M-EasyTools AI+ Super App',
+  // §4.1e — is registration open at all? Three platforms independently
+  // built the same workaround for this gap (Dragon Ginseng, Campus, Mall),
+  // which is why it is in the master rather than in three repos.
+  //   'open'   anyone may register
+  //   'closed' no registration; the tab is hidden entirely
+  //   'gated'  registration requires a key the platform issues
+  //
+  // 'open' is CHECKED, not assumed. M-EasyTools is a commercial SaaS: anyone
+  // may sign up, checkSub auto-provisions a 30-day trial on first use, and the
+  // marketing site links straight here. There is no invite key and nothing to
+  // gate on. See the note about the first registrant in CLAUDE.md — it is a
+  // property of an EMPTY user table, not of open registration, and this
+  // deployment's table has not been empty for a long time.
+  registration: 'open',
+  // when gated: the extra field, and when to demand it
+  gateField: null,          // { name:'setup_key', label:'Setup key', hint:'…' }
+  gateWhen: 'always',       // 'always' | 'claimed' | 'unclaimed'
+                            // 'unclaimed' = first-run only; GET /auth/status
+                            // must return { claimed: true|false }
 
-  (function(){
-    var feats = document.querySelectorAll('#carousel .feature');
-    var dots  = document.querySelectorAll('#dots .dot');
-    if(!feats.length) return;
-    var i = 0;
-    setInterval(function(){
-      feats[i].classList.remove('active'); dots[i].classList.remove('active');
-      i = (i + 1) % feats.length;
-      feats[i].classList.add('active'); dots[i].classList.add('active');
-    }, 3000);
-  })();
+  // §4.1c — roles a visitor may choose at signup. Leave EMPTY unless the
+  // platform genuinely has more than one public account type.
+  // NEVER list a role that can read another user's records; those are
+  // granted by an admin. The server must re-validate this against its own
+  // allowlist — the selector is a convenience, never an authorisation.
+  //   School: [{v:'student',l:'Student'},{v:'parent',l:'Parent / guardian'}]
+  // Empty here: this platform has exactly one public account type. `role` is
+  // decided by the server and never read from the request body.
+  selfServiceRoles: [],
+  tagline:  'Eleven AI marketing tools in one workspace — content, social, SEO, ads, email, PR and more.',
+  features: [
+    'Generate content, captions, ad copy and SEO briefs in seconds',
+    'Publish straight into WordPress and Shopify',
+    'Trilingual by default — English, Bahasa Malaysia, 中文'
+  ]
+};
 
-  function switchTab(mode){
-    var isReg = mode === 'register';
-    document.getElementById('tab-login').classList.toggle('active', !isReg);
-    document.getElementById('tab-register').classList.toggle('active', isReg);
-    document.getElementById('panel-login').classList.toggle('active', !isReg);
-    document.getElementById('panel-register').classList.toggle('active', isReg);
-    document.getElementById('head-title').textContent = isReg ? 'Create account' : 'Welcome back';
-    document.getElementById('head-sub').textContent = isReg
-      ? 'Start your M-EasyTools workspace in seconds'
-      : 'Sign in to your M-EasyTools workspace';
-    document.title = 'M-EasyTools AI+ — ' + (isReg ? 'Create account' : 'Sign in');
+/* ═══════════════════════════════════════════════════════════════════════
+   Everything below is identical in all 9 repos. Do not fork it.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  /* --- platform binding --- */
+  $$('[data-bind="platformName"]').forEach(el => el.textContent = PLATFORM.name);
+  $$('[data-bind="platformTagline"]').forEach(el => el.textContent = PLATFORM.tagline);
+  const featList = $('[data-bind="platformFeatures"]');
+  if (featList) {
+    featList.innerHTML = '';
+    PLATFORM.features.forEach(f => {
+      const li = document.createElement('li');
+      li.className = 'auth-brand-feature';
+      const ic = document.createElement('span');
+      ic.className = 'auth-brand-feature-icon';
+      ic.textContent = '✓';
+      const tx = document.createElement('span');
+      tx.textContent = f;                       // textContent, never innerHTML
+      li.append(ic, tx);
+      featList.appendChild(li);
+    });
   }
-  window.switchTab = switchTab;
+  document.title = 'Sign in — ' + PLATFORM.name;
 
-  function togglePw(id, btn){
-    var el = document.getElementById(id);
-    var show = el.type === 'password';
-    el.type = show ? 'text' : 'password';
+  /* --- §4.1e registration mode. Every platform that needed this wrote its
+         own /auth/status reader; all three were identical, so it lives here
+         now. A closed platform hides the tab rather than failing the POST —
+         §4.3c, a control that cannot succeed should not render. --- */
+  async function applyRegistrationMode() {
+    const mode = PLATFORM.registration || 'open';
+    const tab  = $$('.auth-tab').find(t => t.dataset.view === 'register');
+
+    if (mode === 'closed') {
+      tab?.remove();
+      $('[data-view-panel="register"]')?.remove();
+      $$('[data-view-link="register"]').forEach(a => a.closest('p')?.remove());
+      return;
+    }
+    if (mode !== 'gated' || !PLATFORM.gateField) return;
+
+    const { name, label, hint } = PLATFORM.gateField;
+    let needed = true;
+    if (PLATFORM.gateWhen === 'claimed' || PLATFORM.gateWhen === 'unclaimed') {
+      try {
+        const r = await fetch('/auth/status', { credentials: 'same-origin',
+                                                headers: { 'Accept': 'application/json' } });
+        const st = r.ok ? await r.json() : {};
+        needed = PLATFORM.gateWhen === 'claimed' ? !!st.claimed : !st.claimed;
+      } catch (_) { needed = true; }   // fail closed: demand the key
+    }
+    if (!needed) return;
+
+    const inp = $('#regGate');
+    inp.name = name;
+    inp.required = true;
+    $('#regGateLabel').textContent = label;
+    $('#regGateHint').textContent = hint || '';
+    $('#regGateGroup').hidden = false;
+  }
+  applyRegistrationMode();
+
+  /* --- account type: rendered only if the platform declares one --- */
+  const roles = Array.isArray(PLATFORM.selfServiceRoles) ? PLATFORM.selfServiceRoles : [];
+  if (roles.length > 1) {
+    const grp = $('#regRoleGroup'), sel = $('#regRole');
+    roles.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.v; o.textContent = r.l;   // textContent, never innerHTML
+      sel.appendChild(o);
+    });
+    grp.hidden = false;
+  } else {
+    $('#regRole')?.removeAttribute('name');   // never post an empty role
+  }
+
+  /* --- theme (shared key across the whole ecosystem) --- */
+  const THEME_KEY = 'modus-theme';
+  const applyTheme = t => {
+    document.documentElement.setAttribute('data-theme', t);
+    const b = $('#themeToggle');
+    if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
+  };
+  applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+  $('#themeToggle')?.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
+
+  /* --- language (hooks into public/js/i18n.js when present) --- */
+  const LANG_KEY = 'modus-lang';
+  const setLang = code => {
+    localStorage.setItem(LANG_KEY, code);
+    document.documentElement.setAttribute('lang', code);
+    $$('.lang-switch-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === code));
+    if (window.i18n && typeof window.i18n.apply === 'function') window.i18n.apply(code);
+  };
+  $$('.lang-switch-btn').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+  setLang(localStorage.getItem(LANG_KEY) || 'en');
+
+  /* --- view switching --- */
+  const showView = name => {
+    $$('[data-view-panel]').forEach(p => p.hidden = p.dataset.viewPanel !== name);
+    $$('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
+    $('.auth-tabs').hidden = (name === 'forgot' || name === 'otp');
+    hideAlert();
+    history.replaceState(null, '', '#' + name);
+  };
+  $$('.auth-tab').forEach(t => t.addEventListener('click', () => showView(t.dataset.view)));
+  $$('[data-view-link]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault(); showView(a.dataset.viewLink);
+  }));
+  const initial = (location.hash || '#login').slice(1);
+  showView(['login', 'register', 'forgot', 'otp'].includes(initial) ? initial : 'login');
+
+  /* --- alerts --- */
+  const alertBox = $('#authAlert');
+  function showAlert(kind, msg) {
+    alertBox.hidden = false;
+    alertBox.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'alert alert-' + kind;
+    const icon = document.createElement('span');
+    icon.className = 'alert-icon';
+    icon.textContent = kind === 'error' ? '!' : kind === 'success' ? '✓' : 'i';
+    const body = document.createElement('div');
+    body.className = 'alert-body';
+    body.textContent = msg;                     // textContent, never innerHTML
+    div.append(icon, body);
+    alertBox.appendChild(div);
+    alertBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  function hideAlert() { alertBox.hidden = true; alertBox.innerHTML = ''; }
+
+  /* --- password show/hide --- */
+  $$('[data-pw-toggle]').forEach(btn => btn.addEventListener('click', () => {
+    const inp = document.getElementById(btn.dataset.pwToggle);
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.textContent = show ? '🙈' : '👁';
     btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-    btn.innerHTML = show
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-  }
-  window.togglePw = togglePw;
+  }));
 
-  function scoreStrength(pw){
-    var score = 0;
-    if(pw.length >= 8) score++;
-    if(/[A-Z]/.test(pw)) score++;
-    if(/[0-9]/.test(pw)) score++;
-    if(/[^A-Za-z0-9]/.test(pw)) score++;
-    if(pw.length === 0) score = 0;
-    var colors = ['','#dc2626','#f59e0b','#eab308','#16a34a'];
-    var labels = ['','Weak','Fair','Good','Strong'];
-    var segs = document.querySelectorAll('#strength .seg');
-    segs.forEach(function(s, idx){ s.style.background = idx < score ? colors[score] : 'var(--border)'; });
-    document.getElementById('strength-label').textContent = pw.length ? labels[score] + ' password' : '';
-  }
-  window.scoreStrength = scoreStrength;
-
-  function setErr(fieldId, msg){
-    var f = document.getElementById(fieldId); if(!f) return;
-    f.classList.add('error');
-    if(msg){ var e = f.querySelector('.field-error'); if(e) e.textContent = msg; }
-  }
-  function clearErr(fieldId){ var f = document.getElementById(fieldId); if(f) f.classList.remove('error'); }
-  function showAlert(id, msg){ var a = document.getElementById(id); a.textContent = msg; a.classList.add('show'); }
-  function hideAlert(id){ document.getElementById(id).classList.remove('show'); }
-  function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-  function setLoading(btnId, on){ document.getElementById(btnId).setAttribute('data-loading', on ? 'true' : 'false'); }
-  function looksTaken(status, data, msg){ return status === 409 || (data && data.field === 'email') || /exist|already|registered|in use|taken/i.test(msg || ''); }
-
-  document.getElementById('login-form').addEventListener('submit', async function(e){
-    e.preventDefault();
-    hideAlert('login-alert'); clearErr('lf-email'); clearErr('lf-password');
-    var email = document.getElementById('l-email').value.trim();
-    var password = document.getElementById('l-password').value;
-    var ok = true;
-    if(!isEmail(email)){ setErr('lf-email'); ok = false; }
-    if(!password){ setErr('lf-password'); ok = false; }
-    if(!ok) return;
-    setLoading('login-btn', true);
-    try{
-      var res = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email, password: password }) });
-      var data = {}; try{ data = await res.json(); }catch(_){}
-      if(res.ok && (data.success === true || data.user || data.id)){
-        document.getElementById('login-success').classList.add('show');
-        setTimeout(function(){ window.location.href = data.redirect || '/app'; }, 500);
-      }else{
-        setLoading('login-btn', false);
-        showAlert('login-alert', data.error || 'Invalid email or password.');
-      }
-    }catch(err){ setLoading('login-btn', false); showAlert('login-alert', 'Network error. Please try again.'); }
+  /* --- password strength --- */
+  const strengthLabels = ['Minimum 8 characters', 'Weak', 'Fair', 'Good', 'Strong'];
+  $('#regPassword')?.addEventListener('input', e => {
+    const v = e.target.value;
+    let score = 0;
+    if (v.length >= 8) score++;
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++;
+    if (/\d/.test(v)) score++;
+    if (/[^\w\s]/.test(v) && v.length >= 12) score++;
+    if (!v) score = 0;
+    const box = $('.pw-strength');
+    box.dataset.score = String(score);
+    $('.pw-strength-label').textContent = strengthLabels[score];
   });
 
-  document.getElementById('register-form').addEventListener('submit', async function(e){
-    e.preventDefault();
-    hideAlert('register-alert');
-    ['rf-name','rf-email','rf-password','rf-confirm','rf-org'].forEach(clearErr);
-    document.getElementById('terms-error').style.display = 'none';
+  /* --- field errors --- */
+  function setFieldError(input, msg) {
+    const box = input.closest('.form-group')?.querySelector('.field-error');
+    input.classList.toggle('input-error', !!msg);
+    if (!box) return;
+    box.textContent = msg || '';
+    box.hidden = !msg;
+  }
+  function clearErrors(form) {
+    $$('input', form).forEach(i => setFieldError(i, ''));
+  }
 
-    var name = document.getElementById('r-name').value.trim();
-    var email = document.getElementById('r-email').value.trim();
-    var password = document.getElementById('r-password').value;
-    var confirm = document.getElementById('r-confirm').value;
-    var terms = document.getElementById('r-terms').checked;
-    var orgInput = document.getElementById('r-org');
-    var ok = true;
-    if(!name){ setErr('rf-name'); ok = false; }
-    if(!isEmail(email)){ setErr('rf-email'); ok = false; }
-    if(orgInput && orgInput.required && !orgInput.value.trim()){ setErr('rf-org'); ok = false; }
-    if(password.length < 8){ setErr('rf-password'); ok = false; }
-    if(confirm !== password){ setErr('rf-confirm'); ok = false; }
-    if(!terms){ document.getElementById('terms-error').style.display = 'block'; ok = false; }
-    if(!ok) return;
+  /* --- submit helper --- */
+  async function submit(form, url, onOk) {
+    clearErrors(form); hideAlert();
+    const btn  = $('button[type=submit]', form);
+    const span = btn.querySelector('span');
+    const original = span.textContent;
+    btn.disabled = true;
+    span.textContent = 'Please wait…';
 
-    var body = {};
-    new FormData(e.target).forEach(function(v, k){ if(k !== 'confirm') body[k] = v; });
+    const fd = new FormData(form);
+    const payload = {};
+    fd.forEach((v, k) => payload[k] = v);
+    payload.remember = !!form.querySelector('[name=remember]')?.checked;
+    payload.consent  = !!form.querySelector('[name=consent]')?.checked;
 
-    setLoading('register-btn', true);
-    try{
-      var res = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-      var data = {}; try{ data = await res.json(); }catch(_){}
-      if(res.ok && (data.success === true || data.user || data.id)){
-        document.getElementById('register-success').classList.add('show');
-        setTimeout(function(){ window.location.href = data.redirect || '/app'; }, 500);
-      }else{
-        setLoading('register-btn', false);
-        var msg = data.error || 'Unable to create account.';
-        if(looksTaken(res.status, data, msg)){ setErr('rf-email', msg); }
-        else { showAlert('register-alert', msg); }
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) { onOk(data); return; }
+      if (data.fields) {
+        Object.entries(data.fields).forEach(([name, msg]) => {
+          const inp = form.querySelector('[name="' + name + '"]');
+          if (inp) setFieldError(inp, msg);
+        });
       }
-    }catch(err){ setLoading('register-btn', false); showAlert('register-alert', 'Network error. Please try again.'); }
+      showAlert('error', data.error || 'Something went wrong. Please try again.');
+    } catch (_) {
+      showAlert('error', 'Cannot reach the server. Check your connection and try again.');
+    } finally {
+      btn.disabled = false;
+      span.textContent = original;
+    }
+  }
+
+  $('#loginForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    submit(e.target, '/auth/login', d => location.href = d.redirect || '/app');
   });
 
-  (function(){
-    var params = new URLSearchParams(window.location.search);
-    if(params.get('tab') === 'register') switchTab('register');
-    var err = params.get('error');
-    if(err === 'auth_failed' || err === 'google' || err === 'google_cancelled') showAlert('login-alert', 'Google sign-in failed. Please try again.');
-  })();
+  $('#registerForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!e.target.consent.checked) {
+      showAlert('error', 'Please accept the Terms of Service to continue.');
+      return;
+    }
+    submit(e.target, '/auth/register', d => location.href = d.redirect || '/app');
+  });
+
+  $('#forgotForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    // Always the same response — never reveal whether an email exists.
+    submit(e.target, '/auth/forgot', () =>
+      showAlert('success', 'If that email is registered, a reset link is on its way.'));
+  });
+
+  /* --- OTP boxes --- */
+  const otpInputs = $$('#otpGroup .otp-input');
+  otpInputs.forEach((inp, i) => {
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+      if (inp.value && otpInputs[i + 1]) otpInputs[i + 1].focus();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !inp.value && otpInputs[i - 1]) otpInputs[i - 1].focus();
+    });
+    inp.addEventListener('paste', e => {
+      const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+      if (!digits) return;
+      e.preventDefault();
+      digits.split('').forEach((d, k) => { if (otpInputs[k]) otpInputs[k].value = d; });
+      otpInputs[Math.min(digits.length, 5)].focus();
+    });
+  });
+
+  $('#otpForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const code = otpInputs.map(i => i.value).join('');
+    if (code.length !== 6) { showAlert('error', 'Enter all 6 digits.'); return; }
+    try {
+      const res = await fetch('/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) location.href = data.redirect || '/app';
+      else showAlert('error', data.error || 'That code is not valid.');
+    } catch (_) {
+      showAlert('error', 'Cannot reach the server. Check your connection and try again.');
+    }
+  });
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PLATFORM EXTENSION 2 of 2 (M-EasyTools) — the post-sign-in return path.
+
+     Eight pages in this repo bounce a logged-out visitor with
+     `location = '/login?redirect=' + encodeURIComponent(pathname)`. The
+     canonical portal has no concept of that: submit() posts the form fields
+     and then goes to `d.redirect || '/app'`, so somebody who clicked into
+     /seo would sign in and land on the hub having lost what they asked for.
+
+     Rather than fork submit(), the value is put INTO the form as a hidden
+     field — submit() builds its payload from FormData, so it is posted like
+     any other field — and the server echoes it back as `redirect` after
+     validating it is a same-site path (safeRedirect in server.js). An open
+     redirect on a login endpoint is a phishing primitive, so the validation
+     is on the server; the field is a convenience, never an authorisation.
+
+     Reported as a master defect: a return path is not platform-specific, and
+     at least four repos link to the portal this way.
+     ══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+  var target = '';
+  try {
+    var q = new URLSearchParams(location.search).get('redirect') || '';
+    // Same rule as the server's, applied early so a hostile value is never
+    // even rendered into the DOM.
+    if (q && q.charAt(0) === '/' && q.slice(0, 2) !== '//') target = q;
+  } catch (e) {}
+  if (!target) return;
+
+  ['loginForm', 'registerForm'].forEach(function (id) {
+    var form = document.getElementById(id);
+    if (!form || form.querySelector('[name="redirect"]')) return;
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'redirect';
+    input.value = target;
+    form.appendChild(input);
+  });
+
+  // Google leaves the page entirely, so it cannot post a field. GET
+  // /auth/google already takes ?redirect= and round-trips it through the OAuth
+  // state parameter, so the target just has to reach the URL.
+  //
+  // The canonical portal renders these as <button onclick="location.href=…">,
+  // NOT as anchors — the first version of this block queried
+  // a[href^="/auth/google"], matched nothing, and dropped the return path for
+  // every Google sign-in without erroring. test/ui-contract.js caught it.
+  // Assigning .onclick replaces the inline attribute handler rather than
+  // running alongside it.
+  var url = '/auth/google?redirect=' + encodeURIComponent(target);
+  Array.prototype.forEach.call(
+    document.querySelectorAll('.oauth-google, a[href^="/auth/google"]'),
+    function (el) {
+      if (el.tagName === 'A') el.href = url;
+      else el.onclick = function () { location.href = url; };
+    }
+  );
+})();
 </script>
 </body>
 </html>

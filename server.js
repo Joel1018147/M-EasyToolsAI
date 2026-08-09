@@ -21,6 +21,7 @@ const helmet    = require('helmet');
 const crypto    = require('crypto');
 const fs        = require('fs');
 const { pool }  = require('./db');
+const capabilities = require('./helpers/capabilities');
 const { checkSub, updateExpiredSubscriptions, sendTrialReminders } = require('./middleware/checkSub');
 const subscriptionRoutes = require('./routes/subscription');
 const { Resend } = require('resend');
@@ -241,9 +242,14 @@ async function initDB() {
       ON CONFLICT DO NOTHING;
     `);
 
+    // Settings (§4.2). Created here rather than in a migration file so there
+    // is no unapplied-migration state for routes/settings.js to degrade
+    // through — initDB runs on every boot, before listen.
+    await client.query(require('./routes/settings').SCHEMA);
+
     // Make first user admin
     await client.query(`
-      UPDATE users SET role = 'admin' 
+      UPDATE users SET role = 'admin'
       WHERE id = (SELECT MIN(id) FROM users) AND role = 'user'
     `);
 
@@ -341,29 +347,32 @@ function safeUser(u) {
   };
 }
 
-// UI CONTRACT §4.3e. This used to ask `req.accepts('json')`, which is the
-// wrong question: a browser sends
-//   Accept: text/html,application/xhtml+xml,…,*/*;q=0.8
-// and the wildcard makes that return 'json'. Every page navigation by a
-// logged-out visitor was answered with a raw JSON 401 instead of the login
-// screen — nobody was ever redirected to /login.
-//
-// The /api/ path prefix is the primary signal, because fetch() sends
-// Accept: */* by default and content negotiation alone misclassifies most
-// API calls. req.xhr and an explicit Accept are secondary, and
-// req.accepts(['html','json']) asks which the client PREFERS, so text/html
-// wins when a request advertises both.
-function wantsJson(req) {
-  if (req.originalUrl && req.originalUrl.startsWith('/api/')) return true;
-  if (req.path && req.path.startsWith('/api/')) return true;
-  if (req.xhr) return true;
-  return req.accepts(['html', 'json']) === 'json';
-}
+// UI CONTRACT §4.3e. The definition moved to helpers/wantsJson.js because
+// middleware/checkSub.js needed the same answer and had been carrying its own
+// wrong one (`req.accepts('json')`) since before 7732d91 fixed this file.
+// See that module for why the /api/ prefix is the signal and Accept is not.
+const { wantsJson } = require('./helpers/wantsJson');
 
 function requireAuth(req, res, next) {
   if (req.isAuthenticated()) return next();
   if (wantsJson(req)) return res.status(401).json({ error: 'Please log in' });
   res.redirect('/login');
+}
+
+// §4.1's contract puts GET /auth/me outside /api/, so the path-prefix rule in
+// wantsJson() cannot classify it and a fetch() with the default Accept: */*
+// would be answered with a 302 to the login page. There is no page at
+// /auth/me, so rather than loosen the prefix rule for every /auth/* route —
+// /auth/google IS a page navigation and must keep redirecting — this one route
+// gets a guard that only ever speaks JSON.
+//
+// §4.3e blesses this shape explicitly (two guards, correctness in which one
+// each route picks) and warns that a test of the guards alone passes while the
+// wiring is wrong. test/auth-guard-test.js therefore asserts the ASSIGNMENT:
+// every /api/ route is on a guard that 401s, and no page route is.
+function requireAuthJSON(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.status(401).json({ error: 'Please log in' });
 }
 
 function requireSeller(req, res, next) {
@@ -394,42 +403,118 @@ async function requireApiKey(req, res, next) {
 }
 
 // ════════════════════════════════════════════════════
-//  AUTH ROUTES
+//  AUTH ROUTES — Modus UI Contract §4.1
 // ════════════════════════════════════════════════════
-app.post('/api/auth/register', authLimiter, async (req, res) => {
+//
+// TWO PATHS, ONE HANDLER. The canonical portal posts to /auth/login and
+// /auth/register; everything already in this repo — the smoke test, the module
+// pages — posts to /api/auth/*. Both are mounted on the SAME function below,
+// never re-implemented, because two paths into one account-creating endpoint
+// that are two pieces of code are two things that can drift.
+//
+// The response is a SUPERSET of what the old pages read: `user` is still there
+// and still the same shape, `redirect` and `fields` are added. Nothing that
+// consumed the old body has to change.
+
+// Where to send someone after they sign in. A module page that bounces a
+// logged-out visitor sends ?redirect=/seo, and dropping it lands them on /app
+// having forgotten what they clicked. Only a same-site absolute path is
+// honoured — an open redirect off a login endpoint is a phishing primitive.
+function safeRedirect(value, fallback = '/app') {
+  if (typeof value !== 'string' || !value) return fallback;
+  if (!value.startsWith('/') || value.startsWith('//')) return fallback;
+  return value;
+}
+
+async function handleRegister(req, res) {
   try {
-    const { name, email, password, plan = 'free' } = req.body;
-    if (!name?.trim() || !email?.trim() || !password) return res.status(400).json({ error: 'All fields required' });
-    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email' });
-    if (await db.getOne('SELECT id FROM users WHERE email = $1', [email.toLowerCase()])) return res.status(409).json({ error: 'Email already registered' });
+    const { name, email, password } = req.body || {};
+    // §4.1: validation comes back as { error, fields } so the portal can put
+    // each message under its own input.
+    const fields = {};
+    if (!name || !String(name).trim())  fields.name = 'Enter your name.';
+    if (!email || !String(email).trim()) fields.email = 'Enter your email address.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fields.email = 'That does not look like an email address.';
+    if (!password) fields.password = 'Choose a password.';
+    else if (String(password).length < 8) fields.password = 'Use at least 8 characters.';
+    if (Object.keys(fields).length) {
+      return res.status(422).json({ error: 'Please check the highlighted fields.', fields });
+    }
+    if (await db.getOne('SELECT id FROM users WHERE email = $1', [email.toLowerCase()])) {
+      return res.status(409).json({
+        error: 'That email is already registered.',
+        fields: { email: 'Already registered — try signing in instead.' }
+      });
+    }
     const hash = await bcrypt.hash(password, 12);
     const apiKey = crypto.randomBytes(32).toString('hex');
     const isFirst = !(await db.getOne('SELECT id FROM users LIMIT 1'));
+    // `plan` is NOT taken from the request. It used to be, defaulting to 'free'
+    // but honouring whatever the body carried. Entitlement is decided by the
+    // `subscriptions` table and not by this column, so nothing was actually
+    // purchasable that way — but a signup form writing its own plan name into
+    // the account row is the §4.1b shape, and the canonical portal does not
+    // post the field at all. Plans are changed through billing.
+    // `role` was already server-derived and stays that way.
     const result = await db.getOne(
       'INSERT INTO users (name, email, password, plan, api_key, role) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [name.trim(), email.toLowerCase(), hash, plan, apiKey, isFirst ? 'admin' : 'user']
+      [String(name).trim(), email.toLowerCase(), hash, 'free', apiKey, isFirst ? 'admin' : 'user']
     );
     req.login(result, err => {
-      if (err) return res.status(500).json({ error: 'Login failed after registration' });
-      res.status(201).json({ user: safeUser(result) });
+      if (err) return res.status(500).json({ error: 'Your account was created but signing you in failed. Please sign in.' });
+      res.status(201).json({ user: safeUser(result), redirect: safeRedirect(req.body && req.body.redirect) });
     });
   } catch (err) { res.status(500).json({ error: 'Registration failed: ' + err.message }); }
-});
+}
 
-app.post('/api/auth/login', authLimiter, async (req, res) => {
+async function handleLogin(req, res) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const { email, password } = req.body || {};
+    const fields = {};
+    if (!email)    fields.email = 'Enter your email address.';
+    if (!password) fields.password = 'Enter your password.';
+    if (Object.keys(fields).length) {
+      return res.status(422).json({ error: 'Please check the highlighted fields.', fields });
+    }
     const user = await db.getOne('SELECT * FROM users WHERE email = $1 AND is_active = TRUE', [email.toLowerCase()]);
-    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Invalid email or password' });
+    // One message for "no such account" and for "wrong password" — the pair is
+    // an account-enumeration oracle otherwise.
+    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
     await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
     req.login(user, err => {
       if (err) return res.status(500).json({ error: 'Login failed' });
-      res.json({ user: safeUser(user) });
+      res.json({ user: safeUser(user), redirect: safeRedirect(req.body && req.body.redirect) });
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
-});
+}
+
+// §4.1 — the rule here is INVARIANCE, not the number 200: the response must not
+// vary with whether the submitted address is registered. This route therefore
+// never touches the database at all.
+//
+// It answers 503 because this platform has no password-reset flow to run: there
+// is no reset-token table, no POST /auth/reset and no template. RESEND_API_KEY
+// being set would not change that — nothing would send anything. Answering 200
+// would promise a delivery no code path can make, and leave a locked-out user
+// waiting for an email instead of contacting support. 503 is a property of the
+// server, identical for every address, so it leaks nothing.
+//
+// DEFERRED, and logged as deferred rather than half-shipped: a real flow needs
+// a single-use hashed expiring token table, the reset route, and the email.
+function handleForgot(req, res) {
+  res.status(503).json({
+    error: 'Password reset is not available on this platform yet. Please contact support@modusaiassociates.com and we will reset it for you.'
+  });
+}
+
+app.post('/api/auth/register', authLimiter, handleRegister);
+app.post('/api/auth/login',    authLimiter, handleLogin);
+app.post('/auth/register',     authLimiter, handleRegister);
+app.post('/auth/login',        authLimiter, handleLogin);
+app.post('/auth/forgot',       authLimiter, handleForgot);
+app.post('/api/auth/forgot',   authLimiter, handleForgot);
 
 app.get('/auth/google', (req, res, next) => {
   if (!GOOGLE_ID) return res.status(500).send('Google OAuth not configured');
@@ -456,7 +541,10 @@ app.get('/auth/google/callback',
   }
 );
 
-app.get('/api/auth/me', requireAuth, (req, res) => res.json(safeUser(req.user)));
+// Same handler on both paths, for the same reason as login/register above.
+const handleMe = (req, res) => res.json(safeUser(req.user));
+app.get('/api/auth/me', requireAuth,     handleMe);
+app.get('/auth/me',     requireAuthJSON, handleMe);
 
 app.post('/api/auth/logout', (req, res) => {
   req.logout(err => {
@@ -1549,9 +1637,31 @@ app.use((req, res, next) => {
 // Page routes
 app.get('/app',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
 app.get('/admin',    (req, res) => res.redirect('/seller'));
+// ONE login surface (§B2). public/login.html and public/signup.html are
+// deleted; /login serves the canonical portal, which carries all four views.
+// The portal selects its view from the URL FRAGMENT (#register), not from a
+// query parameter — ?tab=register was read by the page these replaced and
+// would now land every "sign up" link on the sign-in tab.
 app.get('/login',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'auth.html')));
-app.get('/signup',   (req, res) => res.redirect('/login?tab=register'));
-app.get('/register', (req, res) => res.redirect('/login?tab=register'));
+app.get('/signup',   (req, res) => res.redirect('/login#register'));
+app.get('/register', (req, res) => res.redirect('/login#register'));
+app.get('/settings', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'settings.html')));
+require('./routes/settings').mount(app, requireAuth);
+
+// The canonical settings.html sends a 401'd page to /auth/login, and the
+// canonical sidebar links "Sign out" at GET /auth/logout. Neither existed
+// here: the sign-in PAGE is /login on this platform (as it is on Dragon
+// Ginseng, Campus and Mall — /auth/login is a POST-only API endpoint in §4.1),
+// and logout was POST /api/auth/logout only. Two dead links on every settings
+// page. Bridging them server-side is the reversible fix and does not fork the
+// master; reported as a master defect.
+app.get('/auth/login', (req, res) => res.redirect('/login'));
+app.get('/auth/logout', (req, res) => {
+  req.logout(err => {
+    if (err) return res.redirect('/login');
+    req.session.destroy(() => res.redirect('/login'));
+  });
+});
 app.get('/seller',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'seller.html')));
 app.get('/content',  checkModule('content'),  (req, res) => res.sendFile(path.join(__dirname, 'public', 'content.html')));
 app.get('/social',   checkModule('social'),   (req, res) => res.sendFile(path.join(__dirname, 'public', 'social.html')));
@@ -1564,6 +1674,38 @@ app.get('/aichat',   checkModule('aichat'),   (req, res) => res.sendFile(path.jo
 app.get('/gao',      checkModule('gao'),      (req, res) => res.sendFile(path.join(__dirname, 'public', 'gao.html')));
 app.get('/pr',       checkModule('pr'),       (req, res) => res.redirect('/app?goto=pr'));
 app.get('/audiobook', checkModule('audiobook'), (req, res) => res.sendFile(path.join(__dirname, 'public', 'audiobook.html')));
+
+// ════════════════════════════════════════════════════
+//  HEALTH — Modus UI Contract §4.3d
+// ════════════════════════════════════════════════════
+// THREE QUESTIONS, NOT TWO. Do not collapse these.
+//
+//   /health               can the process serve a request AT ALL? Includes the
+//                         hard dependency — a real database round-trip. 503
+//                         when the database is unreachable, because liveness
+//                         that ignores hard dependencies reports healthy while
+//                         every request fails. THIS is what uptime monitors
+//                         should point at, and this is what should page.
+//
+//   /health/capabilities  is any optional capability unconfigured or broken?
+//                         200 healthy / 503 degraded. NOTHING auto-pages on
+//                         this, which is exactly what makes its 503 useful: an
+//                         unset RESEND_API_KEY needs a person, not a pager.
+//
+// Neither had existed in this repo at all before this commit.
+app.get('/health', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', service: 'm-easytools-ai', db: 'up' });
+  } catch (err) {
+    res.status(503).json({ status: 'unavailable', service: 'm-easytools-ai', db: 'down', error: err.message });
+  }
+});
+
+app.get('/health/capabilities', (_req, res) => {
+  const snap = capabilities.snapshot();
+  res.status(snap.healthy ? 200 : 503).json(snap);
+});
 
 // Public per-system landing pages (no auth)
 // /modules/<slug> is the canonical per-system marketing URL, standardized across
@@ -1598,4 +1740,8 @@ app.listen(PORT, () => {
 ║  Billing System: ✓ Ready (/billing)             ║
 ╚══════════════════════════════════════════════════╝
 `);
+  // §4.3d requirement 1. The banner above says "✓ Ready" for things it never
+  // checked; this says what is actually configured, and names the user-visible
+  // consequence of anything that is not.
+  capabilities.logBootCapabilities();
 });

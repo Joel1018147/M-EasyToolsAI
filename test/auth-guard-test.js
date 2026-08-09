@@ -17,7 +17,18 @@
 //
 // The guard lives in server.js, which starts a listener on require. It is
 // read and evaluated in isolation here rather than imported, so the test
-// never boots the app.
+// never boots the app. wantsJson has moved to helpers/wantsJson.js, which has
+// no side effects, so THAT one is required for real — the thing under test is
+// then the actual shipped function rather than a copy of its text.
+//
+// This file also asserts the two things §4.3e says a guard-level test cannot:
+//   - CALL-SITE ASSIGNMENT. This repo now has two guards (requireAuth, which
+//     negotiates, and requireAuthJSON, which never redirects). "Correct" is a
+//     property of which one each route picks, and a test of the functions
+//     alone passes while the wiring is wrong.
+//   - THE SECOND COPY. middleware/checkSub.js makes the same page-vs-fetch
+//     decision for a lapsed subscription and had its own wrong answer. A test
+//     that only ever looks at server.js cannot see that.
 //
 //   node test/auth-guard-test.js
 // ═══════════════════════════════════════════════════════════════
@@ -27,6 +38,8 @@ const path = require('path');
 
 const SERVER = path.join(__dirname, '..', 'server.js');
 const src = fs.readFileSync(SERVER, 'utf8');
+const CHECKSUB = path.join(__dirname, '..', 'middleware', 'checkSub.js');
+const checkSubSrc = fs.readFileSync(CHECKSUB, 'utf8');
 
 let failures = 0;
 const pass = (m) => console.log('  ✓ ' + m);
@@ -53,22 +66,30 @@ function extract(name) {
   return null;
 }
 
-// requireAuth delegates to wantsJson, so both have to come across. Pulling
-// only the guard gave a ReferenceError at call time rather than a wrong
-// answer — which is the good failure mode, but it still has to be handled.
+// requireAuth delegates to wantsJson, which is now a real importable module.
 const guard = extract('requireAuth');
-const helper = extract('wantsJson');
+const guardJson = extract('requireAuthJSON');
 if (!guard) {
   console.error('\n  ✗ requireAuth not found in server.js — has it moved? (§7b rule 4: this is a\n'
     + '    parse failure, not evidence the guard is absent)\n');
   process.exit(1);
 }
+if (!guardJson) {
+  console.error('\n  ✗ requireAuthJSON not found in server.js — GET /auth/me has no JSON-only\n'
+    + '    guard, or it has been renamed. (§7b rule 4: parse failure, not absence.)\n');
+  process.exit(1);
+}
+const { wantsJson } = require('../helpers/wantsJson');
+
 console.log('\n=== §4.3e auth guard: JSON for /api, redirect for pages ===\n');
-console.log('  parsed server.js: requireAuth (' + guard.split('\n').length + ' lines)'
-  + (helper ? ', wantsJson (' + helper.split('\n').length + ' lines)' : ', no wantsJson helper') + '\n');
+console.log('  parsed server.js: requireAuth (' + guard.split('\n').length + ' lines), '
+  + 'requireAuthJSON (' + guardJson.split('\n').length + ' lines)');
+console.log('  required for real: helpers/wantsJson.js\n');
 
 // eslint-disable-next-line no-new-func
-const requireAuth = new Function((helper ? helper + '\n' : '') + guard + '; return requireAuth;')();
+const requireAuth = new Function('wantsJson', guard + '; return requireAuth;')(wantsJson);
+// eslint-disable-next-line no-new-func
+const requireAuthJSON = new Function(guardJson + '; return requireAuthJSON;')();
 
 // express's req.accepts, faithfully enough for the two shapes that matter.
 function makeReq({ url = '/', accept = '', xhr = false, authed = false } = {}) {
@@ -100,14 +121,14 @@ function makeReq({ url = '/', accept = '', xhr = false, authed = false } = {}) {
   };
 }
 
-function run(reqOpts) {
+function run(reqOpts, guardFn = requireAuth) {
   const out = { status: null, body: null, redirect: null, nexted: false };
   const res = {
     status(c) { out.status = c; return res; },
     json(b) { out.body = b; return res; },
     redirect(to) { out.redirect = to; return res; },
   };
-  requireAuth(makeReq(reqOpts), res, () => { out.nexted = true; });
+  guardFn(makeReq(reqOpts), res, () => { out.nexted = true; });
   return out;
 }
 
@@ -145,6 +166,95 @@ for (const url of ['/api/tools', '/dashboard']) {
   else fail(`authenticated ${url} must call next() and write nothing`);
 }
 
+// ── requireAuthJSON: never redirects, still passes authenticated through ──
+console.log('');
+const mj = run({ url: '/auth/me', accept: BROWSER }, requireAuthJSON);
+if (mj.status === 401 && mj.body && !mj.redirect) pass('requireAuthJSON -> 401 even for a browser Accept');
+else fail(`requireAuthJSON must never redirect; got status=${mj.status} redirect=${mj.redirect}`);
+const mjOk = run({ url: '/auth/me', authed: true }, requireAuthJSON);
+if (mjOk.nexted && mjOk.status === null) pass('requireAuthJSON authenticated -> next()');
+else fail('requireAuthJSON must let an authenticated request through untouched');
+
+// ── §4.3e CALL-SITE ASSIGNMENT ───────────────────────────────────
+// "A test of the guards alone passes while the wiring is wrong." Two guards
+// exist, so this enumerates the actual app.<verb>('<path>', <guard>, …)
+// registrations and checks that each path is on a guard that can answer it.
+//
+// requireAuthJSON always 401s, so it is only correct where no browser
+// navigates: /api/* and the /auth/* JSON endpoints from §4.1. requireAuth
+// negotiates, so it is correct anywhere — EXCEPT that a /api/ route on a guard
+// that could redirect would be the original defect, and wantsJson's prefix
+// rule already makes requireAuth answer JSON there. The failure this catches
+// is the reverse: a PAGE route handed the JSON-only guard, which would answer
+// a logged-out visitor with a bare 401 body and no way to sign in.
+console.log('');
+const ROUTE_RE = /app\.(get|post|put|patch|delete)\(\s*'([^']+)'\s*,\s*([A-Za-z_$][\w$]*)/g;
+const registrations = [];
+for (let m; (m = ROUTE_RE.exec(src)) !== null; ) {
+  registrations.push({ verb: m[1], path: m[2], guard: m[3] });
+}
+if (!registrations.length) {
+  fail('parsed ZERO route registrations out of server.js — this is a parse failure, '
+     + 'not proof the wiring is right (§7b rule 4)');
+} else {
+  pass(`parsed ${registrations.length} guarded route registrations from server.js`);
+  const isJsonOnlyPath = (p) => p.startsWith('/api/') || p === '/auth/me';
+  const misassigned = registrations.filter(r => r.guard === 'requireAuthJSON' && !isJsonOnlyPath(r.path));
+  if (misassigned.length === 0) pass('no page route is on requireAuthJSON');
+  else misassigned.forEach(r => fail(
+    `${r.verb.toUpperCase()} ${r.path} is on requireAuthJSON — a logged-out visitor `
+    + 'navigating there gets a bare 401 body and no login screen'));
+
+  const meRoute = registrations.find(r => r.path === '/auth/me');
+  if (!meRoute) fail('GET /auth/me is not registered — §4.1 requires it');
+  else if (meRoute.guard === 'requireAuthJSON') pass('GET /auth/me is on requireAuthJSON');
+  else fail(`GET /auth/me is on ${meRoute.guard}; it sits outside /api/, so a fetch() with the `
+          + 'default Accept: */* would be answered with a 302 and the login HTML');
+}
+
+// ── §4.3e THE SECOND COPY: middleware/checkSub.js ────────────────
+// The same page-vs-fetch decision, made for a lapsed subscription. It asked
+// req.accepts('json'), which a browser's wildcard satisfies, so a signed-in
+// user with an expired plan was shown a raw JSON 402 instead of /billing.
+//
+// Scanned against CODE ONLY. The first version of this check read the raw file
+// and went red on the comment that explains the fix — the sentence naming the
+// old call is not the old call. A scanner that cannot tell those apart reports
+// every properly-documented fix as unfixed.
+function stripComments(text) {
+  let out = '', inS = null, inC = null;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i + 1];
+    if (inC === 'line')  { if (c === '\n') { inC = null; out += c; } continue; }
+    if (inC === 'block') { if (c === '*' && n === '/') { inC = null; i++; } continue; }
+    if (inS) { out += c; if (c === '\\') { out += text[++i] || ''; continue; } if (c === inS) inS = null; continue; }
+    if (c === '/' && n === '/') { inC = 'line'; i++; continue; }
+    if (c === '/' && n === '*') { inC = 'block'; i++; continue; }
+    if (c === '"' || c === "'" || c === '`') { inS = c; }
+    out += c;
+  }
+  return out;
+}
+const checkSubCode = stripComments(checkSubSrc);
+
+console.log('');
+if (/req\.accepts\(\s*['"]json['"]\s*\)/.test(checkSubCode)) {
+  fail("middleware/checkSub.js still calls req.accepts('json') — a browser's */* "
+     + 'makes that true for a page navigation');
+} else {
+  pass("middleware/checkSub.js does not call req.accepts('json')");
+}
+if (/wantsJson\s*\(\s*req\s*\)/.test(checkSubCode) && /require\(['"]\.\.\/helpers\/wantsJson['"]\)/.test(checkSubCode)) {
+  pass('middleware/checkSub.js uses the shared helpers/wantsJson');
+} else {
+  fail('middleware/checkSub.js must use helpers/wantsJson — one definition, or it drifts again');
+}
+if (/require\(['"]\.\/helpers\/wantsJson['"]\)/.test(stripComments(src))) {
+  pass('server.js uses the shared helpers/wantsJson');
+} else {
+  fail('server.js must use helpers/wantsJson, not a private copy');
+}
+
 console.log('');
 if (failures) { console.error('✗ ' + failures + ' failure(s)\n'); process.exit(1); }
-console.log('✓ auth guard negotiates correctly in both directions\n');
+console.log('✓ auth guard negotiates correctly in both directions, and the wiring matches\n');

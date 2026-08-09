@@ -1,5 +1,65 @@
 # M-EasyTools AI+
 
+## Conventions (differ between sibling platforms — check before generating code)
+
+| Thing | Value |
+|---|---|
+| Accent | Orange `#E8622A` (`data-platform="tools"`) |
+| Auth portal | `public/auth.html`, the **canonical** master from `Modus-Agent-OS/design` (md5 `cbd92280`). `/login` serves it. `public/login.html` and `public/signup.html` are **DELETED** — this repo had THREE login surfaces. |
+| Settings | `public/settings.html` from the master (`4ecc6cd5`) + `routes/settings.js`. `user_settings` is created by `initDB()`, so there is no unapplied-migration state to degrade through. |
+| Export | `POST /api/settings/export` → **501**, honestly. There is no job runner in this repo — only a bare `setInterval` for subscription expiry, which is not a queue. Mall and Dragon Ginseng answer 202 because they *have* a runner; Campus answers 501 for the same reason this does. Do not "make it consistent" by copying the 202. |
+| Design system | `public/css/modus-design-system.css`, byte-identical to the master (md5 `63779cf9`). **A per-repo edit to this file is a defect** (§1) — the change goes in the master and is re-copied to all ten repos in the same commit (§1b). |
+| Guards | `requireAuth` negotiates (302 for pages, 401 for `/api/`); `requireAuthJSON` **never** redirects and exists for `GET /auth/me`, which §4.1 puts outside `/api/`. Correctness is call-site assignment — `test/auth-guard-test.js` asserts the wiring, not just the functions. |
+| `wantsJson` | ONE definition, `helpers/wantsJson.js`. `server.js` and `middleware/checkSub.js` both import it. Never re-derive it locally. |
+| i18n | Engine is `window.I18n.setLang(code)` (capital I) reading `localStorage['msm_lang']`. The canonical pages call `window.i18n.apply(code)` and §4.4 says the shared key is `modus-lang`, so both pages carry a small adapter that bridges the names and **dual-writes both keys**. Do not "clean this up" by renaming `msm_lang` — twenty-odd other pages read it. |
+| Locales | `public/locales/{en,ms,zh}.json`. The `auth.*` / `settings.*` key sets come from `Modus-Agent-OS/design/locales/` via `merge-into-repo.js` (§4.2c: keys come from the master, never re-derived here). |
+
+## Two auth paths, one handler
+
+The canonical portal posts to `/auth/login` and `/auth/register`; everything
+that predates it — `scripts/smoke-test.js`, the module pages — posts to
+`/api/auth/*`. Both are mounted on the **same** `handleLogin` / `handleRegister`
+function. Adding a second implementation for the canonical path is the exact
+defect Run 11 found on M-EasyMall: two paths into one account-creating endpoint
+must never become two things that can drift. `test/auth-contract.js` asserts
+they share a handler *identifier*, so a copy-paste fails the suite.
+
+`POST /auth/forgot` answers **503** and that is honest, not a stub: there is no
+reset-token table, no `POST /auth/reset` and no template, so nothing would be
+sent whatever `RESEND_API_KEY` says. The §4.1 rule is *invariance* — the
+response must not vary with whether the address is registered — which is why
+the handler never touches the database and has no branches at all. A real flow
+is DEFERRED and logged as deferred.
+
+## What is deliberately NOT wired
+
+`routes/settings.js` marks several controls `unavailable` with a reason rather
+than storing a flag nothing reads (an inert flag is worse than an absent
+feature — the user believes the capability exists):
+
+- `twofa` — there is no second-factor code path at sign-in
+- `notifyWhatsapp` — no WABA credentials, no send path, no webhook
+- `sstRate` — tax is a payment computation; §C3 says do not touch one
+- the whole **AI & Asha** section — "Asha" is the ecosystem's conversational
+  agent. This platform's AI is a *generation* layer: no conversation to set a
+  tone for, nobody to escalate to. The brand voice that DOES steer output is
+  `users.brand_tone`, edited in the workspace beside the brand name it belongs
+  with. Surfacing it here under a second name would give one setting two homes.
+
+The section still renders — §4.2 keeps all ten on every platform, because a
+section that is present-but-empty and one that does not exist look identical to
+a user and mean completely different things. `GET /api/settings` returns
+`_unavailable` and the page disables each control and prints the reason.
+
+## Health
+
+`/health` does a real `SELECT 1` and answers 503 when the database is down —
+point uptime monitors here. `/health/capabilities` reports unconfigured vs
+**broken** capabilities from `helpers/capabilities.js` and answers 503 when
+degraded; nothing should page on it. Do not collapse the two. `has()` checks
+for a non-empty *value*, never for the key's presence — a variable that exists
+is not a variable that has a value.
+
 ## Model fallback procedure
 Primary: qwen/qwen3.6-27b (Groq preview tier — chosen for EN/BM/ZH multilingual
 strength). If Groq rate-limits or pulls this model:

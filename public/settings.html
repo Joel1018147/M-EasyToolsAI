@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  MODUS AI ECOSYSTEM — CANONICAL SETTINGS PAGE  (reference template v2.0)
+  ───────────────────────────────────────────────────────────────────────────
+  Drop this in as  public/settings.html  in EVERY platform.
+
+  THE TEN MANDATORY SECTIONS — every platform has all ten, in this order,
+  with these labels. A platform that does not use one still shows it with
+  an .empty-state explaining why. Removing a section is not permitted:
+  a user who learns settings on one platform must find them in the same
+  place on the next.
+
+     1. Profile              name, avatar, email, phone, timezone
+     2. Account & Security   password, 2FA, active sessions, login history
+     3. Appearance           theme, density, sidebar default
+     4. Language & Region    EN/BM/ZH, currency, date format, SST rate
+     5. Notifications        email, WhatsApp, in-app, digest frequency
+     6. AI & Asha            model, tone, escalation, trilingual, usage
+     7. Team & Roles         members, invite, role matrix
+     8. Integrations         WhatsApp, Telegram, payment, accounting, API keys
+     9. Billing              plan, features, invoices, payment method
+    10. Danger Zone          export data, delete account
+
+  PLATFORM-SPECIFIC settings are appended AFTER Danger Zone in the nav
+  under a "This platform" group. They never displace the ten.
+
+  TRANSLATION HOOKS — two kinds, and the difference matters:
+    data-i18n       sets textContent. Use for plain text ONLY. Applying it to
+                    an element with child markup DELETES the children.
+    data-i18n-html  sets innerHTML. Use ONLY for developer-authored strings
+                    containing <code>/<strong>/<a>. NEVER for user, API or
+                    database values — that is an XSS boundary.
+  Nodes rendered from JS must have their hook set in JS and the engine
+  re-applied after render, or the switcher translates the static page and
+  silently skips everything drawn from the API.
+
+  Backend contract:
+    GET   /api/settings                  -> 200 { profile, security, ... }
+    PATCH /api/settings/:section         -> 200 { ok, updated }
+    POST  /api/settings/password         -> 200 | 401 | 422
+    POST  /api/settings/export           -> 202 if a job runner exists and
+                                            drains scheduled_jobs;
+                                            501 if it does not. Never enqueue
+                                            into a queue nothing drains.
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+<html data-platform="tools" data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>Settings — M-EasyTools AI+</title>
+<link href="/css/modus-design-system.css" rel="stylesheet"/>
+</head>
+<body>
+<a class="skip-link" data-i18n="common.skipToContent" href="#settingsMain">Skip to content</a>
+<div class="app-layout">
+<!-- ══ SIDEBAR — identical shell on every platform ══════════════════ -->
+<aside class="app-sidebar">
+<div class="sidebar-brand">
+<span class="sidebar-brand-dot"></span>
+<span class="sidebar-logo" data-bind="platformName">M-EasyTools AI+</span>
+</div>
+<nav class="sidebar-nav">
+<div class="sidebar-section-label" data-i18n="nav.group.workspace">Workspace</div>
+<a class="sidebar-item" href="/app"><span class="sidebar-item-icon">▦</span><span data-i18n="nav.sidebar.dashboard">Dashboard</span></a>
+<a class="sidebar-item" href="/billing"><span class="sidebar-item-icon">▤</span><span data-i18n="nav.sidebar.billing">Billing</span></a>
+<div class="sidebar-section-label" data-i18n="nav.group.account">Account</div>
+<a class="sidebar-item active" href="/settings"><span class="sidebar-item-icon">⚙</span><span data-i18n="nav.sidebar.settings">Settings</span></a>
+</nav>
+<div class="sidebar-footer">
+<div class="sidebar-user">
+<div class="sidebar-user-avatar">—</div>
+<div class="sidebar-user-info">
+<div class="sidebar-user-name">—</div>
+<div class="sidebar-user-plan">—</div>
+</div>
+</div>
+<a class="sidebar-logout" data-i18n="nav.signOut" href="/auth/logout">Sign out</a>
+</div>
+</aside>
+<!-- ══ MAIN ═════════════════════════════════════════════════════════ -->
+<main class="app-main" id="settingsMain">
+<header class="app-topbar">
+<div class="topbar-title" data-i18n="nav.sidebar.settings">Settings</div>
+<div class="topbar-right">
+<div class="lang-switch">
+<button class="lang-switch-btn active" data-lang="en" type="button">EN</button>
+<button class="lang-switch-btn" data-lang="ms" type="button">BM</button>
+<button class="lang-switch-btn" data-lang="zh" type="button">中文</button>
+</div>
+<button aria-label="Toggle dark mode" class="theme-toggle" id="themeToggle" type="button">🌙</button>
+<div class="topbar-avatar">—</div>
+</div>
+</header>
+<div class="p-5">
+<h1 class="page-title" data-i18n="nav.sidebar.settings">Settings</h1>
+<p class="page-subtitle" data-i18n="page.settings.subtitle">Manage your profile, security, and how this platform behaves.</p>
+<div class="settings-layout">
+<!-- ── NAV ── -->
+<nav class="settings-nav" id="settingsNav">
+<div class="settings-nav-group-label" data-i18n="nav.group.account">Account</div>
+<button class="settings-nav-item active" data-section="profile"><span class="settings-nav-item-icon">👤</span> <span data-i18n="settings.nav.profile">Profile</span></button>
+<button class="settings-nav-item" data-section="security"><span class="settings-nav-item-icon">🔒</span> <span data-i18n="settings.nav.security">Account &amp; Security</span></button>
+<div class="settings-nav-group-label" data-i18n="settings.nav.group.preferences">Preferences</div>
+<button class="settings-nav-item" data-section="appearance"><span class="settings-nav-item-icon">🎨</span> <span data-i18n="settings.nav.appearance">Appearance</span></button>
+<button class="settings-nav-item" data-section="language"><span class="settings-nav-item-icon">🌐</span> <span data-i18n="settings.nav.language">Language &amp; Region</span></button>
+<button class="settings-nav-item" data-section="notifications"><span class="settings-nav-item-icon">🔔</span> <span data-i18n="settings.nav.notifications">Notifications</span></button>
+<div class="settings-nav-group-label" data-i18n="settings.nav.group.platform">Platform</div>
+<button class="settings-nav-item" data-section="ai"><span class="settings-nav-item-icon">🤖</span> <span data-i18n="settings.nav.ai">AI &amp; Asha</span></button>
+<button class="settings-nav-item" data-section="team"><span class="settings-nav-item-icon">👥</span> <span data-i18n="settings.nav.team">Team &amp; Roles</span></button>
+<button class="settings-nav-item" data-section="integrations"><span class="settings-nav-item-icon">🔌</span> <span data-i18n="settings.nav.integrations">Integrations</span></button>
+<button class="settings-nav-item" data-section="billing"><span class="settings-nav-item-icon">💳</span> <span data-i18n="settings.nav.billing">Billing</span></button>
+<div class="settings-nav-group-label" data-i18n="settings.nav.group.danger">Danger</div>
+<button class="settings-nav-item settings-nav-item-danger" data-section="danger"><span class="settings-nav-item-icon">⚠</span> <span data-i18n="settings.nav.danger">Danger Zone</span></button>
+</nav>
+<!-- ── CONTENT ── -->
+<div class="settings-content">
+<!-- 1. PROFILE -->
+<section class="settings-section" data-panel="profile">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.profile">Profile</div>
+<div class="settings-section-desc" data-i18n="settings.profile.section.desc">How you appear across this platform.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-avatar-row">
+<div class="avatar avatar-xl">JT</div>
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.profile.profilePhoto.label">Profile photo</div>
+<div class="settings-row-desc" data-i18n="settings.profile.profilePhoto.desc">JPG or PNG, up to 2 MB. Square images look best.</div>
+<div class="settings-avatar-actions mt-2">
+<button class="btn btn-outline btn-sm" data-i18n="settings.profile.profilePhoto.upload" type="button">Upload</button>
+<button class="btn btn-outline btn-sm" data-i18n="settings.profile.profilePhoto.remove" type="button">Remove</button>
+</div>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.profile.name.label">Full name</div>
+<div class="settings-row-desc" data-i18n="settings.profile.name.desc">Shown to your team and on documents you generate.</div>
+</div>
+<div class="settings-row-control"><input name="name" placeholder="Loading…" type="text" value=""/></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.profile.email.label">Email address</div>
+<div class="settings-row-desc" data-i18n="settings.profile.email.desc">Used for sign-in and system notifications.</div>
+</div>
+<div class="settings-row-control">
+<input name="email" placeholder="Loading…" type="email" value=""/>
+<span class="badge badge-green" data-i18n="settings.profile.verified">Verified</span>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.profile.phone.label">Mobile number</div>
+<div class="settings-row-desc" data-i18n="settings.profile.phone.desc">Where WhatsApp notifications are delivered.</div>
+</div>
+<div class="settings-row-control"><input name="phone" placeholder="Loading…" type="tel" value=""/></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.profile.timezone.label">Time zone</div>
+<div class="settings-row-desc" data-i18n="settings.profile.timezone.desc">All timestamps and scheduled jobs use this zone.</div>
+</div>
+<div class="settings-row-control">
+<select name="timezone">
+<option data-i18n="settings.profile.timezone.opt.asiaKuala" selected="">Asia/Kuala_Lumpur (GMT+8)</option>
+<option data-i18n="settings.profile.timezone.opt.asiaSingapore">Asia/Singapore (GMT+8)</option>
+<option data-i18n="settings.profile.timezone.opt.asiaShanghai">Asia/Shanghai (GMT+8)</option>
+<option data-i18n="settings.profile.timezone.opt.asiaDubai">Asia/Dubai (GMT+4)</option>
+</select>
+</div>
+</div>
+</div>
+<div class="settings-section-foot">
+<button class="btn btn-outline" data-i18n="settings.profile.cancel" type="button">Cancel</button>
+<button class="btn btn-primary" data-i18n="settings.profile.saveChanges" data-save="profile" type="button">Save changes</button>
+</div>
+</section>
+<!-- 2. ACCOUNT & SECURITY -->
+<section class="settings-section" data-panel="security" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.security">Account &amp; Security</div>
+<div class="settings-section-desc" data-i18n="settings.security.section.desc">Passwords, two-factor authentication and where you are signed in.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-row settings-row-stacked">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.security.password.label">Change password</div>
+<div class="settings-row-desc" data-i18n="settings.security.password.desc">Minimum 8 characters. You will stay signed in on this device.</div>
+</div>
+<div class="settings-row-control">
+<div class="form-grid">
+<div class="form-group"><label data-i18n="settings.security.password.currentLabel">Current password</label>
+<div class="pw-wrap"><input autocomplete="current-password" name="currentPassword" type="password"/>
+<button class="pw-toggle" data-pw-toggle-sibling="" type="button">👁</button></div>
+</div>
+<div class="form-group"><label data-i18n="settings.security.password.newLabel">New password</label>
+<div class="pw-wrap"><input autocomplete="new-password" name="newPassword" type="password"/>
+<button class="pw-toggle" data-pw-toggle-sibling="" type="button">👁</button></div>
+</div>
+</div>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.security.twofa.label">Two-factor authentication</div>
+<div class="settings-row-desc" data-i18n="settings.security.twofa.desc">Require a 6-digit code from your email on every new sign-in.</div>
+</div>
+<div class="settings-row-control">
+<label class="toggle"><input name="twofa" type="checkbox"/><span class="toggle-track"></span></label>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.security.googleAccount.label">Google account</div>
+<div class="settings-row-desc" data-i18n="settings.security.googleAccount.desc">Sign in with Google instead of a password.</div>
+</div>
+<div class="settings-row-control">
+<span class="badge badge-green" data-i18n="settings.security.connected">Connected</span>
+<button class="btn btn-outline btn-sm" data-i18n="settings.security.googleAccount.disconnect" type="button">Disconnect</button>
+</div>
+</div>
+<div class="settings-row settings-row-stacked">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.security.activeSessions.label">Active sessions</div>
+<div class="settings-row-desc" data-i18n="settings.security.activeSessions.desc">Devices currently signed in to your account.</div>
+</div>
+<div class="settings-row-control">
+<div class="table-wrap">
+<table>
+<thead><tr><th data-i18n="settings.security.col.device">Device</th><th data-i18n="settings.security.col.location">Location</th><th data-i18n="settings.security.col.lastActive">Last active</th><th></th></tr></thead>
+<tbody><tr><td class="text-muted text-center" colspan="4" data-empty="1">Loading…</td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="settings-section-foot">
+<button class="btn btn-primary" data-i18n="settings.profile.saveChanges" data-save="security" type="button">Save changes</button>
+</div>
+</section>
+<!-- 3. APPEARANCE -->
+<section class="settings-section" data-panel="appearance" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.appearance">Appearance</div>
+<div class="settings-section-desc" data-i18n="settings.appearance.section.desc">Applies to this browser only. Your accent colour is set by the platform and cannot be changed.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-row settings-row-stacked">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.appearance.theme.label">Theme</div>
+<div class="settings-row-desc" data-i18n-html="settings.appearance.theme.desc">Saved to this device as <code>modus-theme</code> and shared across all Modus platforms.</div>
+</div>
+<div class="settings-row-control">
+<div class="settings-choice" id="themeChoice">
+<label class="settings-choice-opt active" data-theme-val="light">
+<span class="settings-choice-swatch settings-choice-swatch-light"></span>
+<input checked="" name="theme" type="radio" value="light"/> Light
+                    </label>
+<label class="settings-choice-opt" data-theme-val="dark">
+<span class="settings-choice-swatch settings-choice-swatch-dark"></span>
+<input name="theme" type="radio" value="dark"/> Dark
+                    </label>
+<label class="settings-choice-opt" data-theme-val="auto">
+<span class="settings-choice-swatch settings-choice-swatch-auto"></span>
+<input name="theme" type="radio" value="auto"/> System
+                    </label>
+</div>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.appearance.sidebarCollapsed.label">Sidebar</div>
+<div class="settings-row-desc" data-i18n="settings.appearance.sidebarCollapsed.desc">Start collapsed on desktop. Mobile always uses the bottom bar.</div>
+</div>
+<div class="settings-row-control">
+<label class="toggle"><input name="sidebarCollapsed" type="checkbox"/><span class="toggle-track"></span></label>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.appearance.platformAccent.label">Platform accent</div>
+<div class="settings-row-desc" data-i18n="settings.appearance.platformAccent.desc">Fixed per platform. This is the one thing that differs between Modus systems.</div>
+</div>
+<div class="settings-row-control">
+<span class="tag tag-accent" data-i18n="settings.appearance.accent" id="accentTag">Accent</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. LANGUAGE & REGION -->
+<section class="settings-section" data-panel="language" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.language">Language &amp; Region</div>
+<div class="settings-section-desc" data-i18n="settings.language.section.desc">Trilingual by default. Tax settings affect every future transaction.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-row settings-row-stacked">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.language.lang.label">Interface language</div>
+<div class="settings-row-desc" data-i18n="settings.language.lang.desc">Asha replies in the language the customer writes in, regardless of this setting.</div>
+</div>
+<div class="settings-row-control">
+<div class="settings-choice">
+<label class="settings-choice-opt active"><input checked="" name="lang" type="radio" value="en"/> English</label>
+<label class="settings-choice-opt"><input name="lang" type="radio" value="ms"/> Bahasa Malaysia</label>
+<label class="settings-choice-opt"><input name="lang" type="radio" value="zh"/> 简体中文</label>
+</div>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.language.currency.label">Currency</div>
+<div class="settings-row-desc" data-i18n="settings.language.currency.desc">Display currency for all amounts.</div></div>
+<div class="settings-row-control">
+<select name="currency">
+<option data-i18n="settings.language.currency.opt.myrMalaysian" selected="">MYR — Malaysian Ringgit (RM)</option>
+<option data-i18n="settings.language.currency.opt.sgdSingapore">SGD — Singapore Dollar</option>
+<option data-i18n="settings.language.currency.opt.cnyChinese">CNY — Chinese Yuan (¥)</option>
+<option data-i18n="settings.language.currency.opt.usdUs">USD — US Dollar</option>
+</select>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.language.dateFormat.label">Date format</div>
+<div class="settings-row-desc" data-i18n="settings.language.dateFormat.desc">Malaysian convention is day first.</div></div>
+<div class="settings-row-control">
+<select name="dateFormat"><option data-i18n="settings.language.dateFormat.opt.ddMm" selected="">DD/MM/YYYY</option><option data-i18n="settings.language.dateFormat.opt.yyyyMm">YYYY-MM-DD</option><option data-i18n="settings.language.dateFormat.opt.mmDd">MM/DD/YYYY</option></select>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.language.sstRate.label">SST rate</div>
+<div class="settings-row-desc" data-i18n-html="settings.language.sstRate.desc">
+                    Sales &amp; Service Tax, not GST. The rate is stored <strong>on each transaction at the time of sale</strong> —
+                    changing it here does not restate historical transactions.
+                  </div>
+</div>
+<div class="settings-row-control"><input class="w-narrow" max="100" min="0" name="sstRate" step="0.1" type="number" value="8"/> <span class="text-muted">%</span></div>
+</div>
+</div>
+<div class="settings-section-foot">
+<button class="btn btn-primary" data-i18n="settings.profile.saveChanges" data-save="language" type="button">Save changes</button>
+</div>
+</section>
+<!-- 5. NOTIFICATIONS -->
+<section class="settings-section" data-panel="notifications" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.notifications">Notifications</div>
+<div class="settings-section-desc" data-i18n="settings.notifications.section.desc">Choose what reaches you and where.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.notifications.notifyEmail.label">Email</div>
+<div class="settings-row-desc" data-i18n="settings.notifications.notifyEmail.desc">System alerts, weekly digests and billing notices.</div></div>
+<div class="settings-row-control"><label class="toggle"><input checked="" name="notifyEmail" type="checkbox"/><span class="toggle-track"></span></label></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.notifications.notifyWhatsapp.label">WhatsApp</div>
+<div class="settings-row-desc" data-i18n="settings.notifications.notifyWhatsapp.desc">Urgent alerts and Asha escalations to your mobile number.</div></div>
+<div class="settings-row-control"><label class="toggle"><input checked="" name="notifyWhatsapp" type="checkbox"/><span class="toggle-track"></span></label></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.notifications.notifyInApp.label">In-app</div>
+<div class="settings-row-desc" data-i18n="settings.notifications.notifyInApp.desc">Toast notifications while you are using the platform.</div></div>
+<div class="settings-row-control"><label class="toggle"><input checked="" name="notifyInApp" type="checkbox"/><span class="toggle-track"></span></label></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.notifications.digest.label">Digest frequency</div>
+<div class="settings-row-desc" data-i18n="settings.notifications.digest.desc">Delivered by a scheduled job, not a browser timer.</div></div>
+<div class="settings-row-control">
+<select name="digest"><option data-i18n="settings.notifications.digest.opt.dailyAt">Daily at 8:00 AM</option><option data-i18n="settings.notifications.digest.opt.weeklyOn" selected="">Weekly on Monday</option><option data-i18n="settings.notifications.digest.opt.never">Never</option></select>
+</div>
+</div>
+</div>
+<div class="settings-section-foot">
+<button class="btn btn-primary" data-i18n="settings.profile.saveChanges" data-save="notifications" type="button">Save changes</button>
+</div>
+</section>
+<!-- 6. AI & ASHA -->
+<section class="settings-section" data-panel="ai" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.ai.section.title">🤖 AI &amp; Asha</div>
+<div class="settings-section-desc" data-i18n="settings.ai.section.desc">How the AI layer behaves on this platform.</div>
+</div>
+<div class="settings-section-body">
+<div class="ai-insight mt-4">
+<div class="ai-insight-header" data-i18n="settings.ai.insight.title">🤖 Model in use</div>
+<div data-i18n-html="settings.ai.insight.body">Resolved at runtime from <code>GROQ_MODEL</code> if set, otherwise the code default.
+                     What you see here is the value <em>actually being sent</em> to Groq, not the code default.</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.ai.activeModel.label">Active model</div>
+<div class="settings-row-desc" data-i18n="settings.ai.activeModel.desc">Read-only. Changed via the Railway environment, not here.</div></div>
+<div class="settings-row-control"><span class="tag tag-accent" data-src="ai.resolvedModel" id="aiModel">—</span></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.ai.ashaTone.label">Asha tone</div>
+<div class="settings-row-desc" data-i18n="settings.ai.ashaTone.desc">Applied to customer-facing replies on WhatsApp, Telegram and Messenger.</div></div>
+<div class="settings-row-control">
+<select name="ashaTone"><option data-i18n="settings.ai.ashaTone.opt.professional" selected="">Professional</option><option data-i18n="settings.ai.ashaTone.opt.friendly">Friendly</option><option data-i18n="settings.ai.ashaTone.opt.concise">Concise</option></select>
+</div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.ai.trilingualAutoDetect.label">Trilingual auto-detect</div>
+<div class="settings-row-desc" data-i18n="settings.ai.trilingualAutoDetect.desc">Detects EN / BM / 中文 per message and replies in kind.</div></div>
+<div class="settings-row-control"><label class="toggle"><input checked="" name="trilingualAutoDetect" type="checkbox"/><span class="toggle-track"></span></label></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.ai.humanEscalation.label">Human escalation</div>
+<div class="settings-row-desc" data-i18n="settings.ai.humanEscalation.desc">Always available and reachable without the model's cooperation. Cannot be disabled.</div></div>
+<div class="settings-row-control">
+<label class="toggle"><input checked="" disabled="" name="humanEscalation" type="checkbox"/><span class="toggle-track"></span></label>
+<span class="badge badge-gray" data-i18n="settings.ai.locked">Locked</span>
+</div>
+</div>
+<div class="settings-row settings-row-stacked">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.ai.escalationPhone.label">Escalation contact</div>
+<div class="settings-row-desc" data-i18n="settings.ai.escalationPhone.desc">Where Asha hands a conversation to a human.</div></div>
+<div class="settings-row-control"><input name="escalationPhone" type="tel" value="+60 12-345 6789"/></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.ai.aiUsageThis.label">AI usage this month</div>
+<div class="settings-row-desc" data-i18n-html="settings.ai.aiUsageThis.desc">Logged to <code>ai_interactions</code>.</div></div>
+<div class="settings-row-control"><span class="text-muted" id="aiUsage">—</span></div>
+</div>
+</div>
+<div class="settings-section-foot">
+<button class="btn btn-primary" data-i18n="settings.profile.saveChanges" data-save="ai" type="button">Save changes</button>
+</div>
+</section>
+<!-- 7. TEAM & ROLES -->
+<section class="settings-section" data-panel="team" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.team">Team &amp; Roles</div>
+<div class="settings-section-desc" data-i18n="settings.team.section.desc">Who has access and what they can do.</div>
+</div>
+<div class="settings-section-body">
+<div class="table-toolbar">
+<span class="table-toolbar-count" data-i18n="settings.team.3Members">3 members</span>
+<button class="btn btn-primary btn-sm" data-i18n="settings.team.inviteMember" type="button">Invite member</button>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th data-i18n="settings.team.col.member">Member</th><th data-i18n="settings.notifications.email.label">Email</th><th data-i18n="settings.team.col.role">Role</th><th data-i18n="settings.team.col.status">Status</th><th></th></tr></thead>
+<tbody><tr><td class="text-muted text-center" colspan="5" data-empty="1">Loading…</td></tr></tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- 8. INTEGRATIONS -->
+<section class="settings-section" data-panel="integrations" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.integrations">Integrations</div>
+<div class="settings-section-desc" data-i18n="settings.integrations.section.desc">External services connected to this platform.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-integration">
+<div class="settings-integration-logo">💬</div>
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.integrations.whatsappBusinessApi.label">WhatsApp Business API</div>
+<div class="settings-row-desc" data-i18n-html="settings.integrations.whatsappBusinessApi.desc">Asha replies to customers on WhatsApp. Requires <code>WABA_APP_SECRET</code> before connecting a live number — without it the webhook accepts unsigned requests.</div>
+</div>
+<div class="settings-row-control"><span class="badge badge-green" data-i18n="settings.security.connected">Connected</span><button class="btn btn-outline btn-sm" data-i18n="settings.integrations.whatsappBusinessApi.configure" type="button">Configure</button></div>
+</div>
+<div class="settings-integration">
+<div class="settings-integration-logo">✈️</div>
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.integrations.telegramBot.label">Telegram Bot</div>
+<div class="settings-row-desc" data-i18n="settings.integrations.telegramBot.desc">Asha replies to customers on Telegram.</div>
+</div>
+<div class="settings-row-control"><span class="badge badge-gray" data-i18n="settings.integrations.notConnected">Not connected</span><button class="btn btn-outline btn-sm" data-i18n="settings.integrations.telegramBot.connect" type="button">Connect</button></div>
+</div>
+<div class="settings-integration">
+<div class="settings-integration-logo">💳</div>
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.integrations.paymentGateway.label">Payment gateway</div>
+<div class="settings-row-desc" data-i18n="settings.integrations.paymentGateway.desc">iPay88, Fiuu, SenangPay or FPX.</div>
+</div>
+<div class="settings-row-control"><span class="badge badge-amber" data-i18n="settings.integrations.pendingApproval">Pending approval</span><button class="btn btn-outline btn-sm" data-i18n="settings.integrations.whatsappBusinessApi.configure" type="button">Configure</button></div>
+</div>
+<div class="settings-integration">
+<div class="settings-integration-logo">📄</div>
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.integrations.myinvoisLhdnE.label">MyInvois (LHDN e-Invoice)</div>
+<div class="settings-row-desc" data-i18n="settings.integrations.myinvoisLhdnE.desc">Malaysian e-invoicing compliance.</div>
+</div>
+<div class="settings-row-control"><span class="badge badge-gray" data-i18n="settings.integrations.notConnected">Not connected</span><button class="btn btn-outline btn-sm" data-i18n="settings.integrations.telegramBot.connect" type="button">Connect</button></div>
+</div>
+<div class="settings-row settings-row-stacked">
+<div class="settings-row-main">
+<div class="settings-row-label" data-i18n="settings.integrations.apiKey.label">API key</div>
+<div class="settings-row-desc" data-i18n="settings.integrations.apiKey.desc">For mobile apps and third-party integrations. Rotating invalidates the old key immediately.</div>
+</div>
+<div class="settings-row-control">
+<div class="settings-key">
+<div class="settings-key-value" data-src="integrations.apiKey" id="apiKey">—</div>
+<button class="btn btn-outline btn-sm" data-i18n="settings.integrations.apiKey.reveal" type="button">Reveal</button>
+<button class="btn btn-outline btn-sm" data-i18n="settings.integrations.apiKey.copy" type="button">Copy</button>
+<button class="btn btn-danger btn-sm" data-i18n="settings.integrations.apiKey.rotate" type="button">Rotate</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 9. BILLING -->
+<section class="settings-section" data-panel="billing" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.nav.billing">Billing</div>
+<div class="settings-section-desc" data-i18n="settings.billing.section.desc">Your plan, enabled features and invoices.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.billing.currentPlan.label">Current plan</div>
+<div class="settings-row-desc" data-i18n="settings.billing.currentPlan.desc">Billed monthly per enabled feature.</div></div>
+<div class="settings-row-control"><span class="badge badge-accent" data-i18n="settings.billing.growth">Growth</span><button class="btn btn-outline btn-sm" data-i18n="settings.billing.currentPlan.changePlan" type="button">Change plan</button></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.billing.enabledFeatures.label">Enabled features</div>
+<div class="settings-row-desc" data-i18n="settings.billing.enabledFeatures.desc">RM100 per feature per month.</div></div>
+<div class="settings-row-control"><span class="text-muted">—</span></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.billing.paymentMethod.label">Payment method</div>
+<div class="settings-row-desc" data-i18n="settings.billing.paymentMethod.desc">Charged on the 1st of each month.</div></div>
+<div class="settings-row-control"><span class="text-muted">—</span><button class="btn btn-outline btn-sm" data-i18n="settings.billing.paymentMethod.update" type="button">Update</button></div>
+</div>
+<div class="settings-row settings-row-stacked">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.billing.invoices.label">Invoices</div>
+<div class="settings-row-desc" data-i18n="settings.billing.invoices.desc">Tax shown is the SST rate recorded at the time of each invoice.</div></div>
+<div class="settings-row-control">
+<div class="table-wrap">
+<table>
+<thead><tr><th data-i18n="settings.billing.col.date">Date</th><th data-i18n="settings.billing.col.amount">Amount</th><th data-i18n="settings.billing.col.sst">SST</th><th data-i18n="settings.team.col.status">Status</th><th></th></tr></thead>
+<tbody><tr><td class="text-muted text-center" colspan="5" data-empty="1">Loading…</td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 10. DANGER ZONE -->
+<section class="settings-section settings-danger" data-panel="danger" hidden="">
+<div class="settings-section-head">
+<div class="settings-section-title" data-i18n="settings.danger.section.title">⚠ Danger Zone</div>
+<div class="settings-section-desc" data-i18n="settings.danger.section.desc">These actions are permanent. Read carefully.</div>
+</div>
+<div class="settings-section-body">
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.danger.exportAllData.label">Export all data</div>
+<div class="settings-row-desc" data-i18n="settings.danger.exportAllData.desc">Queued as a background job. You will receive an email when the archive is ready.</div></div>
+<div class="settings-row-control"><button class="btn btn-outline" data-i18n="settings.danger.exportAllData.requestExport" type="button">Request export</button></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.danger.transferOwnership.label">Transfer ownership</div>
+<div class="settings-row-desc" data-i18n="settings.danger.transferOwnership.desc">Hand this workspace to another member. You keep manager access.</div></div>
+<div class="settings-row-control"><button class="btn btn-outline" data-i18n="settings.danger.transferOwnership.transfer" type="button">Transfer</button></div>
+</div>
+<div class="settings-row">
+<div class="settings-row-main"><div class="settings-row-label" data-i18n="settings.danger.deleteAccount.label">Delete account</div>
+<div class="settings-row-desc" data-i18n="settings.danger.deleteAccount.desc">All data is permanently removed after a 30-day grace period. This cannot be undone.</div></div>
+<div class="settings-row-control"><button class="btn btn-danger" data-i18n="settings.danger.deleteAccount.label" type="button">Delete account</button></div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- sticky save bar — appears on any change -->
+<div class="settings-savebar mt-4" hidden="" id="saveBar">
+<span class="settings-savebar-msg" data-i18n="settings.savebar.msg">You have unsaved changes.</span>
+<div class="flex gap-2">
+<button class="btn btn-outline" data-i18n="settings.savebar.discard" id="discardBtn" type="button">Discard</button>
+<button class="btn btn-primary" data-i18n="settings.profile.saveChanges" id="saveAllBtn" type="button">Save changes</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- bottom nav — mobile only, identical shell on every platform -->
+<nav class="app-bottom-nav">
+<div class="bottom-nav-inner">
+<a class="bottom-nav-item" href="/app"><span class="bottom-nav-item-icon">▦</span><span data-i18n="nav.bottom.home">Home</span></a>
+<a class="bottom-nav-item" href="/app/inbox"><span class="bottom-nav-item-icon">✉</span><span data-i18n="nav.sidebar.inbox">Inbox</span></a>
+<a class="bottom-nav-item active" href="/settings"><span class="bottom-nav-item-icon">⚙</span><span data-i18n="nav.sidebar.settings">Settings</span></a>
+</div>
+</nav>
+<script>
+(function () {
+  'use strict';
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  /* --- theme, shared ecosystem-wide --- */
+  const THEME_KEY = 'modus-theme';
+  const applyTheme = t => {
+    const resolved = t === 'auto'
+      ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : t;
+    document.documentElement.setAttribute('data-theme', resolved);
+    const b = $('#themeToggle');
+    if (b) b.textContent = resolved === 'dark' ? '☀️' : '🌙';
+  };
+  applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+  $('#themeToggle')?.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+    syncThemeChoice(next);
+  });
+  function syncThemeChoice(v) {
+    $$('#themeChoice .settings-choice-opt').forEach(o => o.classList.toggle('active', o.dataset.themeVal === v));
+  }
+  syncThemeChoice(localStorage.getItem(THEME_KEY) || 'light');
+  $$('#themeChoice .settings-choice-opt').forEach(opt => opt.addEventListener('click', () => {
+    const v = opt.dataset.themeVal;
+    localStorage.setItem(THEME_KEY, v);
+    applyTheme(v);
+    syncThemeChoice(v);
+  }));
+
+  /* --- language --- */
+  const LANG_KEY = 'modus-lang';
+  $$('.lang-switch-btn').forEach(b => b.addEventListener('click', () => {
+    localStorage.setItem(LANG_KEY, b.dataset.lang);
+    document.documentElement.lang = b.dataset.lang;
+    $$('.lang-switch-btn').forEach(x => x.classList.toggle('active', x === b));
+    applyI18n(b.dataset.lang);
+  }));
+
+  /* --- generic choice cards --- */
+  $$('.settings-choice').forEach(group => {
+    if (group.id === 'themeChoice') return;
+    $$('.settings-choice-opt', group).forEach(opt => opt.addEventListener('click', () => {
+      $$('.settings-choice-opt', group).forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      markDirty();
+    }));
+  });
+
+  /* --- section nav --- */
+  const showSection = name => {
+    $$('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== name);
+    $$('.settings-nav-item').forEach(b => b.classList.toggle('active', b.dataset.section === name));
+    history.replaceState(null, '', '#' + name);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  $$('.settings-nav-item').forEach(b => b.addEventListener('click', () => showSection(b.dataset.section)));
+  const valid = $$('.settings-nav-item').map(b => b.dataset.section);
+  const initial = (location.hash || '').slice(1);
+  showSection(valid.includes(initial) ? initial : 'profile');
+
+  /* --- password toggles --- */
+  $$('[data-pw-toggle-sibling]').forEach(btn => btn.addEventListener('click', () => {
+    const inp = btn.previousElementSibling;
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.textContent = show ? '🙈' : '👁';
+  }));
+
+
+  /* --- i18n bridge. §4.3b: repo engines vary. Some take a language code,
+         some take a root element, some auto-read localStorage. Probe, do
+         not assume — passing a code to an engine expecting an element sets
+         scope='en' and then calls 'en'.querySelectorAll, which throws on the
+         first language click. Halal and Dragon Ginseng each hit this. --- */
+  function applyI18n(code) {
+    const i = window.i18n;
+    if (!i) return;
+    try {
+      if (typeof i.setLang === 'function')      return i.setLang(code);
+      if (typeof i.apply === 'function')        return i.apply.length >= 1 && String(i.apply.length) === '1'
+                                                     ? i.apply(code) : i.apply(document);
+      if (typeof i.translate === 'function')    return i.translate(code);
+    } catch (e) { console.error('i18n bridge failed', e); }
+  }
+
+  /* --- toast. The master called window.toast and never defined it, so every
+         save confirmation and every error was silently swallowed. §4.3c: a
+         control that reports nothing is a control that might not have run. --- */
+  window.toast = window.toast || function (kind, msg) {
+    let region = document.getElementById('mds-toast-region');
+    if (!region) {
+      region = document.createElement('div');
+      region.id = 'mds-toast-region';
+      region.setAttribute('role', 'status');
+      region.setAttribute('aria-live', 'polite');
+      document.body.appendChild(region);
+    }
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + (kind === 'error' ? 'error' : kind === 'success' ? 'success' : 'info');
+    const b = document.createElement('div');
+    b.className = 'toast-body';
+    b.textContent = msg;               // textContent, never innerHTML
+    t.appendChild(b);
+    region.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  };
+
+  /* --- LOAD state. The master shipped with exactly one fetch() and it was
+         the PATCH, so every field rendered its template placeholder and a
+         user could not tell a saved setting from a default. --- */
+  async function loadSettings() {
+    try {
+      const res = await fetch('/api/settings', { credentials: 'same-origin',
+                                                 headers: { 'Accept': 'application/json' } });
+      if (res.status === 401) { location.href = '/auth/login'; return; }
+      if (!res.ok) throw new Error('load failed');
+      const data = await res.json();
+      Object.entries(data).forEach(([section, fields]) => {
+        if (!fields || typeof fields !== 'object') return;
+        const panel = document.querySelector('[data-panel="' + section + '"]');
+        if (!panel) return;
+        Object.entries(fields).forEach(([name, value]) => {
+          panel.querySelectorAll('[name="' + name + '"]').forEach(el => {
+            if (el.type === 'checkbox') el.checked = !!value;
+            else if (el.type === 'radio') el.checked = (el.value === String(value));
+            else el.value = value == null ? '' : value;
+          });
+          document.querySelectorAll('[data-src="' + section + '.' + name + '"]')
+                  .forEach(el => el.textContent = value == null ? '—' : String(value));
+        });
+      });
+      document.querySelectorAll('[data-src]').forEach(el => {
+        if (el.textContent === '—' || el.textContent === 'Loading…') el.textContent = '—';
+      });
+      dirty = false; saveBar.hidden = true;
+    } catch (_) {
+      window.toast('error', 'Could not load your settings.');
+    }
+  }
+
+  /* --- dirty tracking + save bar --- */
+  const saveBar = $('#saveBar');
+  let dirty = false;
+  function markDirty() { dirty = true; saveBar.hidden = false; }
+  $$('input, select, textarea').forEach(el => {
+    el.addEventListener('change', markDirty);
+    if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.type === 'number') {
+      el.addEventListener('input', markDirty);
+    }
+  });
+  $('#discardBtn')?.addEventListener('click', () => location.reload());
+  async function saveSection(section, btn) {
+    const panel = document.querySelector('[data-panel="' + section + '"]');
+    if (!panel) return;
+    const original = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    try {
+      const payload = {};
+      panel.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+        if (el.disabled) return;                       // §4.3c: never post a locked control
+        if (el.type === 'radio') { if (el.checked) payload[el.name] = el.value; }
+        else payload[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+      });
+      const res = await fetch('/api/settings/' + section, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload)
+      });
+      if (res.status === 401) { location.href = '/auth/login'; return; }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'save failed');
+      dirty = false; saveBar.hidden = true;
+      window.toast('success', 'Settings saved');
+    } catch (e) {
+      window.toast('error', e.message || 'Could not save. Please try again.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = original; }
+    }
+  }
+
+  /* Five per-section Save buttons shipped wired to NOTHING — data-save
+     existed on the markup and no listener read it. Only the floating bar
+     worked. §4.3c broken by the file that carries §4.3c. */
+  $$('[data-save]').forEach(btn =>
+    btn.addEventListener('click', () => saveSection(btn.dataset.save, btn)));
+
+  $('#saveAllBtn')?.addEventListener('click', () => {
+    const section = $$('.settings-nav-item').find(b => b.classList.contains('active'))?.dataset.section || 'profile';
+    saveSection(section, $('#saveAllBtn'));
+  });
+
+  addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  loadSettings();
+
+  /* --- accent tag reflects the real resolved token --- */
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const tag = $('#accentTag');
+  if (tag) tag.textContent = accent.toUpperCase() + '  ·  ' + document.documentElement.dataset.platform;
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PLATFORM EXTENSION 1 of 2 (M-EasyTools) — the i18n engine and its
+     adapter, identical to the one in auth.html. §4.2e: this repo's engine is
+     window.I18n.setLang, the page's bridge probes window.i18n. Without the
+     adapter the language switch on this page restyles three buttons and
+     translates nothing.
+     ══════════════════════════════════════════════════════════════════════ -->
+<script src="/js/i18n.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SHARED = 'modus-lang', LOCAL = 'msm_lang';
+  try {
+    var shared = localStorage.getItem(SHARED);
+    var local  = localStorage.getItem(LOCAL);
+    if (local === 'bm') local = 'ms';
+    if (shared) localStorage.setItem(LOCAL, shared === 'bm' ? 'ms' : shared);
+    else if (local) localStorage.setItem(SHARED, local);
+  } catch (e) {}
+  window.i18n = window.i18n || {
+    setLang: function (code) { return this.apply(code); },
+    apply: function (code) {
+      try {
+        if (typeof code === 'string') {
+          localStorage.setItem(SHARED, code);
+          if (window.I18n && typeof window.I18n.setLang === 'function') {
+            return window.I18n.setLang(code);
+          }
+        }
+      } catch (e) {}
+    }
+  };
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PLATFORM EXTENSION 2 of 2 (M-EasyTools) — controls that cannot succeed.
+
+     §4.2 keeps all ten sections on every platform, INCLUDING the ones a
+     platform does not use: a section that is present-but-empty and a section
+     that does not exist look identical to a user and mean completely
+     different things. §4.3c then says a control that cannot succeed must not
+     render as though it can.
+
+     Those two rules together need a third thing the master does not have: a
+     way for the page to learn WHICH controls this deployment cannot honour.
+     GET /api/settings answers that in `_unavailable`, keyed section → field →
+     reason, and this disables each one and prints the reason underneath. The
+     master's saveSection() already skips disabled controls, so nothing
+     unpostable is ever posted — and routes/settings.js still refuses these
+     fields with a 422 if someone removes the attribute in devtools, because
+     a UI change is never an enforcement.
+
+     Reported as a master defect: every platform has capabilities it lacks, so
+     `_unavailable` belongs in the canonical page rather than in ten copies of
+     this block.
+     ══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+  fetch('/api/settings', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (!data || !data._unavailable) return;
+      Object.keys(data._unavailable).forEach(function (section) {
+        var panel = document.querySelector('[data-panel="' + section + '"]');
+        if (!panel) return;
+        var reasons = data._unavailable[section];
+        Object.keys(reasons).forEach(function (field) {
+          var controls = panel.querySelectorAll('[name="' + field + '"]');
+          if (!controls.length) return;
+          controls.forEach(function (el) {
+            el.disabled = true;
+            if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+          });
+          var row = controls[0].closest('.settings-row') || controls[0].closest('.form-group');
+          if (!row || row.querySelector('[data-unavailable-note]')) return;
+          var note = document.createElement('div');
+          note.className = 'settings-row-desc';
+          note.setAttribute('data-unavailable-note', field);
+          note.textContent = reasons[field];   // textContent, never innerHTML
+          row.appendChild(note);
+        });
+      });
+    })
+    .catch(function () { /* the page's own loadSettings() already reports a failed read */ });
+})();
+</script>
+</body>
+</html>

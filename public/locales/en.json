@@ -10,7 +10,21 @@
     "why": "Why Us",
     "signin": "Sign In",
     "start": "Start Free →",
-    "lang_label": "Select language"
+    "lang_label": "Select language",
+    "bottom": {
+      "home": "Home"
+    },
+    "group": {
+      "account": "Account",
+      "workspace": "Workspace"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "inbox": "Inbox",
+      "billing": "Billing",
+      "settings": "Settings"
+    },
+    "signOut": "Sign out"
   },
   "hero": {
     "badge": "M-EasyTools AI+ Super App — Powered by Modus AI Associates",
@@ -245,7 +259,8 @@
     "dashboard": "Dashboard",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "contact": "Contact"
+    "contact": "Contact",
+    "support": "Need help? Contact"
   },
   "chat": {
     "tooltip": "AI Assistant — Click to ask me anything!",
@@ -257,5 +272,373 @@
     "q3": "AI Tools",
     "placeholder": "Ask me anything about marketing…",
     "powered": "Powered by"
+  },
+  "brand": {
+    "title": "Eleven AI marketing tools. One workspace.",
+    "copyright": "© 2026 Modus AI Associates. All rights reserved.",
+    "legal": "Malaysia · PDPA compliant · Data hosted in-region"
+  },
+  "tab": {
+    "signin": "Sign in",
+    "register": "Register"
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to continue to your workspace.",
+    "remember": "Keep me signed in",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "noAccount": "Don't have an account?"
+  },
+  "register": {
+    "title": "Create your account",
+    "subtitle": "Free to start. No card required.",
+    "submit": "Create account",
+    "hasAccount": "Already have an account?",
+    "consentPre": "I agree to the",
+    "terms": "Terms of Service",
+    "and": "and",
+    "privacy": "Privacy Policy"
+  },
+  "forgot": {
+    "title": "Reset your password",
+    "subtitle": "Enter your email and we'll send you a reset link.",
+    "submit": "Send reset link",
+    "back": "← Back to sign in"
+  },
+  "otp": {
+    "title": "Enter verification code",
+    "subtitle": "We sent a 6-digit code to your email.",
+    "submit": "Verify",
+    "resend": "Resend code",
+    "noCode": "Didn't get it?"
+  },
+  "field": {
+    "name": "Full name",
+    "email": "Email address",
+    "password": "Password",
+    "phone": "Mobile number",
+    "phoneHint": "Used for WhatsApp notifications. Optional.",
+    "accountType": "I am signing up as",
+    "accountTypeHint": "Staff accounts are created by your administrator."
+  },
+  "oauth": {
+    "google": "Continue with Google",
+    "googleUp": "Sign up with Google"
+  },
+  "divider": {
+    "or": "or"
+  },
+  "pw": {
+    "enter": "Minimum 8 characters"
+  },
+  "common": {
+    "skipToContent": "Skip to content"
+  },
+  "page": {
+    "settings": {
+      "subtitle": "Manage your profile, security, and how this platform behaves."
+    }
+  },
+  "settings": {
+    "savebar": {
+      "msg": "You have unsaved changes.",
+      "discard": "Discard"
+    },
+    "nav": {
+      "group": {
+        "platform": "Platform",
+        "preferences": "Preferences",
+        "danger": "Danger"
+      },
+      "profile": "Profile",
+      "security": "Account & Security",
+      "appearance": "Appearance",
+      "language": "Language & Region",
+      "notifications": "Notifications",
+      "ai": "AI & Asha",
+      "team": "Team & Roles",
+      "integrations": "Integrations",
+      "billing": "Billing",
+      "danger": "Danger Zone"
+    },
+    "profile": {
+      "section": {
+        "desc": "How you appear across this platform."
+      },
+      "profilePhoto": {
+        "label": "Profile photo",
+        "desc": "JPG or PNG, up to 2 MB. Square images look best.",
+        "upload": "Upload",
+        "remove": "Remove"
+      },
+      "name": {
+        "label": "Full name",
+        "desc": "Shown to your team and on documents you generate."
+      },
+      "email": {
+        "label": "Email address",
+        "desc": "Used for sign-in and system notifications."
+      },
+      "verified": "Verified",
+      "phone": {
+        "label": "Mobile number",
+        "desc": "Where WhatsApp notifications are delivered."
+      },
+      "timezone": {
+        "label": "Time zone",
+        "desc": "All timestamps and scheduled jobs use this zone.",
+        "opt": {
+          "asiaKuala": "Asia/Kuala_Lumpur (GMT+8)",
+          "asiaSingapore": "Asia/Singapore (GMT+8)",
+          "asiaShanghai": "Asia/Shanghai (GMT+8)",
+          "asiaDubai": "Asia/Dubai (GMT+4)"
+        }
+      },
+      "saveChanges": "Save changes",
+      "cancel": "Cancel"
+    },
+    "security": {
+      "section": {
+        "desc": "Passwords, two-factor authentication and where you are signed in."
+      },
+      "password": {
+        "label": "Change password",
+        "desc": "Minimum 8 characters. You will stay signed in on this device.",
+        "currentLabel": "Current password",
+        "newLabel": "New password"
+      },
+      "twofa": {
+        "label": "Two-factor authentication",
+        "desc": "Require a 6-digit code from your email on every new sign-in."
+      },
+      "googleAccount": {
+        "label": "Google account",
+        "desc": "Sign in with Google instead of a password.",
+        "disconnect": "Disconnect"
+      },
+      "connected": "Connected",
+      "activeSessions": {
+        "label": "Active sessions",
+        "desc": "Devices currently signed in to your account."
+      },
+      "col": {
+        "device": "Device",
+        "location": "Location",
+        "lastActive": "Last active"
+      }
+    },
+    "appearance": {
+      "section": {
+        "desc": "Applies to this browser only. Your accent colour is set by the platform and cannot be changed."
+      },
+      "theme": {
+        "label": "Theme",
+        "desc": "Saved to this device as"
+      },
+      "sidebarCollapsed": {
+        "label": "Sidebar",
+        "desc": "Start collapsed on desktop. Mobile always uses the bottom bar."
+      },
+      "platformAccent": {
+        "label": "Platform accent",
+        "desc": "Fixed per platform. This is the one thing that differs between Modus systems."
+      },
+      "accent": "Accent"
+    },
+    "language": {
+      "section": {
+        "desc": "Trilingual by default. Tax settings affect every future transaction."
+      },
+      "lang": {
+        "label": "Interface language",
+        "desc": "Asha replies in the language the customer writes in, regardless of this setting."
+      },
+      "currency": {
+        "label": "Currency",
+        "desc": "Display currency for all amounts.",
+        "opt": {
+          "myrMalaysian": "MYR — Malaysian Ringgit (RM)",
+          "sgdSingapore": "SGD — Singapore Dollar",
+          "usdUs": "USD — US Dollar",
+          "cnyChinese": "CNY — Chinese Yuan (¥)"
+        }
+      },
+      "dateFormat": {
+        "label": "Date format",
+        "desc": "Malaysian convention is day first.",
+        "opt": {
+          "ddMm": "DD/MM/YYYY",
+          "mmDd": "MM/DD/YYYY",
+          "yyyyMm": "YYYY-MM-DD"
+        }
+      },
+      "sstRate": {
+        "label": "SST rate",
+        "desc": "Sales & Service Tax, not GST. The rate is stored"
+      }
+    },
+    "notifications": {
+      "section": {
+        "desc": "Choose what reaches you and where."
+      },
+      "email": {
+        "label": "Email"
+      },
+      "notifyEmail": {
+        "label": "Email",
+        "desc": "System alerts, weekly digests and billing notices."
+      },
+      "notifyWhatsapp": {
+        "label": "WhatsApp",
+        "desc": "Urgent alerts and Asha escalations to your mobile number."
+      },
+      "notifyInApp": {
+        "label": "In-app",
+        "desc": "Toast notifications while you are using the platform."
+      },
+      "digest": {
+        "label": "Digest frequency",
+        "desc": "Delivered by a scheduled job, not a browser timer.",
+        "opt": {
+          "never": "Never",
+          "dailyAt": "Daily at 8:00 AM",
+          "weeklyOn": "Weekly on Monday"
+        }
+      }
+    },
+    "ai": {
+      "section": {
+        "title": "🤖 AI & Asha",
+        "desc": "How the AI layer behaves on this platform."
+      },
+      "insight": {
+        "title": "🤖 Model in use",
+        "body": "Resolved at runtime from"
+      },
+      "activeModel": {
+        "label": "Active model",
+        "desc": "Read-only. Changed via the Railway environment, not here."
+      },
+      "locked": "Locked",
+      "ashaTone": {
+        "label": "Asha tone",
+        "desc": "Applied to customer-facing replies on WhatsApp, Telegram and Messenger.",
+        "opt": {
+          "professional": "Professional",
+          "friendly": "Friendly",
+          "concise": "Concise"
+        }
+      },
+      "trilingualAutoDetect": {
+        "label": "Trilingual auto-detect",
+        "desc": "Detects EN / BM / 中文 per message and replies in kind."
+      },
+      "escalationPhone": {
+        "label": "Escalation contact",
+        "desc": "Where Asha hands a conversation to a human."
+      },
+      "humanEscalation": {
+        "label": "Human escalation",
+        "desc": "Always available and reachable without the model's cooperation. Cannot be disabled."
+      },
+      "aiUsageThis": {
+        "label": "AI usage this month",
+        "desc": "Logged to"
+      }
+    },
+    "team": {
+      "section": {
+        "desc": "Who has access and what they can do."
+      },
+      "3Members": "3 members",
+      "inviteMember": "Invite member",
+      "col": {
+        "member": "Member",
+        "role": "Role",
+        "status": "Status"
+      }
+    },
+    "integrations": {
+      "section": {
+        "desc": "External services connected to this platform."
+      },
+      "notConnected": "Not connected",
+      "pendingApproval": "Pending approval",
+      "whatsappBusinessApi": {
+        "label": "WhatsApp Business API",
+        "desc": "Asha replies to customers on WhatsApp. Requires",
+        "configure": "Configure"
+      },
+      "telegramBot": {
+        "label": "Telegram Bot",
+        "desc": "Asha replies to customers on Telegram.",
+        "connect": "Connect"
+      },
+      "paymentGateway": {
+        "label": "Payment gateway",
+        "desc": "iPay88, Fiuu, SenangPay or FPX."
+      },
+      "myinvoisLhdnE": {
+        "label": "MyInvois (LHDN e-Invoice)",
+        "desc": "Malaysian e-invoicing compliance."
+      },
+      "apiKey": {
+        "label": "API key",
+        "desc": "For mobile apps and third-party integrations. Rotating invalidates the old key immediately.",
+        "reveal": "Reveal",
+        "copy": "Copy",
+        "rotate": "Rotate"
+      }
+    },
+    "billing": {
+      "section": {
+        "desc": "Your plan, enabled features and invoices."
+      },
+      "currentPlan": {
+        "label": "Current plan",
+        "desc": "Billed monthly per enabled feature.",
+        "changePlan": "Change plan"
+      },
+      "growth": "Growth",
+      "enabledFeatures": {
+        "label": "Enabled features",
+        "desc": "RM100 per feature per month."
+      },
+      "paymentMethod": {
+        "label": "Payment method",
+        "desc": "Charged on the 1st of each month.",
+        "update": "Update"
+      },
+      "invoices": {
+        "label": "Invoices",
+        "desc": "Tax shown is the SST rate recorded at the time of each invoice."
+      },
+      "col": {
+        "date": "Date",
+        "amount": "Amount",
+        "sst": "SST"
+      }
+    },
+    "danger": {
+      "section": {
+        "title": "⚠ Danger Zone",
+        "desc": "These actions are permanent. Read carefully."
+      },
+      "exportAllData": {
+        "label": "Export all data",
+        "desc": "Queued as a background job. You will receive an email when the archive is ready.",
+        "requestExport": "Request export"
+      },
+      "transferOwnership": {
+        "label": "Transfer ownership",
+        "desc": "Hand this workspace to another member. You keep manager access.",
+        "transfer": "Transfer"
+      },
+      "deleteAccount": {
+        "label": "Delete account",
+        "desc": "All data is permanently removed after a 30-day grace period. This cannot be undone."
+      }
+    }
   }
 }
