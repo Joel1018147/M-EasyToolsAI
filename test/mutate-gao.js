@@ -66,9 +66,14 @@ const MUTATIONS = [
   ['M4  no responders yields 0 instead of no headline', () =>
     mutate(GAO, '  if(!r.length) return null;', '  if(!r.length) return 0;')],
 
+  // Anchor updated after the extraction: the line moved from inside runGAO into
+  // updateHeadlineStats and its indent changed, so the old anchor MISSED. That
+  // printed as ANCHOR ERROR and counted as a survivor, which is the only reason
+  // it was visible — a harness that scored a miss as a kill would have reported
+  // this invariant covered while testing nothing.
   ['M5  the denominator stops being displayed', () =>
-    mutate(GAO, "      avgScore === null ? 'No engine responded' : `from ${answered} of ${total} engines`;",
-                "      '';")],
+    mutate(GAO, "    avgScore === null ? 'No engine responded' : `from ${answered} of ${total} engines`;",
+                "    '';")],
 
   ['M6  an absent engine renders as a number with a trend again', () =>
     mutate(GAO, "    if(score === null){", "    if(false){")],
