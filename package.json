@@ -12,7 +12,8 @@
     "test:auth-contract": "node test/auth-contract.js",
     "test:ui-contract": "node test/ui-contract.js",
     "test:negative-ui": "node test/negative-control-ui.js",
-    "test": "npm run test:gate3 && npm run test:gate3-negative && npm run test:auth-guard && npm run test:auth-contract && npm run test:ui-contract && npm run test:negative-ui"
+    "test": "npm run test:gate3 && npm run test:gate3-negative && npm run test:auth-guard && npm run test:auth-contract && npm run test:ui-contract && npm run test:negative-ui && npm run test:fetch-contract",
+    "test:fetch-contract": "node test/fetch-contract.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

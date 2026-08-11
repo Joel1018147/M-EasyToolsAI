@@ -527,7 +527,16 @@ async function loadStats() {
     document.getElementById('stat-modules-sub').textContent    = `of ${s.totalModules ?? '—'} total`;
     document.getElementById('topbar-count').textContent =
       `${s.totalUsers ?? 0} user${s.totalUsers !== 1 ? 's' : ''}`;
-  } catch(e) {}
+  } catch(e) {
+    // Reset rather than leave the last successful numbers on screen: a stale
+    // figure that looks current is the same lie in slower motion. '—' is the
+    // markup's own default, so it reads as "not known", not as a measurement.
+    ['stat-total-users','stat-active-users','stat-total-docs','stat-active-modules']
+      .forEach((id) => { document.getElementById(id).textContent = '—'; });
+    document.getElementById('stat-modules-sub').textContent = 'of — total';
+    document.getElementById('topbar-count').textContent = '—';
+    showToast('❌ Could not load platform stats — ' + e.message);
+  }
 }
 
 // ── Users ─────────────────────────────────────────────────────────────────────
@@ -735,9 +744,36 @@ function toggleSection(name) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// A non-2xx body is usually still JSON, so JSON.parse succeeds and the error
+// text IS the truth about what happened. Returning the raw body when it will
+// not parse substitutes nothing — the status is carried separately.
+function errorDetail(raw) {
+  if (!raw) return '';
+  try {
+    const j = JSON.parse(raw);
+    return j.error || j.message || raw;
+  } catch (notJson) {
+    return raw;
+  }
+}
+
 async function apiFetch(url, opts = {}) {
   const sep = url.includes('?') ? '&' : '?';
   const res = await fetch(url + sep + 'key=' + encodeURIComponent(sellerKey), opts);
+  // fetch() rejects only on a NETWORK failure. A 401, a 403, a 500 and a
+  // rate-limit all resolve, and .json() on them usually succeeds too — so
+  // returning the body unchecked handed every reader an error object to render
+  // as data ("0 users", "RM0.00", "No modules configured."), and let three
+  // subscription mutations toast success on writes that never landed, because
+  // their catch could never be reached.
+  //
+  // Every failure UI on this page was already written. It was simply
+  // unreachable. These lines are what reach it.
+  if (!res.ok) {
+    const detail = errorDetail(await res.text());
+    throw new Error(`Request failed (${res.status})` + (detail ? ` — ${String(detail).slice(0, 200)}` : ''));
+  }
   return res.json();
 }
 
@@ -767,7 +803,15 @@ async function loadSubStats() {
     document.getElementById('sub-stat-trial').textContent   = s.trial   ?? '—';
     document.getElementById('sub-stat-revenue').textContent = 'RM' + (s.revenue ?? '0.00');
     document.getElementById('sub-count').textContent        = `${s.total ?? 0} total`;
-  } catch(e) {}
+  } catch(e) {
+    // The revenue tile is the reason this run exists: "RM0.00" is a number an
+    // operator reads as measured. It must never appear because a request failed.
+    document.getElementById('sub-stat-active').textContent  = '—';
+    document.getElementById('sub-stat-trial').textContent   = '—';
+    document.getElementById('sub-stat-revenue').textContent = '—';
+    document.getElementById('sub-count').textContent        = '';
+    showToast('❌ Could not load subscription stats — ' + e.message);
+  }
 }
 
 async function loadSubUsers(search = '') {
@@ -821,7 +865,7 @@ async function extendTrial(userId) {
     });
     showToast('✅ Trial extended by 7 days');
     loadSubUsers(document.getElementById('sub-search').value);
-  } catch(e) { showToast('❌ Failed to extend trial'); }
+  } catch(e) { showToast('❌ Failed to extend trial — ' + e.message); }
 }
 
 async function activateSub(userId) {
@@ -833,7 +877,7 @@ async function activateSub(userId) {
     showToast('✅ Subscription activated for 365 days');
     loadSubStats();
     loadSubUsers(document.getElementById('sub-search').value);
-  } catch(e) { showToast('❌ Failed to activate subscription'); }
+  } catch(e) { showToast('❌ Failed to activate subscription — ' + e.message); }
 }
 
 async function resetSub(userId) {
@@ -846,7 +890,7 @@ async function resetSub(userId) {
     showToast('✅ Subscription reset to trial');
     loadSubStats();
     loadSubUsers(document.getElementById('sub-search').value);
-  } catch(e) { showToast('❌ Failed to reset subscription'); }
+  } catch(e) { showToast('❌ Failed to reset subscription — ' + e.message); }
 }
 
 // ── PR Distribution admin ─────────────────────────────────────────────────────

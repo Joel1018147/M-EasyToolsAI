@@ -279,8 +279,15 @@ function copyRes(btn,idx){const t=document.getElementById('rb-'+idx)?.textConten
 async function saveRes(idx){
   const text=document.getElementById('rb-'+idx)?.textContent||'';
   const title=(currentTool?.form?.name||'Content')+' — '+new Date().toLocaleDateString('en-GB');
-  try{await fetch('/api/documents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content:text,tool_id:currentTool?.id,tool_name:currentTool?.form?.name})});toast('Saved to Documents ✓','ok');}
-  catch{toast('Save failed','err');}
+  // fetch() resolves on a 4xx/5xx, so the success toast used to fire on a save
+  // the server had rejected. The other two fetches on this page already check
+  // r.ok (:218, :266) — this one was the outlier.
+  try{
+    const r=await fetch('/api/documents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content:text,tool_id:currentTool?.id,tool_name:currentTool?.form?.name})});
+    if(!r.ok){const d=await r.json().then(j=>j.error||'',()=>'');throw new Error(d||('Save failed ('+r.status+')'));}
+    toast('Saved to Documents ✓','ok');
+  }
+  catch(e){toast(e.message||'Save failed','err');}
 }
 
 init();

@@ -1205,6 +1205,16 @@ app.get('/api/integrations/shopify/products', requireAuth, checkSub, async (req,
     const response = await fetch(`https://${req.user.shopify_store}/admin/api/2024-01/products.json?limit=20&fields=id,title,status`, {
       headers: { 'X-Shopify-Access-Token': req.user.shopify_token }
     });
+    // A revoked or expired token answers 401 here, and `data.products || []`
+    // turned that into `{"products":[]}` — the exact shape a connected store
+    // with no products returns. The merchant is told their catalogue is empty
+    // when in fact we are locked out of it. The sibling calls in this file
+    // (/connect at :1166, /publish at :1194) both check response.ok; this was
+    // the only one that did not.
+    if (!response.ok) {
+      const raw = await response.text();
+      throw new Error(`Shopify rejected the request (${response.status}): ${raw.slice(0, 200)}`);
+    }
     const data = await response.json();
     res.json({ products: data.products || [] });
   } catch (err) { res.status(500).json({ error: err.message }); }
