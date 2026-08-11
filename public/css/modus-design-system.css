@@ -120,8 +120,13 @@
 
 /* ── 3. PLATFORM ACCENT OVERRIDES ────────────────────────────────────── */
 /* Every platform declares the SAME six tokens. No platform may declare an
-   accent token that the others do not. Adding a 10th platform means adding
-   one block here — nothing else in this file changes.                     */
+   accent token that the others do not.
+
+   Adding a platform means TWO edits in this file, not one: the six-token
+   block below, AND the matching [data-theme="dark"] --accent-light rule in
+   §4. This comment said "one block here — nothing else in this file
+   changes" until migs was added as the eleventh; a platform that took it at
+   its word would ship a light tint sitting on a dark surface.             */
 
 [data-platform="do"] {
   --accent: #1a73e8;
@@ -237,6 +242,32 @@
   --accent-contrast: #ffffff;
 }
 
+[data-platform="migs"] {
+  /* MIGS CS AI+ — Mutiara International Grammar School, Ampang Jaya.
+     #344889 is taken from the SCHOOL'S OWN live stylesheet, not from a
+     brand document: migs.edu.my serves `a, .page-title { color: #344889 }`,
+     and the same value drives ::selection and input focus borders. It is
+     the interaction colour MIGS actually chose, and it matches the navy of
+     the school crest.
+
+     Two colours were deliberately NOT used. #E2312C (the crest red) appears
+     only as <font color> emphasis inside headings — decoration, never an
+     interaction state — and it would sit on top of Campus's #DC2626. The
+     Astra theme globals (--e-global-color-astglobalcolor0: #0170B9 and
+     friends) are the THEME's stock defaults shipped with every Astra site,
+     so they say nothing about MIGS.
+
+     Nearest sibling is school #1E40AF. Distinguishable, but these are the
+     two education platforms — check them side by side before adding a
+     third blue.                                                            */
+  --accent: #344889;
+  --accent-2: #29386B;
+  --accent-bg: rgba(52,72,137,0.08);
+  --accent-glow: rgba(52,72,137,0.20);
+  --accent-light: #E1E6F4;
+  --accent-contrast: #ffffff;   /* 8.6:1 on #344889 — WCAG AAA */
+}
+
 /* ── 4. DARK MODE ────────────────────────────────────────────────────── */
 [data-theme="dark"] {
   --bg: #0f172a;
@@ -272,7 +303,9 @@
 }
 
 /* Dark-mode accent parity — --accent-light must not stay a light tint on a
-   dark surface. One rule per platform, same shape for all 9.              */
+   dark surface. One rule per platform, same shape for all 11. (This line
+   said "all 9" while listing ten; corrected when migs made it eleven —
+   count the rules, not the comment.)                                      */
 [data-theme="dark"][data-platform="do"]       { --accent-light: rgba(26,115,232,0.22); }
 [data-theme="dark"][data-platform="tools"]    { --accent-light: rgba(232,98,42,0.22); }
 [data-theme="dark"][data-platform="commerce"] { --accent-light: rgba(22,163,74,0.22); }
@@ -283,6 +316,7 @@
 [data-theme="dark"][data-platform="campus"]   { --accent-light: rgba(220,38,38,0.22); }
 [data-theme="dark"][data-platform="esg"]      { --accent-light: rgba(77,124,15,0.22); }
 [data-theme="dark"][data-platform="dgcs"]     { --accent-light: rgba(124,45,18,0.22); }
+[data-theme="dark"][data-platform="migs"]     { --accent-light: rgba(52,72,137,0.22); }
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
 *, *::before, *::after {
