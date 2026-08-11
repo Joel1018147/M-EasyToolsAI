@@ -71,7 +71,8 @@ function extractFn(src, name) {
 }
 
 const SOURCES = {};
-for (const name of ['errorDetail', 'apiFetch', 'extendTrial', 'activateSub', 'resetSub']) {
+for (const name of ['errorDetail', 'apiFetch', 'loadStats', 'loadSubStats',
+                    'extendTrial', 'activateSub', 'resetSub']) {
   SOURCES[name] = extractFn(html, name);
 }
 ok('the suite found every function it claims to test (an anchor miss must FAIL, not pass — #14)',
@@ -81,6 +82,7 @@ ok('the suite found every function it claims to test (an anchor miss must FAIL, 
 /* ── A sandbox that is the page, minus the browser ────────────────────────── */
 function sandbox({ status, body, throwNetwork = false }) {
   const toasts = [];
+  const calls = [];
   const dom = {};
   const el = (id) => (dom[id] = dom[id] || { textContent: '', innerHTML: '', style: {}, value: '' });
   const ctx = {
@@ -93,7 +95,14 @@ function sandbox({ status, body, throwNetwork = false }) {
     loadSubUsers: () => toasts.push('[reload:users]'),
     confirm: () => true,
     console,
-    fetch: async () => {
+    // Every request the page makes. The real loadSubStats is injected into this
+    // context (it is one of the functions under test), so it SHADOWS the stub
+    // above — which is more faithful, and means "did the success-path reload
+    // run?" has to be answered by counting requests rather than by a marker the
+    // real function never pushes.
+    calls,
+    fetch: async (url) => {
+      calls.push(String(url));
       if (throwNetwork) throw new TypeError('Failed to fetch');
       return {
         ok: status >= 200 && status < 300,
@@ -104,10 +113,8 @@ function sandbox({ status, body, throwNetwork = false }) {
     },
   };
   vm.createContext(ctx);
-  vm.runInContext(
-    [SOURCES.errorDetail, SOURCES.apiFetch, SOURCES.extendTrial, SOURCES.activateSub, SOURCES.resetSub].join('\n'),
-    ctx);
-  return { ctx, toasts, dom };
+  vm.runInContext(Object.values(SOURCES).join('\n'), ctx);
+  return { ctx, toasts, dom, calls };
 }
 
 (async () => {
@@ -149,13 +156,55 @@ function sandbox({ status, body, throwNetwork = false }) {
     ok('a genuine network failure still rejects', threw !== null);
   }
 
+  /* ── 4b. THE DASHBOARD ITSELF: a 401 must not leave numbers on screen ─────
+     Testing apiFetch alone was not enough. The first pass of this suite proved
+     apiFetch throws and stopped there — and a mutation that put "RM0.00" back
+     into loadSubStats' catch SURVIVED it. The read sites are where the operator
+     actually reads a lie, so they are asserted directly. */
+  {
+    const { ctx, dom, toasts } = sandbox({ status: 200, body: { active: 3, trial: 1, revenue: '480.00', total: 4 } });
+    await ctx.loadSubStats();
+    ok('a healthy load shows the real revenue figure',
+       dom['sub-stat-revenue'].textContent === 'RM480.00', dom['sub-stat-revenue'].textContent);
+
+    // Same page, now failing — and crucially AFTER a success, so a stale value
+    // is on screen. Leaving it there is the same lie in slower motion.
+    ctx.fetch = async () => ({
+      ok: false, status: 401,
+      json: async () => ({ error: 'Invalid or missing seller key' }),
+      text: async () => '{"error":"Invalid or missing seller key"}',
+    });
+    await ctx.loadSubStats();
+    ok('THE CENTRAL INVARIANT — a 401 never leaves a currency figure on the revenue tile',
+       !/RM/.test(dom['sub-stat-revenue'].textContent), dom['sub-stat-revenue'].textContent);
+    ok('…and it does not leave the previous successful numbers looking current',
+       dom['sub-stat-revenue'].textContent === '—' &&
+       dom['sub-stat-active'].textContent === '—' &&
+       dom['sub-stat-trial'].textContent === '—',
+       JSON.stringify([dom['sub-stat-active'].textContent, dom['sub-stat-trial'].textContent, dom['sub-stat-revenue'].textContent]));
+    ok('…and the operator is told, rather than left to read dashes',
+       toasts.some((t) => t.includes('❌') && /subscription stats/i.test(t)), JSON.stringify(toasts));
+  }
+  {
+    const { ctx, dom, toasts } = sandbox({ status: 200, body: { totalUsers: 12, activeUsers: 9, totalDocs: 40, activeModules: 3, totalModules: 5 } });
+    await ctx.loadStats();
+    ok('a healthy platform-stats load shows the real user count',
+       dom['stat-total-users'].textContent === 12, String(dom['stat-total-users'].textContent));
+    ctx.fetch = async () => ({ ok: false, status: 500, json: async () => ({ error: 'db down' }), text: async () => '{"error":"db down"}' });
+    await ctx.loadStats();
+    ok('a 500 never leaves "0 users" or a stale count in the platform tiles',
+       dom['stat-total-users'].textContent === '—' && dom['topbar-count'].textContent === '—',
+       JSON.stringify([dom['stat-total-users'].textContent, dom['topbar-count'].textContent]));
+    ok('…and says so', toasts.some((t) => t.includes('❌') && /platform stats/i.test(t)), JSON.stringify(toasts));
+  }
+
   /* ── 5. NO MUTATION TOASTS SUCCESS ON A FAILED WRITE ─────────────────────── */
   for (const [fn, successText] of [
     ['extendTrial',  'Trial extended'],
     ['activateSub',  'Subscription activated'],
     ['resetSub',     'Subscription reset'],
   ]) {
-    const { ctx, toasts } = sandbox({ status: 500, body: { error: 'db is down' } });
+    const { ctx, toasts, calls } = sandbox({ status: 500, body: { error: 'db is down' } });
     await ctx[fn]('user-1');
     ok(`THE WORST OUTCOME — ${fn}: a 500 does NOT toast success`,
        !toasts.some((t) => t.includes(successText) && t.includes('✅')), JSON.stringify(toasts));
@@ -163,16 +212,16 @@ function sandbox({ status, body, throwNetwork = false }) {
        toasts.some((t) => t.includes('❌')) && toasts.some((t) => /db is down/.test(t)),
        JSON.stringify(toasts));
     ok(`${fn}: a failed write does not trigger the success-path reloads`,
-       !toasts.includes('[reload:stats]'), JSON.stringify(toasts));
+       calls.length === 1, `${calls.length} requests: ${JSON.stringify(calls)}`);
   }
 
   /* ── 6. …and a genuine success still toasts and reloads ──────────────────── */
   {
-    const { ctx, toasts } = sandbox({ status: 200, body: { ok: true } });
+    const { ctx, toasts, calls } = sandbox({ status: 200, body: { ok: true } });
     await ctx.activateSub('user-1');
     ok('a genuinely successful activation still toasts success',
        toasts.some((t) => t.includes('✅') && t.includes('Subscription activated')), JSON.stringify(toasts));
-    ok('…and still refreshes the table', toasts.includes('[reload:stats]'), JSON.stringify(toasts));
+    ok('…and still refreshes the table', calls.length > 1, `${calls.length} requests: ${JSON.stringify(calls)}`);
   }
 
   /* ── 7. server.js — a revoked Shopify token is not an empty catalogue ────── */
@@ -198,6 +247,28 @@ function sandbox({ status, body, throwNetwork = false }) {
      honest remaining debt, and the next run starts from it rather than from a
      re-audit. It must never be raised. */
   const MAX_UNCHECKED = 36;
+  /* Per-file ceilings as well as a total.
+   *
+   * A single number is not a ratchet: raising it is one character, and a
+   * mutation that did exactly that survived the first version of this suite.
+   * The realistic bad-faith move is "add an unchecked fetch, then bump the
+   * number to match" — which the total alone cannot see and this map does.
+   * Still a shape, not an exemption list: no file is excused from the rule,
+   * each is only held to what it already owed, and every entry may only go
+   * down. */
+  const BASELINE = {
+    'public/app.html': 15,
+    'public/gao.html': 8,
+    'public/audit.html': 4,
+    'public/index.html': 2,
+    'server.js': 1,
+    'public/ads.html': 1,
+    'public/commerce.html': 1,
+    'public/mail.html': 1,
+    'public/sales.html': 1,
+    'public/seo.html': 1,
+    'public/social.html': 1,
+  };
   {
     const report = scanFiles(APP, targets(APP));
     const n = total(report);
@@ -209,6 +280,11 @@ function sandbox({ status, body, throwNetwork = false }) {
        n > 0);
     ok(`THE RATCHET — no more than ${MAX_UNCHECKED} unchecked fetch sites repo-wide (found ${n})`,
        n <= MAX_UNCHECKED, `${n} > ${MAX_UNCHECKED} — a new unchecked fetch was added`);
+    const regressed = Object.entries(report)
+      .filter(([f, hits]) => hits.length > (BASELINE[f] ?? 0))
+      .map(([f, hits]) => `${f}: ${hits.length} > ${BASELINE[f] ?? 0}`);
+    ok('THE RATCHET, per file — no file gained an unchecked fetch, whatever the total says',
+       regressed.length === 0, regressed.join('; '));
     ok('the three files this run owns are clean',
        !report['public/seller.html'] && !report['public/content.html'] &&
        (!report['server.js'] || !report['server.js'].some((h) => h.line > 1200 && h.line < 1230)),
