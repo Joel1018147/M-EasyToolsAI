@@ -317,8 +317,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
       <div class="gao-hero-sub">Track AI Share of Voice, monitor citations, analyze prompts and outrank competitors across all major LLMs — the first GAO suite built for Malaysian businesses.</div>
       <div class="gao-hero-stats">
         <div class="gao-stat"><div class="gao-stat-num" id="stat-prompts">0</div><div class="gao-stat-label">Prompts Tracked</div></div>
-        <div class="gao-stat"><div class="gao-stat-num"><span id="stat-visibility">--</span><span>%</span></div><div class="gao-stat-label">AI Visibility Score</div></div>
-        <div class="gao-stat"><div class="gao-stat-num" id="stat-citations">0</div><div class="gao-stat-label">Citations Found</div></div>
+        <div class="gao-stat"><div class="gao-stat-num"><span id="stat-visibility">--</span><span>%</span></div><div class="gao-stat-label">AI Visibility Score</div><div class="gao-stat-label" id="stat-visibility-denom"></div></div>
+        <div class="gao-stat"><div class="gao-stat-num" id="stat-citations">—</div><div class="gao-stat-label">Citations Found</div><div class="gao-stat-label">Not measured yet</div></div>
         <div class="gao-stat"><div class="gao-stat-num" id="stat-llms">5</div><div class="gao-stat-label">LLMs Monitored</div></div>
       </div>
     </div>
@@ -838,11 +838,20 @@ Format with clear headers and be specific to ${brand} in the ${industry || 'give
     updateCitationMap(brand,industry);
     updateCompetitorList(brand,industry,scores);
 
-    // Update stats
-    const avgScore = Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length;
-    document.getElementById('stat-visibility').textContent = Math.round(avgScore);
+    // Update stats. The average is over RESPONDERS only, and the screen states
+    // its denominator: "62, from 3 of 5 engines" and "62, from 5 of 5" are
+    // different claims, and until now they were indistinguishable.
+    const total = Object.keys(scores).length;
+    const answered = responded(scores).length;
+    const avgScore = meanScore(scores);
+    document.getElementById('stat-visibility').textContent = avgScore === null ? '--' : avgScore;
+    document.getElementById('stat-visibility-denom').textContent =
+      avgScore === null ? 'No engine responded' : `from ${answered} of ${total} engines`;
     animateStat('stat-prompts',promptList.split('\n').length);
-    animateStat('stat-citations',Math.floor(Math.random()*15)+5);
+    // Citations: nothing measures this. It was Math.random()*15+5 — not a
+    // fallback, because no attempt was made and no failure occurred. It shows
+    // nothing until something measures it.
+    document.getElementById('stat-citations').textContent = '—';
 
     toast('✓ GAO Analysis complete!','success');
     saveGAOAfterAnalysis();
@@ -864,9 +873,31 @@ function extractScores(text){
   const scores = {};
   for(const [key,pattern] of Object.entries(patterns)){
     const match = text.match(pattern);
-    scores[key] = match ? Math.min(parseInt(match[1]),100) : Math.floor(Math.random()*30)+10;
+    // An engine whose score cannot be extracted did NOT respond. It does not
+    // get a number. This used to invent one between 10 and 40, render it with a
+    // trend label, average it into the headline figure and write it to history
+    // — where it became indistinguishable from a measurement.
+    //
+    // null follows scoringEngine.js's existing meaning in this ecosystem:
+    // null = unscorable and leaves the denominator; 0 = answered, and counts.
+    // An engine that did not answer is null, never a low score.
+    scores[key] = match ? Math.min(parseInt(match[1]),100) : null;
   }
   return scores;
+}
+
+/** The engines that actually returned a score. The only values any average,
+ *  ranking or history entry may be computed from. */
+function responded(scores){
+  return Object.entries(scores).filter(([,v]) => typeof v === 'number');
+}
+
+/** Mean over responders, or null when nobody responded. Never 0 — a headline of
+ *  0 is a claim that every engine measured zero visibility. */
+function meanScore(scores){
+  const r = responded(scores);
+  if(!r.length) return null;
+  return Math.round(r.reduce((a,[,v]) => a+v, 0) / r.length);
 }
 
 function updateVisibilityScores(scores){
@@ -876,6 +907,19 @@ function updateVisibilityScores(scores){
     const barEl = document.getElementById('vbar-'+key);
     const scEl  = document.getElementById('sc-'+key);
     const deltaEl = document.getElementById('vdelta-'+key);
+    // No response is rendered as words, never as a number and never as a short
+    // bar. A 0% bar beside "↓ Low visibility" is exactly the reading this run
+    // exists to prevent — it looks like a measurement of poor performance.
+    if(score === null){
+      if(numEl){ numEl.textContent = 'No response'; }
+      if(barEl){ barEl.style.width = '0%'; }
+      if(scEl){ scEl.textContent = '—'; }
+      if(deltaEl){
+        deltaEl.textContent = 'This engine did not return a score';
+        deltaEl.className = 'vis-delta';
+      }
+      continue;
+    }
     if(numEl){ numEl.innerHTML = score+'<span>%</span>'; }
     if(barEl){ setTimeout(()=>{barEl.style.width=score+'%';},200); }
     if(scEl){ scEl.textContent = score+'%'; }
@@ -929,42 +973,28 @@ function updatePromptTable(prompts,brand){
 }
 
 function updateCitationMap(brand,industry){
-  const sources = [
-    {name:'G2.com',icon:'⭐',pct:78,color:'#E8622A'},
-    {name:'Capterra',icon:'📊',pct:65,color:'#3B82F6'},
-    {name:'TechCrunch',icon:'📰',pct:52,color:'#22C55E'},
-    {name:'Forbes Tech',icon:'💼',pct:44,color:'#F4C430'},
-    {name:'Reddit',icon:'🔴',pct:38,color:'#FF4500'},
-    {name:brand+'.com',icon:'🌐',pct:28,color:'#0ECFB0'},
-  ];
-  document.getElementById('citation-list').innerHTML = sources.map(s=>`
-    <div class="cite-row">
-      <div class="cite-icon" style="background:${s.color}20">${s.icon}</div>
-      <div style="flex:1"><div class="cite-domain">${s.name}</div><div class="cite-sub">Frequently cited in AI answers</div></div>
-      <div class="cite-bar-wrap"><div class="cite-bar-fill" style="width:${s.pct}%;background:${s.color}"></div></div>
-      <div class="cite-pct" style="color:${s.color}">${s.pct}%</div>
-    </div>`).join('');
+  // This panel used to render a fixed list — G2.com 78 %, Capterra 65 %,
+  // TechCrunch 52 %, Forbes Tech 44 %, Reddit 38 % — under the caption
+  // "Frequently cited in AI answers". Nothing measured any of it. It is the
+  // same defect as the citations tile and worse in one respect: it attaches
+  // fabricated percentages to NAMED third parties, which is a claim about
+  // someone else's business, not just ours.
+  //
+  // Same ruling as the tile it summarises: show nothing until something
+  // measures it.
+  document.getElementById('citation-list').textContent =
+    'Citation sources are not measured yet. This panel stays empty rather than showing figures nothing produced.';
 }
 
 function updateCompetitorList(brand,industry,scores){
-  const avg = Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length;
-  const competitors = [
-    {name:'Competitor A',score:Math.min(avg+25,95),color:'#F43F5E'},
-    {name:'Competitor B',score:Math.min(avg+15,90),color:'#F59E0B'},
-    {name:brand+' (You)',score:Math.round(avg),color:'#0ECFB0',you:true},
-    {name:'Competitor C',score:Math.max(avg-10,5),color:'#8892A4'},
-  ].sort((a,b)=>b.score-a.score);
-
-  document.getElementById('competitor-list').innerHTML = competitors.map((c,i)=>`
-    <div class="cite-row" style="${c.you?'background:rgba(14,207,176,0.04);border-radius:6px;':''}">
-      <div class="cite-icon" style="background:${c.color}20;font-size:12px;font-weight:700;color:${c.color}">#${i+1}</div>
-      <div style="flex:1">
-        <div class="cite-domain" style="${c.you?'color:var(--teal)':''}">${c.name}${c.you?' ← YOU':''}</div>
-        <div class="cite-sub">AI Share of Voice</div>
-      </div>
-      <div class="cite-bar-wrap"><div class="cite-bar-fill" style="width:${c.score}%;background:${c.color}"></div></div>
-      <div class="cite-pct" style="color:${c.color}">${c.score}%</div>
-    </div>`).join('');
+  // Forced open by Step 1: with absences as null, `reduce((a,b)=>a+b)` yields
+  // NaN and every bar width becomes "NaN%". Fixing that meant deciding what
+  // this panel is, and the answer is that it was never measured either —
+  // "Competitor A" scored `you + 25`, "Competitor C" `you - 10`. A ranking
+  // against invented rivals is a claim about the market, presented as a
+  // finding. Same ruling as the citations panel.
+  document.getElementById('competitor-list').textContent =
+    'Competitor share of voice is not measured yet. This panel stays empty rather than ranking you against invented rivals.';
 }
 
 // ── Prompt Cluster Generator ──────────────────────────────
@@ -1125,10 +1155,22 @@ function switchTab(tab) {
 function saveGAOResult(brand, scores, promptCount) {
   try {
     const history = JSON.parse(localStorage.getItem('gao_history')||'[]');
-    const avg = Math.round(Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length);
-    const best = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0];
+    // Averaged over responders, and the denominator is STORED — otherwise a run
+    // where two engines answered is indistinguishable, a month later, from one
+    // where all five did. `answered` is absent on every entry written before
+    // this change; renderHistory treats that absence as "unknown", not as five.
+    const answered = responded(scores);
+    const avg = meanScore(scores);
+    if(avg === null){
+      // Nothing was measured. Recording a row would put an empty analysis into
+      // the trend chart as if it were a result.
+      console.warn('[gao] no engine responded — nothing to record in history');
+      return;
+    }
+    const best = answered.slice().sort((a,b)=>b[1]-a[1])[0];
     history.unshift({
       brand, date: new Date().toISOString(), scores, avg,
+      answered: answered.length, engines: Object.keys(scores).length,
       bestLLM: best[0], bestScore: best[1], promptCount
     });
     localStorage.setItem('gao_history', JSON.stringify(history.slice(0,20)));
@@ -1138,7 +1180,11 @@ function saveGAOResult(brand, scores, promptCount) {
     document.getElementById('hist-count').innerHTML = history.length+'<span></span>';
     const bestEver = Math.max(...history.map(h=>h.avg));
     document.getElementById('hist-best').innerHTML = bestEver+'<span>%</span>';
-  } catch(e){}
+  } catch(e){
+    // A silently lost history entry looks identical to an analysis nobody ran.
+    console.error('[gao] could not save history:', e.message);
+    toast('Analysis complete, but the history entry could not be saved','error');
+  }
 }
 
 function renderHistory() {
@@ -1155,7 +1201,7 @@ function renderHistory() {
     return `<div class="pt-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 100px">
       <div class="pt-prompt">${h.brand}</div>
       <div style="font-size:12px;color:var(--text2)">${date}</div>
-      <div class="pt-score" style="color:${color}">${h.avg}%</div>
+      <div class="pt-score" style="color:${color}">${h.avg}%<span style="font-size:10px;color:var(--text3);display:block">${h.answered ? `from ${h.answered} of ${h.engines} engines` : 'denominator unknown'}</span></div>
       <div style="font-size:12px;color:var(--text2);text-transform:capitalize">${h.bestLLM} (${h.bestScore}%)</div>
       <div style="font-size:12px;color:var(--text2)">${h.promptCount||0} prompts</div>
       <div><button class="btn btn-outline" style="padding:4px 10px;font-size:11px" onclick="deleteHistory(${i})">🗑️</button></div>
@@ -1205,12 +1251,16 @@ function saveGAOAfterAnalysis() {
   setTimeout(()=>{
     const brand = document.getElementById('brand-input').value.trim();
     const prompts = document.getElementById('prompts-input').value.trim().split('\n').filter(p=>p.trim());
+    // Every engine is recorded, non-responders as null. Dropping them here
+    // would make `engines` equal the number that answered, so history would
+    // read "from 3 of 3" — the denominator restored above, quietly thrown away
+    // one function later. An engine that did not answer has to stay countable.
     const scores = {};
     ['gpt','claude','gemini','perplexity','deepseek'].forEach(id=>{
       const el = document.getElementById('sc-'+id);
-      if(el) { const v=parseInt(el.textContent); if(!isNaN(v)) scores[id]=v; }
+      if(el){ const v = parseInt(el.textContent); scores[id] = isNaN(v) ? null : v; }
     });
-    if(brand && Object.keys(scores).length) saveGAOResult(brand, scores, prompts.length);
+    if(brand && responded(scores).length) saveGAOResult(brand, scores, prompts.length);
   }, 2000);
 }
 
