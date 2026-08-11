@@ -261,6 +261,11 @@ function sandbox({ status, body, throwNetwork = false }) {
     'public/gao.html': 8,
     'public/audit.html': 4,
     'public/index.html': 2,
+    // server.js's single entry is a FALSE POSITIVE and is left counted rather
+    // than exempted: it is a `fetch(...)` inside the API-docs example STRING at
+    // :1359, not a call. Recorded here so the next run does not chase it. The
+    // ratchet only requires the number not to rise, so a known-inert entry
+    // costs nothing and an exemption would cost the rule (#13).
     'server.js': 1,
     'public/ads.html': 1,
     'public/commerce.html': 1,
