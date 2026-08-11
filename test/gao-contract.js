@@ -60,8 +60,9 @@ function extractFn(src, name) {
   return null;
 }
 
-const NAMES = ['extractScores', 'responded', 'meanScore', 'updateVisibilityScores',
-               'updateCitationMap', 'updateCompetitorList', 'saveGAOResult'];
+const NAMES = ['extractScores', 'responded', 'meanScore', 'updateHeadlineStats',
+               'updateVisibilityScores', 'updateCitationMap', 'updateCompetitorList',
+               'saveGAOResult', 'saveGAOAfterAnalysis'];
 const SOURCES = {};
 for (const n of NAMES) SOURCES[n] = extractFn(html, n);
 ok('the suite found every function it claims to test (an anchor miss must FAIL, not pass — #14)',
@@ -87,7 +88,7 @@ ok('the suite found every function it claims to test (an anchor miss must FAIL, 
 function sandbox() {
   const dom = {}, toasts = [], warns = [];
   const store = {};
-  const el = (id) => (dom[id] = dom[id] || { textContent: '', innerHTML: '', style: {}, className: '' });
+  const el = (id) => (dom[id] = dom[id] || { textContent: '', innerHTML: '', style: {}, className: '', value: '' });
   const ctx = {
     document: { getElementById: el },
     localStorage: {
@@ -96,6 +97,7 @@ function sandbox() {
     },
     toast: (m) => toasts.push(m),
     renderHistory: () => {},
+    animateStat: (id, v) => { el(id).textContent = String(v); },
     console: { warn: (...a) => warns.push(a.join(' ')), error: (...a) => warns.push(a.join(' ')), log: () => {} },
     setTimeout: (fn) => fn(),
     Math, JSON, Object, Date, Number, isNaN, parseInt, String, Array,
@@ -133,6 +135,39 @@ const ALL = [['ChatGPT', 70], ['Claude', 60], ['Gemini', 50], ['Perplexity', 40]
        String(ctx.responded(scores).length));
     ok('NEGATIVE CONTROL — absences do not drag the mean down as zeros would',
        ctx.meanScore(scores) !== 36, 'the mean was computed over all five');
+  }
+
+  /* ── 2b. THE DENOMINATOR IS DISPLAYED, AND CORRECT ───────────────────────
+     The brief names this explicitly — "3 of 5 renders as 3 of 5" — and it was
+     the one invariant nothing could reach, because the code lived inside
+     runGAO behind a network call. A mutation that deleted the line entirely
+     survived. It is now its own function, for exactly this reason. */
+  {
+    const { ctx, dom } = sandbox();
+    ctx.updateHeadlineStats(ctx.extractScores(reply(ALL.slice(0, 3))), 4);
+    ok('THE INVARIANT — the headline shows the responders-only mean',
+       dom['stat-visibility'].textContent === 60, String(dom['stat-visibility'].textContent));
+    ok('THE INVARIANT — and states its denominator, 3 of 5',
+       dom['stat-visibility-denom'].textContent === 'from 3 of 5 engines',
+       dom['stat-visibility-denom'].textContent);
+    ok('the citations tile shows no number at all',
+       dom['stat-citations'].textContent === '—', dom['stat-citations'].textContent);
+  }
+  {
+    const { ctx, dom } = sandbox();
+    ctx.updateHeadlineStats(ctx.extractScores(reply(ALL)), 4);
+    ok('all five responding renders as 5 of 5, not as a bare number',
+       dom['stat-visibility-denom'].textContent === 'from 5 of 5 engines',
+       dom['stat-visibility-denom'].textContent);
+  }
+  {
+    const { ctx, dom } = sandbox();
+    ctx.updateHeadlineStats(ctx.extractScores('prose, no percentages'), 4);
+    ok('no responders shows no headline number',
+       dom['stat-visibility'].textContent === '--', String(dom['stat-visibility'].textContent));
+    ok('…and says so in place of a denominator',
+       /no engine responded/i.test(dom['stat-visibility-denom'].textContent),
+       dom['stat-visibility-denom'].textContent);
   }
 
   /* ── 3. ALL FIVE UNMATCHED YIELDS NO HEADLINE, NOT ZERO ──────────────────── */
@@ -200,6 +235,22 @@ const ALL = [['ChatGPT', 70], ['Claude', 60], ['Gemini', 50], ['Perplexity', 40]
        !store.gao_history || JSON.parse(store.gao_history).length === 0, store.gao_history);
     ok('…and the reason is reported rather than swallowed',
        warns.some((w) => /no engine responded/i.test(w)), JSON.stringify(warns));
+  }
+
+  {
+    /* The DOM re-read. saveGAOAfterAnalysis rebuilds `scores` from the rendered
+       score cells, and dropping the non-responders there would make `engines`
+       equal the number that answered — history reading "from 3 of 3", the
+       denominator restored in one function and thrown away in the next. A
+       mutation doing exactly that survived the first version of this suite. */
+    const { ctx, dom, store } = sandbox();
+    dom['brand-input'] = { value: 'Acme' };
+    dom['prompts-input'] = { value: ['a','b','c'].join(String.fromCharCode(10)) };
+    ctx.updateVisibilityScores(ctx.extractScores(reply(ALL.slice(0, 3))));
+    ctx.saveGAOAfterAnalysis();
+    const h = JSON.parse(store.gao_history || '[]');
+    ok('THE INVARIANT — the DOM re-read keeps non-responders countable',
+       h[0] && h[0].answered === 3 && h[0].engines === 5, JSON.stringify(h[0]));
   }
 
   /* ── 7. THE RATCHET FROM RUN 29 MUST NOT MOVE ────────────────────────────── */

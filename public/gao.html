@@ -838,20 +838,7 @@ Format with clear headers and be specific to ${brand} in the ${industry || 'give
     updateCitationMap(brand,industry);
     updateCompetitorList(brand,industry,scores);
 
-    // Update stats. The average is over RESPONDERS only, and the screen states
-    // its denominator: "62, from 3 of 5 engines" and "62, from 5 of 5" are
-    // different claims, and until now they were indistinguishable.
-    const total = Object.keys(scores).length;
-    const answered = responded(scores).length;
-    const avgScore = meanScore(scores);
-    document.getElementById('stat-visibility').textContent = avgScore === null ? '--' : avgScore;
-    document.getElementById('stat-visibility-denom').textContent =
-      avgScore === null ? 'No engine responded' : `from ${answered} of ${total} engines`;
-    animateStat('stat-prompts',promptList.split('\n').length);
-    // Citations: nothing measures this. It was Math.random()*15+5 — not a
-    // fallback, because no attempt was made and no failure occurred. It shows
-    // nothing until something measures it.
-    document.getElementById('stat-citations').textContent = '—';
+    updateHeadlineStats(scores, promptList.split('\n').length);
 
     toast('✓ GAO Analysis complete!','success');
     saveGAOAfterAnalysis();
@@ -884,6 +871,31 @@ function extractScores(text){
     scores[key] = match ? Math.min(parseInt(match[1]),100) : null;
   }
   return scores;
+}
+
+/** The hero tiles.
+ *
+ *  Extracted from runGAO so it can be executed by a test. It was inline, and a
+ *  mutation that deleted the denominator entirely SURVIVED the first version of
+ *  this run's suite — the one invariant the brief names explicitly ("3 of 5
+ *  renders as 3 of 5") was the one nothing could reach, because runGAO does a
+ *  network round trip. Checklist #21 in one line: if it cannot be executed, it
+ *  is not covered.
+ */
+function updateHeadlineStats(scores, promptCount){
+  const total = Object.keys(scores).length;
+  const answered = responded(scores).length;
+  const avgScore = meanScore(scores);
+  // "62, from 3 of 5 engines" and "62, from 5 of 5" are different claims, and
+  // until now they were indistinguishable.
+  document.getElementById('stat-visibility').textContent = avgScore === null ? '--' : avgScore;
+  document.getElementById('stat-visibility-denom').textContent =
+    avgScore === null ? 'No engine responded' : `from ${answered} of ${total} engines`;
+  animateStat('stat-prompts', promptCount);
+  // Citations: nothing measures this. It was Math.random()*15+5 — not a
+  // fallback, because no attempt was made and no failure occurred. It shows
+  // nothing until something measures it.
+  document.getElementById('stat-citations').textContent = '—';
 }
 
 /** The engines that actually returned a score. The only values any average,
