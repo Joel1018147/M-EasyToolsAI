@@ -28,7 +28,11 @@ const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
 const PLATFORM = 'tools';
 const ACCENT = '#E8622A';                       // §2 platform registry
-const MASTER_CSS_MD5 = '63779cf96f82b8db28f679b6311a4e3e';
+const MASTER_CSS_MD5 = 'a208320dcabe23aef105fefa64ccd8ff';
+// Moves in the SAME commit as a master sync. This constant is the tripwire
+// that fires when the shared stylesheet drifts, so it firing is correct — it
+// only becomes noise when a sync updates the ten copies and leaves it behind,
+// which is what happened on the a208320d rollout and turned three repos red.
 
 let failures = 0, checks = 0;
 const pass = (m) => { checks++; console.log('  ✓ ' + m); };
