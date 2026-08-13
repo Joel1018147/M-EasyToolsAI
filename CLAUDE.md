@@ -60,6 +60,19 @@ degraded; nothing should page on it. Do not collapse the two. `has()` checks
 for a non-empty *value*, never for the key's presence — a variable that exists
 is not a variable that has a value.
 
+## Test coverage gap — content.html fetch-response checks
+
+`test/fetch-contract.js` pulls `public/seller.html`'s functions out and runs
+them for real in a `vm` sandbox, but `public/content.html`'s save-handling is
+only covered by the static `.ok`/`.status`-presence scan in
+`test/lib/unchecked-fetch.js` (recurring-bugs-checklist.md #21) — nothing
+loads or executes content.html's actual code. `test/mutate-fetch.js` M7 proves
+the scan catches an `.ok` check being **deleted**, but the scan cannot catch
+the check being **inverted** (`if(!r.ok)` → `if(r.ok)`) — the `.ok` token
+would still be present and the scan would still read it as "checked" while the
+save/failure toasts fire backwards. Verified by static scan only, not a
+live-executing test — do not treat this as closed.
+
 ## Model fallback procedure
 Primary: qwen/qwen3.6-27b (Groq preview tier — chosen for EN/BM/ZH multilingual
 strength). If Groq rate-limits or pulls this model:
