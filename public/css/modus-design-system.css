@@ -116,6 +116,31 @@
   --font: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Mono', monospace;
+
+  /* Motion and gamification — see §50.
+     DECLARED HERE, IN :root, DELIBERATELY. ESG inlines a token floor that is
+     extracted BY SELECTOR (src/utils/layout.js), and :root is on that list.
+     A token declared under any other selector is absent from that floor, and
+     the floor is what renders when the linked stylesheet fails — so it would
+     break only in the situation it exists for.                            */
+  --motion-fast: 120ms;
+  --motion-base: 220ms;
+  --motion-slow: 420ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Joins the --shadow-sm / --shadow / --shadow-lg family, so it is
+     --shadow-glow and not --elev-glow. A new prefix beside an established
+     one is a fork in miniature.                                          */
+  --shadow-glow: 0 0 0 4px var(--accent-glow), 0 8px 24px var(--accent-glow);
+  /* Geometry, joining --sidebar-w / --topbar-h. Theme-neutral by nature:
+     a rail is the same width in the dark.                                */
+  --rail-w: 3px;
+  --node-size: 28px;
+  --ring-thickness: 8px;
+  /* The deliberately dark "command centre" surface. Dark in BOTH themes —
+     that is the point of it — so it carries a dark-mode value below rather
+     than inverting.                                                      */
+  --surface-deep: #0f172a;
 }
 
 /* ── 3. PLATFORM ACCENT OVERRIDES ────────────────────────────────────── */
@@ -285,6 +310,13 @@
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
   --shadow: 0 4px 20px rgba(0,0,0,0.5);
   --shadow-lg: 0 12px 40px rgba(0,0,0,0.6);
+  /* §50 parity. The glow keeps its accent ring — that is the signal — but the
+     ambient half goes darker, exactly as the other three shadows do here.
+     The durations, easings and geometry tokens have no entry because they are
+     theme-neutral: a 220ms transition and a 3px rail do not change in the
+     dark, and a value repeated identically is a value that can drift.     */
+  --shadow-glow: 0 0 0 4px var(--accent-glow), 0 10px 34px rgba(0,0,0,0.55);
+  --surface-deep: #020817;
 }
 [data-theme="dark"][data-platform="commerce"] {
   --brown-dark: #e2d5cb;
@@ -2281,6 +2313,23 @@ tr:hover td { background: var(--bg-soft); }
     transition-duration: 0.01ms !important;
   }
   .skeleton { animation: none; background: var(--border); }
+
+  /* §50. THE RULE ABOVE IS EXACTLY WHAT MAKES AN ENTRANCE STATE DANGEROUS,
+     so the fix belongs here, in the one block, and not in a second one whose
+     effect would depend on source order.
+
+     An entrance class whose resting state is opacity:0 and which is revealed
+     by motion does not become "fast" under this media query — it becomes
+     PERMANENTLY INVISIBLE, and the content is never reachable. That is the
+     accessibility failure, not a cosmetic one.
+
+     So .reveal collapses to its FINAL state — visible, untransformed — rather
+     than to a fast animation. Nothing is removed and nothing is hidden.     */
+  [data-reveal="on"] .reveal,
+  [data-reveal="on"] .reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* ── 42. ANIMATIONS & TRANSITIONS ───────────────────────────────────── */
@@ -3421,3 +3470,281 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 
 /* narrow numeric input — SST rate, percentages, quantities */
 .w-narrow { min-width: 100px; max-width: 140px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   50. GAMIFICATION & MOTION LAYER
+   ──────────────────────────────────────────────────────────────────────
+   Progress rails, mission cards, score rings, milestone states, XP chrome
+   and one entrance state. Every rule here is PLATFORM-NEUTRAL: colour comes
+   from the six accent tokens, so ESG renders moss green and Commerce renders
+   green and nothing in this section knows which platform it is on.
+
+   There is deliberately no [data-platform="…"] selector below, and there
+   must never be one. A platform opts in by USING these classes in its
+   markup, which is how every other component in this file already works.
+   Where a genuine opt-out is needed it gates on a non-platform axis —
+   prefers-reduced-motion, or the data-motion attribute — which any platform
+   may set and which therefore creates no asymmetry in the file.
+
+   THREE RULES THIS SECTION IS BUILT AROUND:
+
+   1. STATE IS NEVER COLOUR ALONE (§6). Every state class here has a matching
+      text slot — .journey-node-label, .mission-meta, .milestone-badge's own
+      content. A done node says "Done"; a mission at 3 of 8 says "3 of 8".
+      A green ring that says nothing is not an accessible progress indicator.
+
+   2. NOTHING LOOPS. No animation in this section repeats. The one rule that
+      may loop indefinitely is a live progress indicator, and this section
+      does not ship one — .xp-bar and .mission-progress are static widths
+      that transition when the value changes.
+
+   3. DURATIONS COME FROM TOKENS. A hardcoded 0.3s here is the same defect
+      class as a hardcoded #16A34A. Every duration below is --motion-*, every
+      easing is --ease-*, every radius is --r*, every colour is a token.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* --- 50.1 journey rail ---------------------------------------------- */
+/* A vertical progress spine. The rail is a border on the container so the
+   nodes can sit on top of it without a second positioned element.        */
+.journey {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-left: 28px;
+  border-left: var(--rail-w) solid var(--border);
+}
+.journey-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.journey-node {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.journey-node::before {
+  content: '';
+  position: absolute;
+  left: calc(-28px - var(--rail-w) - (var(--node-size) / 2) + (var(--rail-w) / 2));
+  top: 0;
+  width: var(--node-size);
+  height: var(--node-size);
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  transition: background var(--motion-base) var(--ease-out),
+              border-color var(--motion-base) var(--ease-out),
+              box-shadow var(--motion-base) var(--ease-out);
+}
+.journey-node.is-done::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.journey-node.is-active::before {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+.journey-node.is-pending::before {
+  background: var(--surface-2);
+  border-color: var(--border-2);
+}
+/* The text half of every state. Present because colour alone is not a state. */
+.journey-node-label {
+  font-family: var(--font);
+  font-weight: 600;
+  color: var(--text);
+}
+.journey-node-meta {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* --- 50.2 mission card ---------------------------------------------- */
+.mission-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--motion-base) var(--ease-out),
+              transform var(--motion-base) var(--ease-out);
+}
+.mission-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+.mission-card.is-complete {
+  border-color: var(--accent);
+}
+/* The command-centre variant — deliberately dark in both themes.
+   --accent-contrast is the "text on a strong coloured surface" token and is
+   #ffffff on every platform, so it is the right one here. The meta line dims
+   with opacity rather than a second colour: a literal rgba() in a RULE is a
+   hardcoded colour, and this section may not contain one. Token DEFINITIONS
+   carry literals — that is what a token is — but rules read tokens.        */
+.mission-card--deep {
+  background: var(--surface-deep);
+  border-color: transparent;
+  color: var(--accent-contrast);
+}
+.mission-card--deep .mission-meta {
+  color: var(--accent-contrast);
+  opacity: 0.72;
+}
+.mission-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.mission-meta {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.mission-progress {
+  height: 6px;
+  border-radius: var(--r-sm);
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 12px;
+}
+.mission-progress > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width var(--motion-slow) var(--ease-out);
+}
+
+/* --- 50.3 score ring ------------------------------------------------- */
+/* A conic-gradient driven by one custom property. No canvas, no library.
+   Set --score (0-100) on the element; the number is ALSO rendered as text
+   inside .score-ring-value, because a ring on its own states nothing.     */
+.score-ring {
+  --score: 0;
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    conic-gradient(var(--accent) calc(var(--score) * 1%), var(--border) 0);
+  transition: background var(--motion-slow) var(--ease-out);
+}
+.score-ring::before {
+  content: '';
+  position: absolute;
+  inset: var(--ring-thickness);
+  border-radius: 50%;
+  background: var(--surface);
+}
+.score-ring-value {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+.score-ring-label {
+  position: relative;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+/* --- 50.4 XP bar and level chip -------------------------------------- */
+.xp-bar {
+  height: 10px;
+  border-radius: var(--r-sm);
+  background: var(--border);
+  overflow: hidden;
+}
+.xp-bar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width var(--motion-slow) var(--ease-out);
+}
+.level-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: var(--r-xl);
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* --- 50.5 milestone badge -------------------------------------------- */
+/* Carries its own text by construction — it is a text element.           */
+.milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--r-xl);
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background var(--motion-base) var(--ease-out),
+              color var(--motion-base) var(--ease-out),
+              border-color var(--motion-base) var(--ease-out);
+}
+.milestone-badge.is-earned {
+  background: var(--accent-light);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+.milestone-badge.is-locked {
+  opacity: 0.6;
+}
+
+/* --- 50.6 glowing stat card ------------------------------------------ */
+/* A MODIFIER ON .stat-card, which exists in §11. It is not .stat-tile--glow;
+   .stat-tile does not exist anywhere in this file, and a modifier on a base
+   class that is not there is a rule that never matches and never warns.    */
+.stat-card--glow {
+  box-shadow: var(--shadow-glow);
+  border-color: var(--accent);
+}
+
+/* --- 50.7 reveal on scroll ------------------------------------------- */
+/* THE RESTING STATE IS VISIBLE. The hidden state applies only under
+   [data-reveal="on"], which JS sets on <html> AFTER it has confirmed it has
+   an IntersectionObserver to turn it back on again.
+
+   Authored this way round on purpose: if the script never runs, never loads,
+   or throws, the content is simply visible. The opposite arrangement — hide
+   in CSS, reveal in JS — makes the whole page depend on a script it has no
+   way to check, and fails silently to exactly the users least able to report
+   it. Reduced-motion handling lives in §41's existing media block.        */
+.reveal { opacity: 1; }
+[data-reveal="on"] .reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity var(--motion-slow) var(--ease-out),
+              transform var(--motion-slow) var(--ease-out);
+}
+[data-reveal="on"] .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+/* An explicit, user-settable opt-out on a NON-PLATFORM axis. */
+[data-motion="off"] .reveal,
+[data-motion="off"] .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
