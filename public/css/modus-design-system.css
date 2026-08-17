@@ -72,15 +72,44 @@
   /* Text */
   --text: #1e293b;
   --text-2: #475569;
-  --muted: #94a3b8;
+  /* WCAG. #94a3b8 was 2.56:1 on --surface and 2.43:1 on --bg — it is the
+     colour of .stat-label, .stat-sub, .text-muted, .empty-state p,
+     .page-subtitle, .step-label and about thirty other rules, which is most of
+     the secondary text in the product. §6 asks for 4.5:1 and nothing had ever
+     checked it. Derived, not chosen: same hue, lightness walked down until the
+     worst backdrop cleared 4.6. See Run 54. */
+  --muted: #5a6d87;
+  /* THE ACCENT USED AS TEXT, which is not the same job as the accent.
+     A brand colour is chosen to be recognisable on a surface, not legible on
+     one, and eight of the eleven platform accents are too light to read on
+     white while ALL ELEVEN are too dark to read on a dark surface — ESG's
+     #4D7C0F is 2.38:1 on --surface in dark mode.
+     Defaults to --accent, so a platform that does not need an override does
+     not carry one, and the six-token rule is untouched. Backgrounds, borders,
+     rings and rails all keep --accent; only FOREGROUND text moves. */
+  --accent-text: var(--accent);
 
   /* Brand — sidebar background */
   --brand: #0f172a;
   --brand-2: #1e293b;
   --brand-3: #263348;
 
-  /* Status palette */
-  --red: #ef4444;
+  /* Status palette.
+     THESE ARE FOREGROUNDS AS WELL AS FILLS. Every .badge-*, .alert-* and
+     .tag-* pairs one of them with its own 8% tint, and at the values shipped
+     until Run 54 that pairing measured between 2.8:1 and 3.9:1 — the entire
+     quiet colour language of the system sat below §6's 4.5:1, in both themes,
+     on every platform, and nothing had ever checked it.
+     Darkened here for light mode and overridden lighter in [data-theme="dark"].
+     Derived, not chosen: hue and saturation held, lightness walked until the
+     worst backdrop cleared 4.6. The -bg tints are deliberately NOT moved — at
+     8% the hue difference is imperceptible, and leaving them means every
+     existing surface keeps exactly the colour it had. */
+  /* #ef4444 until Run 54, where the derived-pairs check found .btn-danger at
+     3.76:1 — white on it, in both themes, since v2.0. A fill that carries white
+     text has to be dark enough to; a fill that is only a dot or a bar does not
+     care, so deepening it costs nothing and fixes the one place it does. */
+  --red: #c81e1e;
   --red-bg: rgba(239,68,68,0.08);
   /* Aliases — --danger is the name people reach for. Both were used in
      M-EasyHalal's modus-widget.js and resolved to nothing.             */
@@ -88,12 +117,25 @@
   --danger-bg: var(--red-bg);
   --green: #16a34a;
   --green-bg: rgba(22,163,74,0.08);
-  --amber: #d97706;
+  /* Same reason as --red: .btn-gold is white on --amber and measured 3.19:1. */
+  --amber: #a25904;
   --amber-bg: rgba(217,119,6,0.08);
   --blue: #1a73e8;
   --blue-bg: rgba(26,115,232,0.08);
   --purple: #7c3aed;
   --purple-bg: rgba(124,58,237,0.08);
+  /* THE STATUS COLOURS USED AS TEXT. Every .badge-*, .alert-* and .tag-* pairs
+     one of these with its own 8% tint, and at the fill values that pairing
+     measured between 2.8:1 and 3.9:1 — the entire quiet colour language of the
+     system sat below §6's 4.5:1, in both themes, on every platform, and
+     nothing had ever checked it.
+     Derived, not chosen: hue and saturation held, lightness walked until the
+     worst backdrop cleared 4.6. --purple already cleared it and is unchanged. */
+  --red-text: #d41212;
+  --green-text: #117b38;
+  --amber-text: #a25904;
+  --blue-text: #1567d3;
+  --purple-text: var(--purple);
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
@@ -159,6 +201,7 @@
   --accent-bg: rgba(26,115,232,0.08);
   --accent-glow: rgba(26,115,232,0.20);
   --accent-light: #D6E4FA;
+  --accent-text: #1461c5;
   --accent-contrast: #ffffff;
 }
 
@@ -168,6 +211,7 @@
   --accent-bg: rgba(232,98,42,0.08);
   --accent-glow: rgba(232,98,42,0.20);
   --accent-light: #FBE2D8;
+  --accent-text: #b24213;
   --accent-contrast: #ffffff;
 }
 
@@ -177,6 +221,7 @@
   --accent-bg: rgba(22,163,74,0.08);
   --accent-glow: rgba(22,163,74,0.20);
   --accent-light: #D7F0E1;
+  --accent-text: #107636;
   --accent-contrast: #ffffff;
   /* Backward-compat aliases for existing inline styles in route files.
      DEPRECATED — do not use in new code. Delete once Commerce route files
@@ -201,6 +246,7 @@
   --accent-bg: rgba(13,148,136,0.08);
   --accent-glow: rgba(13,148,136,0.20);
   --accent-light: #D2EDEA;
+  --accent-text: #0a736a;
   --accent-contrast: #ffffff;
 }
 
@@ -219,6 +265,7 @@
   --accent-bg: rgba(124,58,237,0.08);
   --accent-glow: rgba(124,58,237,0.20);
   --accent-light: #E9DDFD;
+  --accent-text: #7631ec;
   --accent-contrast: #ffffff;
 }
 
@@ -228,6 +275,7 @@
   --accent-bg: rgba(217,119,6,0.08);
   --accent-glow: rgba(217,119,6,0.20);
   --accent-light: #FBEBD5;
+  --accent-text: #9d5604;
   --accent-contrast: #ffffff;
 }
 
@@ -237,6 +285,7 @@
   --accent-bg: rgba(220,38,38,0.08);
   --accent-glow: rgba(220,38,38,0.20);
   --accent-light: #FBDBDB;
+  --accent-text: #bf1f1f;
   --accent-contrast: #ffffff;
 }
 
@@ -250,6 +299,7 @@
   --accent-bg: rgba(77,124,15,0.08);
   --accent-glow: rgba(77,124,15,0.20);
   --accent-light: #E4EFD1;
+  --accent-text: #47730e;
   --accent-contrast: #ffffff;
 }
 
@@ -303,7 +353,17 @@
   --border-2: #475569;
   --text: #e2e8f0;
   --text-2: #94a3b8;
-  --muted: #64748b;
+  /* 3.07:1 at #64748b. Same derivation as the light value, walked up. */
+  --muted: #919eb0;
+  /* THE STATUS COLOURS USED AS TEXT. Same split as --accent-text and for the
+     same reason: --red is a fill that white sits on (.btn-danger) AND the
+     colour of the word "error" on a tint, and one value cannot be both.
+     Fills keep their shipped values; only text moves. */
+  --red-text: #f26a6a;
+  --green-text: #18b050;
+  --amber-text: #e87f06;
+  --blue-text: #5b9bef;
+  --purple-text: #ab80f3;
   --brand: #020817;
   --brand-2: #0f172a;
   --brand-3: #1e293b;
@@ -338,17 +398,17 @@
    dark surface. One rule per platform, same shape for all 11. (This line
    said "all 9" while listing ten; corrected when migs made it eleven —
    count the rules, not the comment.)                                      */
-[data-theme="dark"][data-platform="do"]       { --accent-light: rgba(26,115,232,0.22); }
-[data-theme="dark"][data-platform="tools"]    { --accent-light: rgba(232,98,42,0.22); }
-[data-theme="dark"][data-platform="commerce"] { --accent-light: rgba(22,163,74,0.22); }
-[data-theme="dark"][data-platform="halal"]    { --accent-light: rgba(13,148,136,0.22); }
-[data-theme="dark"][data-platform="school"]   { --accent-light: rgba(30,64,175,0.28); }
-[data-theme="dark"][data-platform="member"]   { --accent-light: rgba(124,58,237,0.22); }
-[data-theme="dark"][data-platform="mall"]     { --accent-light: rgba(217,119,6,0.22); }
-[data-theme="dark"][data-platform="campus"]   { --accent-light: rgba(220,38,38,0.22); }
-[data-theme="dark"][data-platform="esg"]      { --accent-light: rgba(77,124,15,0.22); }
-[data-theme="dark"][data-platform="dgcs"]     { --accent-light: rgba(124,45,18,0.22); }
-[data-theme="dark"][data-platform="migs"]     { --accent-light: rgba(52,72,137,0.22); }
+[data-theme="dark"][data-platform="do"]       { --accent-light: rgba(26,115,232,0.22); --accent-text: #6da6f0; }
+[data-theme="dark"][data-platform="tools"]    { --accent-light: rgba(232,98,42,0.22); --accent-text: #ee8e66; }
+[data-theme="dark"][data-platform="commerce"] { --accent-light: rgba(22,163,74,0.22); --accent-text: #1bc75a; }
+[data-theme="dark"][data-platform="halal"]    { --accent-light: rgba(13,148,136,0.22); --accent-text: #11beaf; }
+[data-theme="dark"][data-platform="school"]   { --accent-light: rgba(30,64,175,0.28); --accent-text: #829aea; }
+[data-theme="dark"][data-platform="member"]   { --accent-light: rgba(124,58,237,0.22); --accent-text: #b189f4; }
+[data-theme="dark"][data-platform="mall"]     { --accent-light: rgba(217,119,6,0.22); --accent-text: #f98f14; }
+[data-theme="dark"][data-platform="campus"]   { --accent-light: rgba(220,38,38,0.22); --accent-text: #ea7e7e; }
+[data-theme="dark"][data-platform="esg"]      { --accent-light: rgba(77,124,15,0.22); --accent-text: #6fb316; }
+[data-theme="dark"][data-platform="dgcs"]     { --accent-light: rgba(124,45,18,0.22); --accent-text: #e8815e; }
+[data-theme="dark"][data-platform="migs"]     { --accent-light: rgba(52,72,137,0.22); --accent-text: #899ad2; }
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
 *, *::before, *::after {
@@ -521,7 +581,9 @@ input, textarea, select { font-family: var(--font); }
   font-weight: 700;
   letter-spacing: 1.4px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.28);
+  /* 0.28 measured 2.50:1 light / 2.37:1 dark against --brand. 0.46 is the
+     lowest alpha that clears 4.5 in both. */
+  color: rgba(255,255,255,0.46);
 }
 .sidebar-nav {
   flex: 1;
@@ -623,7 +685,8 @@ input, textarea, select { font-family: var(--font); }
 }
 .sidebar-user-plan {
   font-size: 11px;
-  color: rgba(255,255,255,0.35);
+  /* 0.35 measured 3.21:1 light / 3.10:1 dark against --brand. */
+  color: rgba(255,255,255,0.46);
   margin-top: 1px;
 }
 .sidebar-logout {
@@ -680,7 +743,7 @@ input, textarea, select { font-family: var(--font); }
 }
 .bottom-nav-item.active,
 .bottom-nav-item:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .bottom-nav-item-icon {
   width: 22px; height: 22px;
@@ -872,19 +935,19 @@ tr:hover td { background: var(--bg-soft); }
   font-weight: 600;
   white-space: nowrap;
 }
-.badge-blue { background: var(--blue-bg); color: var(--blue); }
-.badge-green { background: var(--green-bg); color: var(--green); }
-.badge-red { background: var(--red-bg); color: var(--red); }
-.badge-amber { background: var(--amber-bg); color: var(--amber); }
-.badge-orange { background: var(--amber-bg); color: var(--amber); }
-.badge-gold { background: var(--amber-bg); color: var(--amber); }
-.badge-purple { background: var(--purple-bg); color: var(--purple); }
+.badge-blue { background: var(--blue-bg); color: var(--blue-text); }
+.badge-green { background: var(--green-bg); color: var(--green-text); }
+.badge-red { background: var(--red-bg); color: var(--red-text); }
+.badge-amber { background: var(--amber-bg); color: var(--amber-text); }
+.badge-orange { background: var(--amber-bg); color: var(--amber-text); }
+.badge-gold { background: var(--amber-bg); color: var(--amber-text); }
+.badge-purple { background: var(--purple-bg); color: var(--purple-text); }
 .badge-gray {
   background: var(--bg-soft);
   color: var(--text-2);
   border: 1px solid var(--border);
 }
-.badge-accent { background: var(--accent-bg); color: var(--accent); }
+.badge-accent { background: var(--accent-bg); color: var(--accent-text); }
 
 /* ── 15. FORMS ───────────────────────────────────────────────────────── */
 .form-group {
@@ -974,7 +1037,7 @@ tr:hover td { background: var(--bg-soft); }
   transition: all 0.15s;
   font-family: var(--font);
 }
-.modal-close:hover { background: var(--red-bg); color: var(--red); }
+.modal-close:hover { background: var(--red-bg); color: var(--red-text); }
 
 /* ── 17. SEARCH BAR ──────────────────────────────────────────────────── */
 .search-bar {
@@ -1014,7 +1077,7 @@ tr:hover td { background: var(--bg-soft); }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 8px;
 }
 .ai-insight p {
@@ -1080,7 +1143,7 @@ tr:hover td { background: var(--bg-soft); }
   font-size: 12px;
   font-weight: 700;
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   border: 1px solid var(--accent-glow);
 }
 
@@ -1102,7 +1165,7 @@ tr:hover td { background: var(--bg-soft); }
 }
 .theme-toggle:hover {
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent-glow);
 }
 
@@ -1124,6 +1187,24 @@ tr:hover td { background: var(--bg-soft); }
   .app-bottom-nav { display: block; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .form-grid { grid-template-columns: 1fr; }
+
+  /* §6: "Touch targets ≥ 44×44 px on mobile". Nothing in this file cleared it
+     until Run 54 — .btn measured ~29px and .btn-sm ~22px, and a 22px target on
+     a phone is a miss, not a tap. Applied HERE and not to the base rule on
+     purpose: 44px is a finger, not a design, and a desktop toolbar of 44px
+     buttons is a different and worse product. min-height rather than height so
+     a button that wraps still grows. */
+  .btn,
+  .btn-sm,
+  .btn-lg,
+  .btn-oauth,
+  .page-btn,
+  .theme-toggle,
+  .modal-close,
+  .pw-toggle {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 @media (max-width: 480px) {
   .stat-grid { grid-template-columns: 1fr 1fr; }
@@ -1143,7 +1224,7 @@ tr:hover td { background: var(--bg-soft); }
   font-size: 12px;
   font-weight: 700;
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   border: 1px solid var(--accent-glow);
 }
 .table-card { /* old name → use .table-wrap */
@@ -1169,7 +1250,7 @@ tr:hover td { background: var(--bg-soft); }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 8px;
 }
 .ai-box p {
@@ -1219,10 +1300,10 @@ tr:hover td { background: var(--bg-soft); }
 .text-primary { color: var(--text); }
 .text-secondary{ color: var(--text-2); }
 .text-muted   { color: var(--muted); }
-.text-accent  { color: var(--accent); }
-.text-success { color: var(--green); }
-.text-warning { color: var(--amber); }
-.text-danger  { color: var(--red); }
+.text-accent  { color: var(--accent-text); }
+.text-success { color: var(--green-text); }
+.text-warning { color: var(--amber-text); }
+.text-danger  { color: var(--red-text); }
 
 .truncate { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .leading-tight { line-height: 1.2; }
@@ -1447,7 +1528,7 @@ tr:hover td { background: var(--bg-soft); }
   margin-top: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   background: none;
   border: none;
@@ -1523,10 +1604,10 @@ tr:hover td { background: var(--bg-soft); }
 }
 .alert-close:hover { opacity: 1; }
 
-.alert-info    { background: var(--blue-bg);   border-color: rgba(26,115,232,0.2);   color: var(--blue);   }
-.alert-success { background: var(--green-bg);  border-color: rgba(22,163,74,0.2);   color: var(--green);  }
-.alert-warning { background: var(--amber-bg);  border-color: rgba(217,119,6,0.2);    color: var(--amber);  }
-.alert-error   { background: var(--red-bg);    border-color: rgba(239,68,68,0.2);    color: var(--red);    }
+.alert-info    { background: var(--blue-bg);   border-color: rgba(26,115,232,0.2);   color: var(--blue-text);   }
+.alert-success { background: var(--green-bg);  border-color: rgba(22,163,74,0.2);   color: var(--green-text);  }
+.alert-warning { background: var(--amber-bg);  border-color: rgba(217,119,6,0.2);    color: var(--amber-text);  }
+.alert-error   { background: var(--red-bg);    border-color: rgba(239,68,68,0.2);    color: var(--red-text);    }
 
 .alert-info .alert-body,
 .alert-success .alert-body,
@@ -1621,7 +1702,7 @@ tr:hover td { background: var(--bg-soft); }
 }
 .tab:hover { color: var(--text-2); }
 .tab.active {
-  color: var(--accent);
+  color: var(--accent-text);
   border-bottom-color: var(--accent);
 }
 .tab-badge {
@@ -1635,7 +1716,7 @@ tr:hover td { background: var(--bg-soft); }
 }
 .tab.active .tab-badge {
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent-glow);
 }
 
@@ -1688,7 +1769,7 @@ tr:hover td { background: var(--bg-soft); }
   white-space: nowrap;
   transition: color 0.15s;
 }
-.breadcrumb-item:hover { color: var(--accent); }
+.breadcrumb-item:hover { color: var(--accent-text); }
 .breadcrumb-item:last-child {
   color: var(--text);
   font-weight: 600;
@@ -1949,7 +2030,7 @@ tr:hover td { background: var(--bg-soft); }
 }
 .dropdown-item.active {
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .dropdown-item-icon {
   width: 16px;
@@ -1957,8 +2038,8 @@ tr:hover td { background: var(--bg-soft); }
   font-size: 14px;
   flex-shrink: 0;
 }
-.dropdown-item-danger { color: var(--red); }
-.dropdown-item-danger:hover { background: var(--red-bg); color: var(--red); }
+.dropdown-item-danger { color: var(--red-text); }
+.dropdown-item-danger:hover { background: var(--red-bg); color: var(--red-text); }
 
 .dropdown-sep {
   height: 1px;
@@ -2157,7 +2238,7 @@ tr:hover td { background: var(--bg-soft); }
   color: var(--muted);
   text-align: center;
 }
-.step.active .step-label { color: var(--accent); }
+.step.active .step-label { color: var(--accent-text); }
 .step.done .step-label   { color: var(--text-2); }
 
 /* ── 39. TAG / CHIP ──────────────────────────────────────────────────── */
@@ -2195,12 +2276,12 @@ tr:hover td { background: var(--bg-soft); }
   background: var(--border-2);
   color: var(--text);
 }
-.tag-blue   { background: var(--blue-bg);   color: var(--blue);   border-color: rgba(26,115,232,0.2); }
-.tag-green  { background: var(--green-bg);  color: var(--green);  border-color: rgba(22,163,74,0.2); }
-.tag-red    { background: var(--red-bg);    color: var(--red);    border-color: rgba(239,68,68,0.2); }
-.tag-amber  { background: var(--amber-bg);  color: var(--amber);  border-color: rgba(217,119,6,0.2); }
-.tag-purple { background: var(--purple-bg); color: var(--purple); border-color: rgba(124,58,237,0.2); }
-.tag-accent { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-glow); }
+.tag-blue   { background: var(--blue-bg);   color: var(--blue-text);   border-color: rgba(26,115,232,0.2); }
+.tag-green  { background: var(--green-bg);  color: var(--green-text);  border-color: rgba(22,163,74,0.2); }
+.tag-red    { background: var(--red-bg);    color: var(--red-text);    border-color: rgba(239,68,68,0.2); }
+.tag-amber  { background: var(--amber-bg);  color: var(--amber-text);  border-color: rgba(217,119,6,0.2); }
+.tag-purple { background: var(--purple-bg); color: var(--purple-text); border-color: rgba(124,58,237,0.2); }
+.tag-accent { background: var(--accent-bg); color: var(--accent-text); border-color: var(--accent-glow); }
 
 /* Tag input area */
 .tag-input-wrap {
@@ -2486,7 +2567,7 @@ tr:hover td { background: var(--bg-soft); }
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: var(--red);
+  color: var(--red-text);
   margin-top: 4px;
   font-weight: 500;
 }
@@ -2585,8 +2666,8 @@ th[data-sort]::after {
   color: var(--muted);
   opacity: 0.5;
 }
-th[data-sort="asc"]::after  { content: '↑'; opacity: 1; color: var(--accent); }
-th[data-sort="desc"]::after { content: '↓'; opacity: 1; color: var(--accent); }
+th[data-sort="asc"]::after  { content: '↑'; opacity: 1; color: var(--accent-text); }
+th[data-sort="desc"]::after { content: '↓'; opacity: 1; color: var(--accent-text); }
 th[data-sort]:hover::after  { opacity: 0.8; }
 
 /* Row states */
@@ -2646,8 +2727,8 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   color: var(--muted);
   margin-top: 3px;
 }
-.input-counter.near-limit { color: var(--amber); }
-.input-counter.at-limit   { color: var(--red); }
+.input-counter.near-limit { color: var(--amber-text); }
+.input-counter.at-limit   { color: var(--red-text); }
 
 /* Select custom */
 .form-group select {
@@ -2869,7 +2950,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 .auth-tab:hover { color: var(--text); }
 .auth-tab.active {
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
   box-shadow: var(--shadow-sm);
 }
 
@@ -2909,7 +2990,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 .auth-link {
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   transition: opacity .15s ease;
 }
 .auth-link:hover { opacity: .78; text-decoration: underline; }
@@ -2920,7 +3001,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   font-size: 13px;
   color: var(--text-2);
 }
-.auth-alt a { color: var(--accent); font-weight: 600; }
+.auth-alt a { color: var(--accent-text); font-weight: 600; }
 .auth-alt a:hover { text-decoration: underline; }
 
 /* --- 48.6 OAuth ---------------------------------------------------- */
@@ -3020,10 +3101,10 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 .pw-strength[data-score="2"] .pw-strength-seg:nth-child(-n+2) { background: var(--amber); }
 .pw-strength[data-score="3"] .pw-strength-seg:nth-child(-n+3) { background: var(--blue); }
 .pw-strength[data-score="4"] .pw-strength-seg { background: var(--green); }
-.pw-strength[data-score="1"] .pw-strength-label { color: var(--red); }
-.pw-strength[data-score="2"] .pw-strength-label { color: var(--amber); }
-.pw-strength[data-score="3"] .pw-strength-label { color: var(--blue); }
-.pw-strength[data-score="4"] .pw-strength-label { color: var(--green); }
+.pw-strength[data-score="1"] .pw-strength-label { color: var(--red-text); }
+.pw-strength[data-score="2"] .pw-strength-label { color: var(--amber-text); }
+.pw-strength[data-score="3"] .pw-strength-label { color: var(--blue-text); }
+.pw-strength[data-score="4"] .pw-strength-label { color: var(--green-text); }
 
 /* --- 48.8 legal consent -------------------------------------------- */
 .auth-legal {
@@ -3035,7 +3116,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   color: var(--text-2);
 }
 .auth-legal input { margin-top: 2px; flex-shrink: 0; }
-.auth-legal a { color: var(--accent); font-weight: 600; }
+.auth-legal a { color: var(--accent-text); font-weight: 600; }
 .auth-legal a:hover { text-decoration: underline; }
 
 /* --- 48.9 OTP / verification code ---------------------------------- */
@@ -3091,7 +3172,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 .lang-switch-btn:hover { color: var(--text); }
 .lang-switch-btn.active {
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
   box-shadow: var(--shadow-sm);
 }
 
@@ -3154,7 +3235,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 .settings-nav-item:hover { background: var(--surface-2); color: var(--text); }
 .settings-nav-item.active {
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 .settings-nav-item-icon {
@@ -3166,8 +3247,8 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   font-size: 14px;
   opacity: .85;
 }
-.settings-nav-item-danger { color: var(--red); }
-.settings-nav-item-danger:hover { background: var(--red-bg); color: var(--red); }
+.settings-nav-item-danger { color: var(--red-text); }
+.settings-nav-item-danger:hover { background: var(--red-bg); color: var(--red-text); }
 
 /* --- 49.2 settings content ----------------------------------------- */
 .settings-content {
@@ -3289,7 +3370,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 .settings-choice-opt.active {
   border-color: var(--accent);
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .settings-choice-opt input { position: absolute; opacity: 0; pointer-events: none; }
 .settings-choice-swatch {
@@ -3355,7 +3436,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   background: var(--red-bg);
   border-bottom-color: var(--red);
 }
-.settings-danger .settings-section-title { color: var(--red); }
+.settings-danger .settings-section-title { color: var(--red-text); }
 
 /* --- 49.9 sticky save bar -------------------------------------------- */
 .settings-savebar {
@@ -3678,7 +3759,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   padding: 2px 10px;
   border-radius: var(--r-xl);
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   border: 1px solid var(--accent);
   font-family: var(--font);
   font-size: 12px;
@@ -3702,9 +3783,15 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
               color var(--motion-base) var(--ease-out),
               border-color var(--motion-base) var(--ease-out);
 }
+/* WAS `background: var(--accent-light); color: var(--accent-contrast)`, which
+   is #ffffff on a pale tint — 1.20:1 in light mode, on every platform, since
+   §50 shipped in Run 50. Not "below AA": white on near-white, and unreadable.
+   --accent-bg is the 8% tint the rest of the system uses behind accent text,
+   and --accent-text is legible on it in both themes. The border keeps --accent
+   so the badge still reads as earned at a glance. */
 .milestone-badge.is-earned {
-  background: var(--accent-light);
-  color: var(--accent-contrast);
+  background: var(--accent-bg);
+  color: var(--accent-text);
   border-color: var(--accent);
 }
 .milestone-badge.is-locked {
@@ -3747,4 +3834,381 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   opacity: 1;
   transform: none;
   transition: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   52. COMPOSITION LAYER
+   ───────────────────────────────────────────────────────────────────────────
+   §50 gave this system its MOTION vocabulary. This gives it the COMPOSITION
+   one. The gap between a product that reads as a school exercise and one that
+   reads as infrastructure is not polish: it is that every page here is a
+   one-column stack of full-width cards, and density is most of what
+   "professional" means on a dashboard.
+
+   NUMBERED 52, NOT 51. §51 is DISPLAY TYPEFACE and has been since v2.0, and
+   this file already carries TWO sections numbered 50 — "RESPONSIVE — AUTH +
+   SETTINGS" and "GAMIFICATION & MOTION LAYER", the second appended in Run 50
+   without checking. Repeating that would make a section number useless as a
+   reference for the third time.
+
+   PLATFORM-NEUTRAL, like §50. Colour comes from the six accent tokens and the
+   status palette, so ESG renders moss green and Campus renders crimson and
+   nothing below knows which platform it is on. There is deliberately no
+   [data-platform="…"] selector here and there must never be one.
+
+   WHAT WAS NOT ADDED, BECAUSE IT ALREADY EXISTS. Checked before writing, which
+   is the whole lesson of Run 53 finding a complete app shell this ecosystem
+   had been hand-rolling past for months:
+
+     a step rail across a panel header   .stepper / .step / .step-dot / .step-label
+     a labelled progress bar             .progress / .progress-bar / .progress-labeled
+     a static pill                       .tag / .tag-accent  (a LABEL, not a control)
+     a metric card                       .stat-card / .stat-label / .stat-value / .stat-sub
+     spacing, flex and text utilities    .gap-*, .flex-*, .items-*, .justify-*, .text-*
+
+   Four of the components below compose those rather than restating them.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* --- 52.1 the twelve-column grid ------------------------------------------
+   .grid ALREADY EXISTS as a bare `display: grid` utility and is in use, so it
+   is not redefined here — a shipped utility that changes meaning under
+   existing markup is the §1 hazard this file exists to prevent. The columned
+   grid is its own name.
+
+   Collapses to one column at the SAME ≤768px breakpoint the app shell uses.
+   One breakpoint per system; a second one is a second layout to reason about. */
+.grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.grid-12.grid--dense { gap: 10px; }
+
+.col-1  { grid-column: span 1; }
+.col-2  { grid-column: span 2; }
+.col-3  { grid-column: span 3; }
+.col-4  { grid-column: span 4; }
+.col-5  { grid-column: span 5; }
+.col-6  { grid-column: span 6; }
+.col-7  { grid-column: span 7; }
+.col-8  { grid-column: span 8; }
+.col-9  { grid-column: span 9; }
+.col-10 { grid-column: span 10; }
+.col-11 { grid-column: span 11; }
+.col-12 { grid-column: span 12; }
+
+/* --- 52.2 the panel ------------------------------------------------------
+   The numbered card chrome. This is the component that makes nine different
+   cards read as one system rather than as nine cards.
+
+   .panel is NOT .card with extras: a card is a container, a panel is a
+   container that knows its own position in a sequence. Where there is no
+   sequence, use .card. The step rail across a panel header is the EXISTING
+   .stepper — it is not restated here. */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-index {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-text);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+.panel-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.panel-body { padding: 18px; }
+
+/* The accent top-border the mock uses to separate a wall of panels. A 2px rule
+   rather than a coloured header: it reads at a glance and costs no contrast. */
+.panel--accent-top { border-top: 2px solid var(--accent); }
+
+/* The command-centre variant, deliberately dark in BOTH themes — that is what
+   --surface-deep is for, and §50 already establishes the pattern on
+   .mission-card--deep. --accent-contrast is the "text on a strong coloured
+   surface" token and is #ffffff on every platform, so it is the right one. */
+.panel--deep {
+  background: var(--surface-deep);
+  border-color: transparent;
+  color: var(--accent-contrast);
+}
+/* --accent-glow, not an rgba() literal. A literal in a RULE is a hardcoded
+   colour and this section may not contain one — §50 solved the same problem on
+   .mission-card--deep by reaching for opacity, and the glow token is the
+   equivalent for a divider: 20% accent, which reads as a faint rule on a deep
+   surface in either theme. */
+.panel--deep .panel-head { border-bottom-color: var(--accent-glow); }
+.panel--deep .panel-title { color: var(--accent-contrast); }
+.panel--deep .panel-meta { color: var(--accent-contrast); opacity: 0.72; }
+
+/* --- 52.3 filter chips ---------------------------------------------------
+   .tag already exists and is a LABEL — it describes something. A chip is a
+   CONTROL: it is pressed, it has an active state, and it carries a count. Two
+   names because they are two jobs; they share a shape on purpose.
+
+   THE ACTIVE STATE IS NOT COLOUR ALONE (§6): the active chip also carries a
+   border, and the markup carries aria-pressed, which is what a screen reader
+   and a monochrome display actually read. */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out);
+}
+.chip:hover { background: var(--surface-2); }
+.chip.is-active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.chip-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+.chip:disabled,
+.chip[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+
+/* --- 52.4 the checklist --------------------------------------------------
+   Every item states its status in WORDS as well as by mark and colour. A
+   checklist whose middle rows are decorative is a fallback wearing a nicer
+   coat, so the three states are the three that exist and there is no fourth
+   for "looks busy". */
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text);
+}
+.checklist-item + .checklist-item { border-top: 1px solid var(--border); }
+.checklist-mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-2);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: background var(--motion-base) var(--ease-out),
+              border-color var(--motion-base) var(--ease-out);
+}
+.checklist-item.is-done .checklist-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+.checklist-item.is-active .checklist-mark {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.checklist-item.is-pending { color: var(--text-2); }
+.checklist-status {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.checklist-item.is-done .checklist-status { color: var(--accent-text); }
+
+/* --- 52.5 the file row ---------------------------------------------------
+   Icon, name, size, status. Deliberately not a table: a list of two to twenty
+   files is a list, and a table of it has to invent column headings. */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+}
+.file-row + .file-row { margin-top: 6px; }
+.file-row-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.file-row-main { flex: 1; min-width: 0; }
+.file-row-name {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-row-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.file-row-status { flex-shrink: 0; }
+
+/* --- 52.6 the metric row -------------------------------------------------
+   Label, value, bar. COMPOSES .progress rather than restating a bar: there is
+   one bar in this system and one place it is defined. */
+.metric-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.metric-row + .metric-row { border-top: 1px solid var(--border); }
+.metric-row-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 110px;
+  flex-shrink: 0;
+}
+.metric-row .progress { flex: 1; }
+.metric-row-value {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* --- 52.7 the KPI tile ---------------------------------------------------
+   The small "Strengths 12" counters. Smaller and quieter than .stat-card,
+   which is a headline figure; these sit in a row of three or four beneath one. */
+.kpi-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.kpi-tile-icon { font-size: 18px; flex-shrink: 0; opacity: 0.8; }
+.kpi-tile-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-tile-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* --- 52.8 the score ring, extended ---------------------------------------
+   §50 ships .score-ring at one size with a value and a label. The mock needs
+   a hero ring with a denominator, a caption and a band chip, and small inline
+   rings for the sub-scores. Extended, never redefined: .score-ring keeps its
+   96px default and everything below is a modifier or a new child.
+
+   STILL NO CANVAS AND NO LIBRARY. The arc is the conic-gradient §50 already
+   drives from --score, and the number is TEXT in the DOM — a ring that only
+   reads correctly after a script has run shows a wrong number to a screen
+   reader, to a no-JS visitor, and to anyone whose script was dropped. */
+.score-ring--hero { width: 152px; height: 152px; }
+.score-ring--hero .score-ring-value { font-size: 40px; }
+.score-ring--hero .score-ring-label { font-size: 12px; }
+.score-ring--inline { width: 64px; height: 64px; }
+.score-ring--inline .score-ring-value { font-size: 16px; }
+.score-ring--inline .score-ring-label { font-size: 9px; }
+
+/* Value and denominator on one baseline: "78" large, "/100" quiet. */
+.score-ring-figure {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+.score-ring-den {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+/* Caption and band sit OUTSIDE the ring — inside it they fight the arc. */
+.score-ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.score-ring-caption {
+  font-size: 12px;
+  color: var(--text-2);
+  text-align: center;
+  max-width: 200px;
+}
+
+/* --- 52.9 responsive -----------------------------------------------------
+   ONE breakpoint, the same ≤768px the app shell already uses. */
+@media (max-width: 768px) {
+  .grid-12 { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+  .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 { grid-column: span 1; }
+  .score-ring--hero { width: 120px; height: 120px; }
+  .score-ring--hero .score-ring-value { font-size: 32px; }
+  .metric-row { flex-wrap: wrap; }
+  .metric-row-label { min-width: 0; }
+  .panel-meta { display: none; }
 }
