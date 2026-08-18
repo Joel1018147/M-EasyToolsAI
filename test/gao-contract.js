@@ -13,7 +13,7 @@
        with fixed percentages under "Frequently cited in AI answers"
      - the competitor panel ranked the user against "Competitor A" at `you+25`
 
-   The ruling (Run 30 brief, Cowork under RULE 4a): never invent, and never
+   The ruling (Run 30 brief, under RULE 4a): never invent, and never
    hide the gap. An engine that did not answer is `null` — unscorable, leaves
    the denominator — never a low score, which is `scoringEngine.js`'s existing
    distinction in this ecosystem.
