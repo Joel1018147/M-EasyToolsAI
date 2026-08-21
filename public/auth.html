@@ -489,6 +489,36 @@ const PLATFORM = {
   $$('.lang-switch-btn').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
   setLang(localStorage.getItem(LANG_KEY) || 'en');
 
+  /* --- alerts ---
+     DECLARED HERE, ABOVE showView(), AND THE ORDER IS THE WHOLE FIX.
+
+     This const used to sit below the view-switching block. showView() calls
+     hideAlert(), hideAlert() reads alertBox, and showView() is INVOKED at the
+     bottom of that block to render the initial view — so it ran while
+     alertBox was still in its temporal dead zone and threw:
+
+         Cannot access 'alertBox' before initialization
+
+     A `const` is not hoisted the way a `function` is. showAlert/hideAlert are
+     function declarations, so they hoist and look available; the variable they
+     close over does not.
+
+     The consequence was not a cosmetic alert failure. The throw killed the
+     rest of the script, so the `#loginForm` submit listener further down was
+     NEVER ATTACHED — and a form with no JS handler does what HTML says: a
+     native GET to its own URL. Sign-in silently became:
+
+         /login?email=…&password=SuriaDemo!2026-…&remember=on
+
+     Nobody could sign in, and every attempt wrote the user's password into
+     the URL bar, the browser history, the server access log and any Referer
+     header the next request sent. Found by driving the real page in a real
+     browser; curl could not see it, because curl never runs the script.
+
+     M-EasyDo's copy already declares alertBox before showView() and is the
+     only one in the ecosystem that does. This now matches it. */
+  const alertBox = $('#authAlert');
+
   /* --- view switching --- */
   const showView = name => {
     $$('[data-view-panel]').forEach(p => p.hidden = p.dataset.viewPanel !== name);
@@ -504,8 +534,7 @@ const PLATFORM = {
   const initial = (location.hash || '#login').slice(1);
   showView(['login', 'register', 'forgot', 'otp'].includes(initial) ? initial : 'login');
 
-  /* --- alerts --- */
-  const alertBox = $('#authAlert');
+  /* --- alerts (alertBox itself is declared above showView, see the note) --- */
   function showAlert(kind, msg) {
     alertBox.hidden = false;
     alertBox.innerHTML = '';
