@@ -219,6 +219,13 @@ const LANG_DIRECTIVES = {
     '  微信、支付宝、淘宝等平台名称。',
     '• emoji 只用作段落或列表项开头的结构标记，不在句子中间作装饰，每段最多一个。',
     '• 品牌名称、产品型号等专有名词保留原文，不要音译。',
+    /* Added after a live run produced a whole 500-word article in 繁體字.
+       The rule was already stated at the top of this block and the model
+       still broke it, so it is restated LAST — recency matters in a long
+       system prompt — and with concrete pairs, because "use Simplified" is
+       an abstraction and "体验 not 體驗" is an instruction. */
+    '• 再次确认：全文必须是简体字。例如写「体验」不是「體驗」，「来」不是「來」，'
+      + '「国」不是「國」，「们」不是「們」，「后」不是「後」。货币写 RM，不是「馬幣」。',
   ].join('\n'),
 };
 
@@ -264,6 +271,31 @@ const CORRECTION = {
       '保持相同的结构、篇幅与优惠内容。只输出重写后的正文，不要道歉，也不要解释。',
 };
 
+/* A model that just produced 500 words of 繁體字 has not ignored "answer in
+   Chinese" — it answered in Chinese. Telling it the generic thing again asks
+   it to fix something it does not believe it got wrong, so the Traditional
+   case gets its own correction naming the actual fault and the actual
+   characters. Keyed by what looksLikeLang() DETECTED, not by the request. */
+const CORRECTION_BY_DETECTED = {
+  'zh-Hant': '提醒：上一次的回答使用了繁體字，但本平台只接受简体中文。' +
+    '请将全文逐字改写为简体字（例如「體驗」→「体验」，「來」→「来」，「國」→「国」，' +
+    '「們」→「们」，「後」→「后」），并将「馬幣」改回 RM。结构、篇幅与优惠内容保持不变。' +
+    '只输出改写后的正文，不要道歉，也不要解释。',
+  id: 'PERINGATAN: jawapan tadi ditulis dalam Bahasa Indonesia, bukan Bahasa ' +
+    'Malaysia. Tulis semula KESELURUHAN kandungan dalam Bahasa Malaysia baku: ' +
+    'guna "boleh" bukan "bisa", "percuma" bukan "gratis", "anda" bukan "kamu" ' +
+    'atau "kalian", "rindu" bukan "kangen", "untuk" bukan "buat". Kekalkan ' +
+    'struktur, panjang dan tawaran yang sama. Berikan kandungan yang ditulis ' +
+    'semula sahaja — tanpa permohonan maaf dan tanpa penjelasan.',
+};
+
+/** The most specific correction available for what actually came back. */
+function correctionFor(lang, verdict) {
+  const detected = verdict && verdict.detected;
+  if (detected && CORRECTION_BY_DETECTED[detected]) return CORRECTION_BY_DETECTED[detected];
+  return CORRECTION[lang];
+}
+
 /* Shown to the user when both attempts failed. In the language they asked
    for, because a user who asked for Chinese is the person who has to read it. */
 const WRONG_LANG_WARNING = {
@@ -276,9 +308,9 @@ const WRONG_LANG_WARNING = {
 };
 
 const LANG_NAME_IN = {
-  en: { en: 'English', ms: 'Malay', zh: 'Chinese' },
-  ms: { en: 'bahasa Inggeris', ms: 'Bahasa Malaysia', zh: 'bahasa Cina' },
-  zh: { en: '英文', ms: '马来文', zh: '中文' },
+  en: { en: 'English', ms: 'Malay', zh: 'Chinese', 'zh-Hant': 'Traditional Chinese', id: 'Indonesian' },
+  ms: { en: 'bahasa Inggeris', ms: 'Bahasa Malaysia', zh: 'bahasa Cina', 'zh-Hant': 'tulisan Cina Tradisional', id: 'Bahasa Indonesia' },
+  zh: { en: '英文', ms: '马来文', zh: '中文', 'zh-Hant': '繁體中文', id: '印尼文' },
 };
 
 function nameLangIn(detected, inLang) {
@@ -423,7 +455,7 @@ function createGenerator({ pool, groqKey }) {
           messages: [
             ...messages,
             { role: 'assistant', content: text },
-            { role: 'user', content: CORRECTION[lang] },
+            { role: 'user', content: correctionFor(lang, verdict) },
           ],
           maxTokens: 2500,
           // Lower than the first pass on purpose: the first answer already
@@ -575,6 +607,8 @@ module.exports = {
   LANG_DIRECTIVES,
   TONE_LABELS,
   CORRECTION,
+  CORRECTION_BY_DETECTED,
+  correctionFor,
   WRONG_LANG_WARNING,
   GENLANG_BLOCK_RE,
 };

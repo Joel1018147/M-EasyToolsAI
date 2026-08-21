@@ -23,7 +23,7 @@ const fs        = require('fs');
 const { pool }  = require('./db');
 const capabilities = require('./helpers/capabilities');
 const { GROQ_MODEL, normaliseModel, chat } = require('./helpers/groq');
-const { createGenerator } = require('./helpers/generation');
+const { createGenerator, LANG_DIRECTIVES } = require('./helpers/generation');
 const langHelper = require('./helpers/lang');
 const { checkSub, updateExpiredSubscriptions, sendTrialReminders } = require('./middleware/checkSub');
 const subscriptionRoutes = require('./routes/subscription');
@@ -624,12 +624,32 @@ app.post('/api/auth/regenerate-key', requireAuth, async (req, res) => {
 
 app.post('/api/chat', requireApiKey, apiLimiter, async (req, res) => {
   try {
-    const { messages, model: requestedModel } = req.body;
+    const { messages, model: requestedModel, lang } = req.body;
     const model = normaliseModel(requestedModel);
     if (!Array.isArray(messages)) return res.status(400).json({ error: 'Messages array required' });
     const groqKey = req.user.groq_key || GROQ_KEY;
     if (!groqKey) return res.status(400).json({ error: 'Groq API key not configured' });
-    const systemPrompt = `You are M-EasyTools AI, an expert marketing strategist and copywriter. Help with content creation, SEO, email marketing, social media, ad campaigns, and brand strategy. Be specific and actionable. User brand: ${req.user.brand_name || 'Not set'}. Tone: ${req.user.brand_tone || 'Professional'}.`;
+
+    /* LANGUAGE ON THE CHAT SURFACE.
+       /api/chat is one of the two generation paths that do NOT go through
+       generateWithGroq(), so it never picked up the trilingual layer. The
+       register guidance is IMPORTED from helpers/generation.js rather than
+       restated — the trilingual lane exported LANG_DIRECTIVES for exactly
+       this call site, and a second copy of "use anda, not kau" is a second
+       thing to keep in sync and the one that will drift.
+
+       Refused up front on an unknown code, for the same reason as
+       /api/generate: a 500 from a downstream throw is not something an API
+       caller can act on. */
+    if (lang !== undefined && lang !== null && String(lang).trim() !== '' && !langHelper.normaliseLang(lang)) {
+      return res.status(400).json({
+        error: 'Unsupported output language: "' + String(lang) + '". Supported: ' + langHelper.LANGS.join(', '),
+      });
+    }
+    const chatLang = langHelper.normaliseLang(lang);
+    const langDirective = chatLang ? '\n\n' + (LANG_DIRECTIVES[chatLang] || '') : '';
+
+    const systemPrompt = `You are M-EasyTools AI, an expert marketing strategist and copywriter. Help with content creation, SEO, email marketing, social media, ad campaigns, and brand strategy. Be specific and actionable. User brand: ${req.user.brand_name || 'Not set'}. Tone: ${req.user.brand_tone || 'Professional'}.${langDirective}`;
     // `model` is the caller's, normalised — NOT GROQ_MODEL. /api/chat is the
     // one surface that lets an API-key holder name a model, so the reasoning
     // gate inside chat() has to be checked against what is actually being
@@ -782,9 +802,17 @@ app.post('/api/score', requireAuth, checkSub, async (req, res) => {
 // WRITE — reuses generateWithGroq() for the release; adds an AI GEO score.
 app.post('/api/pr/generate', requireAuth, checkSub, apiLimiter, async (req, res) => {
   try {
-    const { company, headline, keyMessages, quote, spokesperson, audience, region, cta, tone } = req.body;
+    const { company, headline, keyMessages, quote, spokesperson, audience, region, cta, tone, lang } = req.body;
     if (!company?.trim() || !headline?.trim() || !keyMessages?.trim()) {
       return res.status(400).json({ error: 'Company name, headline, and key messages are required' });
+    }
+    // Same up-front language refusal as /api/generate and /api/chat. A press
+    // release is the one output here that goes to real journalists, so a
+    // silent language fallback would be published, not just saved.
+    if (lang !== undefined && lang !== null && String(lang).trim() !== '' && !langHelper.normaliseLang(lang)) {
+      return res.status(400).json({
+        error: 'Unsupported output language: "' + String(lang) + '". Supported: ' + langHelper.LANGS.join(', '),
+      });
     }
 
     const prPrompt = `You are an expert PR writer specialising in Malaysian and Southeast Asian business press releases for distribution to journalists and media outlets across the region.
@@ -835,7 +863,7 @@ ${spokesperson || '[Spokesperson Name]'}
 Optimise this press release to rank in search engines AND be cited in AI-generated answers (ChatGPT, Perplexity, Google AI Overviews). Use specific named entities, quotable statistics, clear subject-predicate-object sentences, and factual claims that AI systems can reference.`;
 
     // Reuse existing generateWithGroq function
-    const result = await generateWithGroq(req.user, prPrompt, 'press-release', 'Press Release', tone || 'Professional');
+    const result = await generateWithGroq(req.user, prPrompt, 'press-release', 'Press Release', tone || 'Professional', 1, { lang });
 
     // GEO score — separate quick call, silent fallback
     let geoScore = 0;

@@ -154,6 +154,29 @@ head('§2  language codes normalise');
     bad.map(([i, w]) => JSON.stringify(i) + '→' + JSON.stringify(lang.normaliseLang(i)) + ' (wanted ' + w + ')').join(', '));
 }
 
+  /* zh-Hant is NOT zh. This platform ships Simplified only — §L's register is
+     简体中文 for Malaysian Chinese readers — so collapsing a Traditional
+     request onto the Simplified pipeline answers a question nobody asked and
+     never mentions that it did. Refusing is the only non-silent option, and it
+     lands in §3's refusal path. Found by the blind critic running the model. */
+  {
+    const traditional = ['zh-Hant', 'zh-TW', 'zh-HK', 'zh-MO', 'zh-Hant-TW', 'zh-yue'];
+    const collapsed = traditional.filter((v) => lang.normaliseLang(v) !== null);
+    if (!collapsed.length) {
+      pass('Traditional/regional tags are refused, not collapsed onto Simplified: ' + traditional.join(', '));
+    } else {
+      fail('these silently became ' + JSON.stringify(lang.normaliseLang(collapsed[0])) +
+           ': ' + collapsed.join(', ') + ' — a Traditional request answered in Simplified, unremarked');
+    }
+    // …while the Simplified spellings still resolve, or the block above would
+    // be asserting that nothing works rather than that the right things do.
+    if (['zh', 'zh-Hans', 'zh-CN', 'zh-SG'].every((v) => lang.normaliseLang(v) === 'zh')) {
+      pass('and the Simplified spellings still resolve to zh');
+    } else {
+      fail('the refusal is too broad — a Simplified tag stopped resolving');
+    }
+  }
+
 /* ══ §3 — an unknown language does NOT silently become English ══════════════
    This is the one that matters most, because the failure is invisible: a
    caller who asked for French and got confident English back cannot tell
@@ -236,6 +259,146 @@ head('§4  wrong-language output is detected');
   } else {
     fail('the checker rejects realistic Malaysian Chinese copy — it is too strict to use');
   }
+}
+
+/* ── §4a — TRADITIONAL CHINESE, which hanRatio() cannot see ────────────────
+   Found by the blind critic RUNNING the live model, not by reading code. One
+   ZH generation in six came back entirely in 繁體字 — 46 distinct
+   Traditional-only characters, 144 occurrences — and localised the currency as
+   馬幣, which this platform's own ZH directive explicitly forbids. The checker
+   answered {ok:true, detected:'zh', hanRatio:0.833} and the row saved
+   langVerified:true with no warning: two §L criteria broken in one output,
+   passed as verified. On this one criterion the test arm was measured WORSE
+   than the benchmark, which produced Simplified 5 times out of 5.
+
+   hanRatio cannot possibly see it — 繁體 and 简体 are both Han script. The
+   check has to know about the orthography, not merely about the script. */
+{
+  const HANT = '在繁忙的早晨或午後的疲憊時刻，一杯手沖咖啡總能帶來慰藉。我們的門市提供來自檳城的優質豆子，' +
+    '無論在風味、香氣還是整體體驗上，都遠勝於工業化的速溶產品。現在購買即可享有馬幣49元的優惠，歡迎親臨體驗。';
+  const HANS = '在繁忙的早晨或午后的疲惫时刻，一杯手冲咖啡总能带来慰藉。我们的门市提供来自槟城的优质豆子，' +
+    '无论在风味、香气还是整体体验上，都远胜于工业化的速溶产品。现在购买即可享有 RM49 的优惠，欢迎亲临体验。';
+
+  // Positive control: the OLD measure really does wave this through. Without
+  // this line the assertion below could pass because the sample is not Chinese
+  // at all, which would be the right answer for the wrong reason.
+  if (lang.hanRatio(HANT) > 0.5) {
+    pass('positive control: the Traditional sample is ' + Math.round(lang.hanRatio(HANT) * 100) +
+         '% Han, so hanRatio alone would have called it verified Chinese');
+  } else {
+    fail('the Traditional sample is not Han-dense enough to reproduce the defect');
+  }
+
+  const v = lang.hanVariant(HANT);
+  if (v.variant === 'hant') {
+    pass('hanVariant() reads it as Traditional (' + v.traditional + ' Traditional-only vs ' +
+         v.simplified + ' Simplified-only characters)');
+  } else {
+    fail('hanVariant() says ' + JSON.stringify(v) + ' for an all-Traditional article');
+  }
+
+  const verdict = lang.looksLikeLang(HANT, 'zh');
+  if (verdict.ok === false) pass('and looksLikeLang(zh) REFUSES it — the defect is closed');
+  else fail('Traditional Chinese still passes as verified Simplified: ' + JSON.stringify(verdict));
+  if (verdict.reason && /traditional|繁/i.test(verdict.reason)) {
+    pass('naming the actual problem: ' + JSON.stringify(verdict.reason));
+  } else {
+    fail('the refusal does not say it was Traditional: ' + JSON.stringify(verdict.reason));
+  }
+  if (verdict.detected === 'zh-Hant') pass('and reports detected="zh-Hant", not a bare "zh"');
+  else fail('detected is ' + JSON.stringify(verdict.detected));
+
+  // The other half: real Simplified copy must still pass, or the fix has
+  // broken Chinese generation rather than checked it.
+  const good = lang.looksLikeLang(HANS, 'zh');
+  if (good.ok === true) pass('the same sentence in Simplified passes');
+  else fail('Simplified Chinese now fails verification too: ' + JSON.stringify(good));
+  if (lang.hanVariant(HANS).variant === 'hans') pass('and reads as hans');
+  else fail('the Simplified sample reads as ' + JSON.stringify(lang.hanVariant(HANS)));
+
+  // Not over-corrected: one incidental Traditional character inside otherwise
+  // Simplified copy — a quoted brand, a place name — is not a Traditional
+  // article, and failing it would send good copy round the retry loop.
+  const incidental = HANS + '（原名「臺灣珍珠奶茶」）';
+  if (lang.looksLikeLang(incidental, 'zh').ok === true) {
+    pass('a Simplified article carrying an incidental Traditional character still passes');
+  } else {
+    fail('over-correction: incidental Traditional characters now fail a Simplified article');
+  }
+
+  // Non-vacuity: the two character sets must be real, disjoint, and neither
+  // empty. A checker built on an empty set is a checker that always passes.
+  const sets = lang.HAN_VARIANT_SETS;
+  const overlap = [...sets.simplified].filter((c) => sets.traditional.has(c));
+  if (sets.simplified.size > 100 && sets.traditional.size > 100) {
+    pass('the variant sets carry ' + sets.simplified.size + ' Simplified-only and ' +
+         sets.traditional.size + ' Traditional-only characters');
+  } else {
+    fail('the variant sets are too small to mean anything: ' +
+         sets.simplified.size + ' / ' + sets.traditional.size);
+  }
+  if (!overlap.length) pass('and no character sits in both sets');
+  else fail('these characters are in BOTH sets, so they prove nothing: ' + overlap.join(''));
+}
+
+/* ── §4b — Malay verification was a single-token OR ────────────────────────
+   Also found by running the model. MALAY_RE.test() passed on one hit anywhere
+   in the text, where the ZH path uses a 0.30 proportion. Two live failures:
+
+     · a wholly English answer containing the token "Dan" — an English given
+       name as well as the Malay word for "and" — verified as Malay.
+     · Indonesian verified cleanly, using `bisa` and `gratis`: the exact two
+       words this platform's own BM directive names as forbidden Indonesian.
+       The directive knew about them and the checker did not. */
+{
+  const EN_WITH_DAN = 'Hi [Name], Dan from [Business] here! We miss you. Claim your RM10 voucher ' +
+    'before it expires and enjoy your favourite drinks with us again.';
+  const INDONESIAN = 'Halo [Name], kami kangen kamu. Gratis voucher RM10 buat kamu, bisa dipakai hari ini!';
+
+  const a = lang.looksLikeLang(EN_WITH_DAN, 'ms');
+  if (a.ok === false) pass('an English answer containing one "Dan" no longer verifies as Malay');
+  else fail('the single-token OR is still live: ' + JSON.stringify(a));
+
+  const b = lang.looksLikeLang(INDONESIAN, 'ms');
+  if (b.ok === false) pass('Indonesian no longer verifies as Bahasa Malaysia');
+  else fail('Indonesian still passes as Malay: ' + JSON.stringify(b));
+  if (b.reason && /indonesian/i.test(b.reason)) {
+    pass('and the refusal names the markers it found: ' + JSON.stringify(b.reason));
+  } else {
+    fail('the refusal does not mention Indonesian: ' + JSON.stringify(b.reason));
+  }
+
+  // The directive and the checker must agree about which words are forbidden.
+  // A rule stated in the prompt and unenforced in the check is a rule the model
+  // can break for free — which is exactly what happened.
+  const forbidden = ['bisa', 'gratis', 'banget', 'gimana'];
+  const unchecked = forbidden.filter((w) => lang.looksLikeLang(
+    'Kami ada tawaran istimewa untuk anda dan rakan anda hari ini, ' + w + ' digunakan sekarang.', 'ms').ok);
+  if (!unchecked.length) {
+    pass('every Indonesian word the BM directive forbids is also refused by the checker: ' + forbidden.join(', '));
+  } else {
+    fail('the directive forbids these and the checker accepts them: ' + unchecked.join(', '));
+  }
+
+  // And real Malay still passes, or this is not a check, it is an outage.
+  if (lang.looksLikeLang(OUT.ms, 'ms').ok === true) pass('genuine Bahasa Malaysia still verifies');
+  else fail('real Malay now fails verification: ' + JSON.stringify(lang.looksLikeLang(OUT.ms, 'ms')));
+
+  // The proportion has to be a proportion. One Malay word in a long English
+  // text and many Malay words in a short one must not score the same.
+  const m1 = lang.malayMetrics(EN_WITH_DAN);
+  const m2 = lang.malayMetrics(OUT.ms);
+  if (m2.ratio > m1.ratio * 3) {
+    pass('the Malay signal is proportional: ' + m1.ratio.toFixed(3) + ' for the English sample vs ' +
+         m2.ratio.toFixed(3) + ' for the Malay one');
+  } else {
+    fail('the Malay ratio does not separate the two samples: ' + m1.ratio + ' vs ' + m2.ratio);
+  }
+
+  // detectLang must not label it Malay either, or the scorer would run Malay
+  // metrics over English text.
+  if (lang.detectLang(EN_WITH_DAN) === 'en') pass('and detectLang() calls the English sample English');
+  else fail('detectLang() says ' + JSON.stringify(lang.detectLang(EN_WITH_DAN)) + ' for plain English');
 }
 
 /* ══ §5 — the prompt carries language instruction, and beats the benchmark ══*/
@@ -517,6 +680,50 @@ head('§7  post-generation verification');
     fail('langVerified does not vary with the text; it is decorative');
   }
 }
+
+  /* 7d — the Traditional case, end to end. This is the path the live defect
+     took: a zh request, a Traditional answer, and a row saved verified. */
+  const HANT_OUT = '在繁忙的早晨或午後的疲憊時刻，一杯手沖咖啡總能帶來慰藉。我們的門市提供來自檳城的優質豆子，' +
+    '無論在風味、香氣還是整體體驗上，都遠勝於工業化的速溶產品。現在購買即可享有馬幣49元的優惠。';
+  const HANS_OUT = '在繁忙的早晨或午后的疲惫时刻，一杯手冲咖啡总能带来慰藉。我们的门市提供来自槟城的优质豆子，' +
+    '无论在风味、香气还是整体体验上，都远胜于工业化的速溶产品。现在购买即可享有 RM49 的优惠。';
+
+  reset(HANT_OUT, HANS_OUT);
+  const rescued = (await generateWithGroq(USER, '写一篇咖啡文章', 'content', 'Content', 'Friendly', 1, { lang: 'zh' }));
+  if (calls.length === 2) pass('a Traditional answer triggers the corrective turn (it used to pass silently)');
+  else fail('Traditional output made ' + calls.length + ' call(s) — it is not being caught');
+  if (calls[1] && /繁體|繁体/.test(calls[1].messages[2].content)) {
+    pass('and the correction names the actual problem — Traditional characters — not just "answer in Chinese"');
+  } else {
+    fail('the correction is the generic one; a model that just produced 繁體 needs telling that specifically');
+  }
+  if (rescued.langVerified === true && rescued.text === HANS_OUT) {
+    pass('the Simplified rewrite is what gets returned and saved');
+  } else {
+    fail('the corrective turn did not rescue it: ' + JSON.stringify({ v: rescued.langVerified }));
+  }
+
+  reset(HANT_OUT, HANT_OUT);
+  const stillHant = (await generateWithGroq(USER, '写一篇咖啡文章', 'content', 'Content', 'Friendly', 1, { lang: 'zh' }));
+  if (stillHant.langVerified === false) pass('Traditional twice is reported langVerified=false, not verified');
+  else fail('Traditional output was saved as verified — the live defect is still open');
+  if (stillHant.langDetected === 'zh-Hant') pass('and names it: langDetected="zh-Hant"');
+  else fail('langDetected is ' + JSON.stringify(stillHant.langDetected));
+  if (typeof stillHant.langWarning === 'string' && /繁體|繁体/.test(stillHant.langWarning)) {
+    pass('and the user-facing warning says so, in Chinese: ' + JSON.stringify(stillHant.langWarning));
+  } else {
+    fail('the warning does not tell the user it is Traditional: ' + JSON.stringify(stillHant.langWarning));
+  }
+
+  /* 7e — the Indonesian case, end to end. Same shape, other language. */
+  reset('Halo [Name], kami kangen kamu. Gratis voucher RM10 buat kamu, bisa dipakai hari ini!', OUT.ms);
+  const bmFixed = (await generateWithGroq(USER, 'Tulis promosi', 'social', 'Social', 'Friendly', 1, { lang: 'ms' }));
+  if (calls.length === 2 && bmFixed.langVerified === true && bmFixed.text === OUT.ms) {
+    pass('an Indonesian answer to a BM request is caught and corrected, not accepted');
+  } else {
+    fail('Indonesian was accepted for a Bahasa Malaysia request: ' +
+      JSON.stringify({ calls: calls.length, verified: bmFixed.langVerified }));
+  }
 
 /* ══ §8 — the prompt channel genlang.js uses ════════════════════════════════*/
 head('§8  the GENLANG prompt channel');
