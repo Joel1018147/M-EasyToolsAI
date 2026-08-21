@@ -24,6 +24,7 @@ const { pool }  = require('./db');
 const capabilities = require('./helpers/capabilities');
 const { GROQ_MODEL, normaliseModel, chat } = require('./helpers/groq');
 const { createGenerator } = require('./helpers/generation');
+const langHelper = require('./helpers/lang');
 const { checkSub, updateExpiredSubscriptions, sendTrialReminders } = require('./middleware/checkSub');
 const subscriptionRoutes = require('./routes/subscription');
 const { Resend } = require('resend');
@@ -649,26 +650,49 @@ app.post('/api/score', requireAuth, checkSub, async (req, res) => {
   const { content, keyword, targetLength } = req.body;
   if (!content) return res.status(400).json({ error: 'Content required' });
 
-  const words = content.split(/\s+/).filter(Boolean);
-  const wordCount = words.length;
-  const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  /* ── THE SAME CJK DEFECT AS generateWithGroq(), CLOSED HERE TOO ──────────
+     The trilingual lane fixed helpers/generation.js and reported that this
+     endpoint carried an identical copy of the bug in a file no lane owned.
+     Fixing one and not the other would have been worse than fixing neither:
+     the tool would have generated a Chinese article scoring 65, then scored
+     that same text 0 when the user pasted it back in.
+
+     Three separate things were wrong for non-English text:
+       1. split(/\s+/) counted a whole Chinese article as ONE word.
+       2. keywordDensity divided BY that 1, so a single keyword match read as
+          100% density — and with no match at all on empty content it divided
+          by zero and returned NaN to the UI.
+       3. avgSyllables was the literal 1.5 for every language, which makes the
+          Flesch term a constant and the whole score a function of sentence
+          length alone. helpers/lang.js computes real syllables for English and
+          refuses to pretend Flesch means anything for Chinese. */
+  const scoreLang = langHelper.detectLang(content);
+  const m = langHelper.textMetrics(content, scoreLang);
+  const wordCount = m.words;
+  const sentences = m.sentences;
   const avgWordsPerSentence = sentences > 0 ? wordCount / sentences : 0;
   const paragraphs = content.split(/\n\n+/).filter(p => p.trim()).length;
 
-  // Keyword density
+  // Keyword density.
+  //
+  // Counted by OCCURRENCE, not by whitespace token. A Chinese keyword is a
+  // substring of a run of characters with no spaces in it, so the token filter
+  // this used to do could only ever return 0 or 1 for Chinese.
   let keywordDensity = 0;
   let keywordCount = 0;
-  if (keyword) {
-    const kw = keyword.toLowerCase();
-    keywordCount = words.filter(w => w.toLowerCase().includes(kw)).length;
+  if (keyword && String(keyword).trim() && wordCount > 0) {
+    const kw = String(keyword).trim().toLowerCase();
+    const hay = content.toLowerCase();
+    let at = hay.indexOf(kw);
+    while (at !== -1) { keywordCount++; at = hay.indexOf(kw, at + kw.length); }
     keywordDensity = ((keywordCount / wordCount) * 100).toFixed(2);
   }
 
-  // Readability score (Flesch-Kincaid simplified)
-  const avgSyllables = 1.5; // approximation
-  const readabilityScore = Math.max(0, Math.min(100, Math.round(
-    206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllables
-  )));
+  // Readability, per language, with the basis reported rather than implied.
+  // null means "this cannot be measured for this text", which is a real answer
+  // and is not the same statement as 0 or 100.
+  const r = langHelper.readability(content, scoreLang);
+  const readabilityScore = r.score;
 
   // SEO Score calculation
   let seoScore = 0;
@@ -690,7 +714,14 @@ app.post('/api/score', requireAuth, checkSub, async (req, res) => {
     readabilityScore,
     seoScore: Math.min(100, seoScore),
     feedback: seoFeedback,
-    grade: seoScore >= 80 ? 'A' : seoScore >= 60 ? 'B' : seoScore >= 40 ? 'C' : 'D'
+    grade: seoScore >= 80 ? 'A' : seoScore >= 60 ? 'B' : seoScore >= 40 ? 'C' : 'D',
+    // WIDENED, never narrowed — every field above keeps its name and meaning,
+    // so nothing consuming this endpoint has to change. These three say HOW
+    // the numbers were reached, which for a trilingual product is the
+    // difference between a score and a number.
+    lang: scoreLang,
+    wordBasis: m.wordBasis,
+    readabilityBasis: r.basis,
   });
 });
 
