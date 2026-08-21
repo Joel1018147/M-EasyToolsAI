@@ -53,11 +53,30 @@ console.log('\ngeneration-extraction — the CJK defect is gone, and every other
    stop: a test that silently compares the new code against nothing is the
    "test that cannot fail" of recurring-bugs #14. */
 
+/* A FIXED COMMIT, NOT `git merge-base`.
+   This originally resolved `git merge-base origin/main HEAD`, which was right
+   exactly once: while the work sat on a feature branch, the merge-base WAS the
+   pre-round baseline. Merging armed a time bomb — main became its own
+   merge-base, and the scorer this test lifts no longer lives in server.js
+   there, so the suite went red the moment the branch landed with a message
+   about a missing anchor rather than about anything real.
+
+   The comparison has always meant one specific thing: "the scorer as it was
+   before Round 1 touched it". That is a fixed point in history, so it is
+   written down as one. 67d30ae is the commit immediately before Foundation.
+
+   Recorded because it is the more useful half: a moving anchor in a test that
+   asserts against history is a test that breaks on a merge, and it breaks
+   confusingly — pointing at the extraction rather than at the anchor. */
+const BASELINE = '67d30ae';
 const MERGE_BASE = (() => {
   try {
-    return execFileSync('git', ['merge-base', 'origin/main', 'HEAD'], { encoding: 'utf8' }).trim();
+    return execFileSync('git', ['rev-parse', BASELINE], { encoding: 'utf8' }).trim();
   } catch (err) {
-    console.error('  cannot resolve merge-base: ' + err.message);
+    console.error('\n  ✗ cannot resolve the Round 1 baseline commit ' + BASELINE + ': ' + err.message);
+    console.error('    This test compares against real history and will not invent a baseline.');
+    console.error('    If that commit was rewritten or the repo was re-cloned shallow, pin a');
+    console.error('    new one deliberately rather than reaching for merge-base again.\n');
     process.exit(1);
   }
 })();
