@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html data-platform="tools" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M-Ai — M-EasyTools AI+</title>
+<link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
+<style>
+/* ── M-Ai — DAILY-USE SURFACE (Visual Bar §V) ─────────────────────────────
+   This is a panel somebody opens ten times a day, not a marketing page, so it
+   takes the daily-use column of the surface split: transitions on COLOUR and
+   WIDTH only (no transforms), glass on the sticky top bar and nowhere else, no
+   gradient, 15px / 1.55, 26px section gaps.
+
+   NOT ONE COLOUR LITERAL. Every value below is a design-system or r2 token, so
+   the platform orange has exactly one definition — [data-platform="tools"] in
+   the md5-pinned master — and this page consumes it rather than restating it.
+   Figures are set in var(--r2-mono) with tabular numerals, per the Raycast
+   reference: a number a staff member is going to read against another number
+   should not shift width between them.
+   ──────────────────────────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.55}
+
+/* The one glass surface on this page. */
+.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:14px 24px;border-bottom:1px solid var(--border);
+  background:var(--r2-glass-bg);backdrop-filter:blur(var(--r2-glass-blur))}
+.brand{font-family:var(--font-display);font-size:var(--t-section);font-weight:var(--w-section);letter-spacing:-0.018em}
+.brand-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:middle}
+.topbar-spacer{flex:1}
+.pill{font-family:var(--r2-mono);font-size:var(--r2-eyebrow);text-transform:uppercase;letter-spacing:0.11em;
+  padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--surface)}
+.pill.is-ok{background:var(--green-bg);color:var(--green-text);border-color:transparent}
+.pill.is-warn{background:var(--amber-bg);color:var(--amber-text);border-color:transparent}
+.pill.is-err{background:var(--red-bg);color:var(--red-text);border-color:transparent}
+
+.wrap{max-width:var(--r2-max);margin:0 auto;padding:26px 24px 64px}
+.section{margin-bottom:26px}
+h1{font-family:var(--font-display);font-size:var(--t-page);font-weight:var(--w-page);letter-spacing:-0.018em;margin-bottom:6px}
+.lede{color:var(--muted);font-size:var(--t-second);max-width:var(--r2-measure)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.card + .card{margin-top:14px}
+.card-title{font-size:var(--t-card);font-weight:var(--w-card);margin-bottom:10px}
+.eyebrow{font-family:var(--r2-mono);font-size:var(--r2-eyebrow);text-transform:uppercase;letter-spacing:0.11em;color:var(--muted);margin-bottom:8px}
+
+.ask{display:flex;gap:10px;flex-wrap:wrap}
+.ask input{flex:1;min-width:260px;padding:12px 14px;font-family:inherit;font-size:15px;color:var(--text);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
+  transition:border-color var(--motion-fast) var(--ease-out)}
+.ask input:focus{outline:none;border-color:var(--accent)}
+.ask input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-go{padding:12px 22px;background:var(--accent);color:var(--accent-contrast);border:none;border-radius:var(--r-sm);
+  font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
+  transition:background-color var(--motion-fast) var(--ease-out)}
+.btn-go:hover{background:var(--accent-2)}
+.btn-go:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-go:disabled{opacity:.6;cursor:default}
+.btn-quiet{padding:10px 18px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);
+  border-radius:var(--r-sm);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;
+  transition:background-color var(--motion-fast) var(--ease-out)}
+.btn-quiet:hover{background:var(--surface)}
+.btn-quiet:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Perplexity reference: a working state that SAYS what it is doing. The bar
+   animates WIDTH only, which the daily-use column allows. */
+.working{display:none;margin-top:14px}
+.working.on{display:block}
+.working-label{font-family:var(--r2-mono);font-size:var(--r2-eyebrow);text-transform:uppercase;letter-spacing:0.11em;color:var(--muted)}
+.working-track{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-top:8px}
+.working-fill{height:100%;width:18%;background:var(--accent);border-radius:2px;animation:slide 1.1s var(--ease-out) infinite}
+@keyframes slide{0%{margin-left:0}50%{margin-left:82%}100%{margin-left:0}}
+@media (prefers-reduced-motion: reduce){.working-fill{animation:none;width:100%}}
+
+.answer{white-space:pre-wrap;font-size:15px;line-height:1.6}
+.rows{list-style:none;margin-top:12px;border-top:1px solid var(--border)}
+.rows li{padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--r2-mono);
+  font-size:var(--t-meta);font-variant-numeric:tabular-nums;color:var(--text-2)}
+.rows li:last-child{border-bottom:none}
+.meta{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+
+.confirm-card{border-color:var(--accent)}
+.confirm-sentence{font-size:var(--t-card);line-height:1.5;margin-bottom:12px}
+.confirm-actions{display:flex;gap:10px;flex-wrap:wrap}
+.confirm-note{margin-top:10px;font-size:var(--t-meta);color:var(--muted);max-width:var(--r2-measure)}
+
+.tool-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.tool-list li{font-family:var(--r2-mono);font-size:var(--t-meta);color:var(--text-2);
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--r-sm)}
+.tool-list li .kind{color:var(--muted)}
+
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand"><span class="brand-dot"></span>M-Ai</span>
+  <span class="topbar-spacer"></span>
+  <span class="pill" id="pill-role">role …</span>
+  <span class="pill" id="pill-model">model …</span>
+  <span class="pill" id="pill-state">checking</span>
+</header>
+
+<main class="wrap">
+
+  <div class="section">
+    <h1>Ask about this workspace</h1>
+    <p class="lede">
+      M-Ai answers only from the tools below, which query this account's own rows. It never answers from its own
+      knowledge: if no tool fits the question, it says so rather than guessing. Every figure you see was returned by
+      a query, not written by the model.
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="card">
+      <div class="eyebrow">Your question</div>
+      <form class="ask" id="ask-form" autocomplete="off">
+        <input id="q" type="text" maxlength="2000"
+               placeholder="How many documents did we generate this month?" aria-label="Your question">
+        <button class="btn-go" id="go" type="submit">Ask</button>
+      </form>
+      <div class="working" id="working">
+        <div class="working-label" id="working-label">Selecting a tool…</div>
+        <div class="working-track"><div class="working-fill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section hidden" id="confirm-section">
+    <div class="card confirm-card">
+      <div class="eyebrow">Confirm before this happens</div>
+      <p class="confirm-sentence" id="confirm-sentence"></p>
+      <div class="confirm-actions">
+        <button class="btn-go" id="confirm-yes" type="button">Confirm</button>
+        <button class="btn-quiet" id="confirm-no" type="button">Cancel</button>
+      </div>
+      <p class="confirm-note" id="confirm-note"></p>
+    </div>
+  </div>
+
+  <div class="section hidden" id="result-section">
+    <div class="card">
+      <div class="eyebrow" id="result-kind">Answer</div>
+      <div class="answer" id="answer"></div>
+      <ul class="rows hidden" id="rows"></ul>
+      <div class="meta" id="meta"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="card">
+      <div class="card-title">What M-Ai can reach for you</div>
+      <p class="lede" id="tools-note">Loading the tool list…</p>
+      <ul class="tool-list hidden" id="tool-list"></ul>
+    </div>
+  </div>
+
+</main>
+
+<script>
+'use strict';
+
+var $ = function (id) { return document.getElementById(id); };
+
+/* The token from the last pending_confirmation. Held in memory for one round
+   trip and cleared the moment it is spent or abandoned — it is a bearer
+   credential and it does not go into localStorage, the URL or a data attribute. */
+var pendingToken = null;
+
+function setPill(el, text, cls) {
+  el.textContent = text;
+  el.className = 'pill' + (cls ? ' ' + cls : '');
+}
+
+function show(el) { el.classList.remove('hidden'); }
+function hide(el) { el.classList.add('hidden'); }
+
+function working(on, label) {
+  $('working').classList.toggle('on', !!on);
+  if (label) $('working-label').textContent = label;
+  $('go').disabled = !!on;
+}
+
+/**
+ * Read a JSON body from a response whose status has ALREADY been inspected by
+ * the caller. It is deliberately not a "just give me something" helper: the
+ * caller decides what a failure means, and this only reports that the body
+ * could not be read as JSON.
+ */
+function readJson(res) {
+  return res.text().then(function (raw) {
+    if (!raw) return { _unreadable: true, _raw: '' };
+    try {
+      return JSON.parse(raw);
+    } catch (err) {
+      return { _unreadable: true, _raw: raw.slice(0, 300) };
+    }
+  });
+}
+
+function renderResult(payload, kindLabel) {
+  $('result-kind').textContent = kindLabel;
+  $('answer').textContent = payload.answer || payload.display || payload.error || 'No answer was returned.';
+
+  var rows = Array.isArray(payload.rows) ? payload.rows : [];
+  var list = $('rows');
+  list.innerHTML = '';
+  if (rows.length) {
+    rows.forEach(function (r) {
+      var li = document.createElement('li');
+      li.textContent = r;
+      list.appendChild(li);
+    });
+    show(list);
+  } else {
+    hide(list);
+  }
+
+  var meta = $('meta');
+  meta.innerHTML = '';
+  var chips = [];
+  if (payload.tool) chips.push({ text: payload.tool, cls: '' });
+  if (payload.reason) chips.push({ text: payload.reason, cls: '' });
+  /* `wrote` is a claim about the DATABASE — the executor reported that a row
+     changed — not about the tool's kind. A write that ran and deliberately
+     changed nothing says so. */
+  if (payload.confirmed || payload.wrote) {
+    chips.push(payload.wrote
+      ? { text: 'applied — your data changed', cls: 'is-ok' }
+      : { text: 'ran — nothing changed', cls: 'is-warn' });
+  }
+  if (payload.detail) chips.push({ text: payload.detail, cls: 'is-warn' });
+  chips.forEach(function (c) {
+    var s = document.createElement('span');
+    s.className = 'pill' + (c.cls ? ' ' + c.cls : '');
+    s.textContent = c.text;
+    meta.appendChild(s);
+  });
+  show($('result-section'));
+}
+
+function renderPending(payload) {
+  pendingToken = (payload.confirm && payload.confirm.token) ? payload.confirm.token : null;
+  $('confirm-sentence').textContent = 'This will ' + (payload.sideEffect || 'change something') + ' Confirm to proceed.';
+  $('confirm-note').textContent =
+    (payload.reversible ? 'This change is reversible. ' : '') +
+    'Nothing has happened yet — M-Ai resolved the action and stopped. Confirming runs exactly the action ' +
+    'described above; the model is not asked again.' +
+    (payload.confirm && payload.confirm.expiresAt ? ' This approval expires at ' + payload.confirm.expiresAt + '.' : '');
+  show($('confirm-section'));
+}
+
+function clearPending() {
+  pendingToken = null;
+  hide($('confirm-section'));
+}
+
+/** One POST to /api/mai/ask. `body` is either {question} or {confirmToken}. */
+function post(body, label) {
+  working(true, label);
+  return fetch('/api/mai/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(body)
+  }).then(function (res) {
+    return readJson(res).then(function (data) {
+      working(false);
+      if (data && data._unreadable) {
+        renderResult({ answer: 'M-Ai answered with something this page could not read (HTTP ' + res.status + '). ' +
+                               'Nothing was changed. ' + (data._raw || '') }, 'Error');
+        return null;
+      }
+      /* THE STATUS IS CHECKED, AND IT IS CHECKED IN THE RIGHT DIRECTION.
+         A non-2xx here is a refusal of the REQUEST — malformed body, no staff
+         role, provider unconfigured, another question already running. The
+         dispatcher's own refusals ("no tool fits") arrive as 200 with a
+         `reason`, and those go down the success path below. */
+      if (!res.ok) {
+        renderResult({
+          answer: data.error || ('M-Ai refused this request (HTTP ' + res.status + ').'),
+          reason: data.reason || null
+        }, 'Refused');
+        return null;
+      }
+      return data;
+    });
+  }).catch(function (err) {
+    working(false);
+    renderResult({ answer: 'M-Ai could not be reached: ' + err.message + '. Nothing was changed.' }, 'Error');
+    return null;
+  });
+}
+
+$('ask-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var q = $('q').value.trim();
+  if (!q) return;
+  clearPending();
+  post({ question: q }, 'Selecting a tool and running the query…').then(function (data) {
+    if (!data) return;
+    if (data.pendingConfirmation) { renderPending(data); return; }
+    renderResult(data, data.answered ? 'Answer' : 'No answer');
+  });
+});
+
+$('confirm-yes').addEventListener('click', function () {
+  if (!pendingToken) return;
+  var token = pendingToken;
+  /* Cleared BEFORE the request. The token is single-use server-side; clearing
+     it here too means a double click cannot send it twice from this tab. */
+  clearPending();
+  post({ confirmToken: token }, 'Running the action you approved…').then(function (data) {
+    if (!data) return;
+    renderResult(data, 'Done');
+  });
+});
+
+$('confirm-no').addEventListener('click', function () {
+  clearPending();
+  renderResult({ answer: 'Cancelled. Nothing was changed.' }, 'Cancelled');
+});
+
+/* ── Status, on load ──────────────────────────────────────────────────────
+   The pills report what the SERVER said, including the role it derived from
+   the session. A page that decided its own role would be a second opinion
+   about the thing that must have only one. */
+fetch('/api/mai/status', { credentials: 'same-origin' })
+  .then(function (res) {
+    return readJson(res).then(function (data) {
+      if (!res.ok || (data && data._unreadable)) {
+        setPill($('pill-state'), 'unavailable', 'is-err');
+        setPill($('pill-role'), 'role unknown', 'is-err');
+        setPill($('pill-model'), 'model unknown', '');
+        $('tools-note').textContent =
+          'M-Ai status could not be read (HTTP ' + res.status + '). The tool list below is not shown rather ' +
+          'than shown empty — an empty list and an unreadable one mean different things.';
+        return;
+      }
+      setPill($('pill-role'), data.role ? 'role ' + data.role : 'no staff role', data.role ? '' : 'is-err');
+      setPill($('pill-model'), data.model || 'no model', data.configured ? '' : 'is-warn');
+      setPill($('pill-state'), data.available ? 'ready' : 'unavailable', data.available ? 'is-ok' : 'is-warn');
+
+      if (!data.available) {
+        $('go').disabled = true;
+        $('q').disabled = true;
+        $('tools-note').textContent = data.reason ||
+          'M-Ai is not available on this deployment right now.';
+        return;
+      }
+
+      var t = data.tools || {};
+      $('tools-note').textContent =
+        (t.forRole || 0) + ' of ' + (t.total || 0) + ' tools are available to the role ' + data.role +
+        ' — ' + (t.read || 0) + ' that read and ' + (t.write || 0) +
+        ' that change something. A write is always described and confirmed before it runs.';
+      var ul = $('tool-list');
+      ul.innerHTML = '';
+      (t.names || []).forEach(function (name) {
+        var isWrite = (t.writes || []).some(function (w) { return w.name === name; });
+        var li = document.createElement('li');
+        li.textContent = name;
+        var k = document.createElement('span');
+        k.className = 'kind';
+        k.textContent = isWrite ? '  · write' : '  · read';
+        li.appendChild(k);
+        ul.appendChild(li);
+      });
+      if ((t.names || []).length) show(ul);
+    });
+  })
+  .catch(function (err) {
+    setPill($('pill-state'), 'unreachable', 'is-err');
+    $('tools-note').textContent = 'M-Ai status could not be reached: ' + err.message;
+  });
+</script>
+</body>
+</html>

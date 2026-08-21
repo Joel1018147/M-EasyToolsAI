@@ -163,6 +163,35 @@ const SEGMENTER_HAS_CJK = (() => {
 })();
 
 /**
+ * The word-like segments of a Latin-script string, as strings.
+ *
+ * Exists so that anything computing a PER-WORD average counts the same words
+ * countWords() counted. A metric whose numerator and denominator disagree
+ * about what a word is produces a number that is not wrong by a little.
+ *
+ * Not used for Han text — countWords() estimates there rather than listing.
+ */
+function wordList(text, lang) {
+  const s = String(text || '');
+  if (!s.trim()) return [];
+  const l = normaliseLang(lang) || detectLang(s) || 'en';
+  if (HAS_SEGMENTER) {
+    try {
+      const seg = new Intl.Segmenter(LANG_TAGS[l], { granularity: 'word' });
+      const out = [];
+      for (const part of seg.segment(s)) if (part.isWordLike) out.push(part.segment);
+      return out;
+    } catch (err) {
+      warnOnce('segmenter-list', 'Intl.Segmenter word listing failed for ' +
+        LANG_TAGS[l] + ' (' + err.message + ') — falling back to a whitespace split');
+    }
+  }
+  // Whitespace tokens that actually contain a letter or digit. Bare "-" and
+  // "##" are not words and must not enter a per-word average.
+  return s.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w));
+}
+
+/**
  * Word count that means the same thing in all three languages.
  *
  * @returns {{count: number, basis: string}} basis names the method, so a
@@ -196,7 +225,10 @@ function countWords(text, lang) {
   // Latin-script words present. Approximate and LABELLED as approximate —
   // what it must never do is return 1 for a whole article.
   const han = (s.match(HAN_GLOBAL_RE) || []).length;
-  const latin = s.replace(HAN_GLOBAL_RE, ' ').split(/\s+/).filter(Boolean).length;
+  // Same "contains a letter or digit" rule wordList() uses, so the fallback
+  // path cannot disagree with the fallback list about what a word is.
+  const latin = s.replace(HAN_GLOBAL_RE, ' ').split(/\s+/)
+    .filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
   if (han > 0) {
     return { count: Math.round(han / 1.5) + latin, basis: 'han-char-estimate' };
   }
@@ -232,6 +264,40 @@ function countSentences(text, lang) {
 }
 
 /**
+ * Syllables in one English word.
+ *
+ * Flesch is 84.6 × (syllables / words), so every syllable the counter invents
+ * costs the score about twelve points. Two counters were tried and both
+ * over-counted the same way:
+ *
+ *   vowel LETTERS  "generates" → e,e,a,e            = 4   (it is 3)
+ *   vowel GROUPS   "generates" → e,e,a,e            = 4   (it is 3)
+ *                  "queueing"  → ueuei              = 1   (it is 3)
+ *
+ * Three syllables of error over an eight-word sentence moved
+ * "The platform generates marketing content for small businesses." from its
+ * textbook ~30 to 8 — the reading difficulty of a tax statute, for a sentence
+ * a child could read. The old code hid that behind a floor of 30; removing the
+ * floor is what made it visible.
+ *
+ * So: drop the silent terminal -e / -es, then chunk vowels in ones and twos
+ * rather than in unbounded runs. This is the standard textbook heuristic. It
+ * is still an estimate — "business" is two syllables in speech and three here
+ * — but it is an estimate that agrees with a dictionary on ordinary marketing
+ * prose, which the previous two did not. (Lane C.)
+ */
+function syllablesEn(word) {
+  const w = String(word || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!w) return 0;
+  if (w.length <= 3) return 1;
+  const trimmed = w
+    .replace(/(?:[^laeiouy]es|[^laeiouy]e)$/, '')
+    .replace(/^y/, '');
+  const groups = trimmed.match(/[aeiouy]{1,2}/g);
+  return groups ? groups.length : 1;
+}
+
+/**
  * Readability.
  *
  * THIS FUNCTION IS ALLOWED TO SAY IT DOES NOT KNOW, and that is the point.
@@ -256,6 +322,14 @@ function readability(text, lang) {
   const l = normaliseLang(lang) || detectLang(s) || 'en';
   const sentences = countSentences(s, l) || 1;
 
+  /* No words, no readability. "... !!! ???" has a length and a sentence count
+     and nothing to read, and every formula below divides by a word count. The
+     old code returned 100 for it — the flattering-wrong direction that §0.7 is
+     about — so this says so instead. (Lane C, found by wiring these metrics
+     into scoreContent() and reading the corpus output.) */
+  const wordsHere = countWords(s, l).count;
+  if (wordsHere === 0) return { score: null, basis: l + '-no-words' };
+
   if (l === 'zh') {
     const han = (s.match(HAN_GLOBAL_RE) || []).length;
     const perSentence = han / sentences;
@@ -268,7 +342,7 @@ function readability(text, lang) {
     return { score, basis: 'zh-chars-per-sentence' };
   }
 
-  const { count: words } = countWords(s, l);
+  const words = wordsHere;
   const wps = words / sentences;
 
   if (l === 'ms') {
@@ -278,14 +352,19 @@ function readability(text, lang) {
     return { score, basis: 'ms-words-per-sentence' };
   }
 
-  // English: Flesch Reading Ease.
-  // Syllables by vowel GROUPS, not by vowel letters — the previous code
-  // counted every vowel character, so "queueing" scored 6.
-  const syllables = s
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .reduce((acc, w) => acc + Math.max(1, (w.match(/[aeiouy]+/g) || []).length), 0);
+  /* English: Flesch Reading Ease.
+     Syllables by vowel GROUPS, not by vowel letters — the previous code
+     counted every vowel character, so "queueing" scored 6.
+
+     THE NUMERATOR AND THE DENOMINATOR MUST COUNT THE SAME WORDS. This used to
+     sum syllables over `s.split(/\s+/)` while dividing by the SEGMENTER's word
+     count, so every whitespace token that is not a word — a markdown "-", a
+     bare "##" — added a syllable to a denominator that had never counted it.
+     "- one\n- two\n- three" came out at 7 syllables over 3 words and scored 8
+     out of 100, which is roughly the reading difficulty of a tax statute.
+     Counting both over the same word list fixes it; it scores 93.
+     (Lane C, found by wiring these metrics into scoreContent().) */
+  const syllables = wordList(s, l).reduce((acc, w) => acc + syllablesEn(w), 0);
   const score = clamp(
     Math.round(206.835 - 1.015 * wps - 84.6 * (syllables / (words || 1))),
     0,
@@ -368,7 +447,9 @@ module.exports = {
   normaliseLang,
   detectLang,
   hanRatio,
+  wordList,
   countWords,
+  syllablesEn,
   countSentences,
   readability,
   textMetrics,

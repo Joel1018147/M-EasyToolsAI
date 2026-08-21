@@ -332,6 +332,32 @@ app.use(passport.session());
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json({ limit: '10mb' }));
+/* ── Private panels, gated BEFORE express.static ─────────────────────────────
+   Round 1 added two staff/authenticated panels under public/. express.static
+   serves anything in that directory by filename, and it is mounted here —
+   ahead of every page route — so `app.get('/mai', requireAuth, ...)` further
+   down does NOT protect `/mai.html`. Without this block the panel is on the
+   open internet under every spelling static will answer to.
+
+   This is not hypothetical. M-EasyDo shipped exactly this: its M-Ai panel was
+   reachable by anonymous request under fourteen different URL spellings until
+   it was fixed AT THE STATIC MOUNT, which is why this sits here rather than
+   next to the page routes.
+
+   The shells carry no customer data — every byte they render comes from
+   /api/mai and /api/docintel, which are guarded independently. So this is
+   defence in depth, not the only lock. It still matters: an unauthenticated
+   visitor being shown a staff console learns the tool exists, what it can do,
+   and exactly what to go looking for.
+
+   Matched on the normalised path so /MAI.HTML and /./mai.html do not slip
+   past — a case-sensitive equality check here would be the fourteen-spellings
+   bug again in miniature. */
+const PRIVATE_PAGES = new Set(['/mai.html', '/docintel.html']);
+app.use((req, res, next) => {
+  if (!PRIVATE_PAGES.has(path.posix.normalize(req.path).toLowerCase())) return next();
+  return requireAuth(req, res, () => checkSub(req, res, next));
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { error: 'Too many attempts.' } });
@@ -1644,6 +1670,44 @@ app.get('/login',    (req, res) => res.sendFile(path.join(__dirname, 'public', '
 app.get('/signup',   (req, res) => res.redirect('/login#register'));
 app.get('/register', (req, res) => res.redirect('/login#register'));
 app.get('/settings', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'settings.html')));
+
+// ── Round 1 page routes ──────────────────────────────────────────────────────
+// Added at Integration. Lane A and Lane B each reported that their panel had no
+// page route and that adding one needed this file, which neither owned — so
+// both stopped and flagged it rather than editing across the boundary.
+//
+// GUARDED, and the guard is the point. A staff tool that renders for a
+// signed-out visitor tells them the tool exists, what it can do, and what to
+// go looking for — even though the shells carry no data, because everything
+// they render comes from /api/mai and /api/docintel, which are guarded
+// independently.
+//
+// THESE TWO LINES ARE NOT WHAT CLOSES THE .html SPELLING. express.static is
+// mounted far above this point and answers /mai.html directly, so a page route
+// here could never have protected it. That hole is closed at the static mount
+// itself — see PRIVATE_PAGES — which is where M-EasyDo had to fix the same bug
+// after shipping its panel under fourteen reachable spellings.
+//
+// Verified live, not assumed: /mai.html, /docintel.html and /MAI.HTML all 302
+// to /login, while every public asset still serves 200.
+app.get('/mai', requireAuth, checkSub, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'mai.html')));
+app.get('/docintel', requireAuth, checkSub, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'docintel.html')));
+
+/* PRE-EXISTING 404s, found by probing rather than by reading. Neither route has
+   ever existed — `git show main:server.js` has no privacy/terms handler either —
+   but routes/subsystemPages.js builds a footer on EVERY subsystem landing page
+   containing:
+
+       <a href="/privacy">Privacy</a><a href="/terms">Terms</a>
+
+   so both links are dead in production right now, on the pages a prospect sees
+   first. The files exist and are fine; only the extensionless spelling was
+   missing. Public on purpose — a privacy policy behind a login is not a privacy
+   policy. */
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 require('./routes/settings').mount(app, requireAuth);
 
 // The canonical settings.html sends a 401'd page to /auth/login, and the

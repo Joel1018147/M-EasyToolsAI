@@ -644,5 +644,12 @@
         "desc": "All data is permanently removed after a 30-day grace period. This cannot be undone."
       }
     }
+  },
+  "genlang": {
+    "label": "Output language",
+    "aria": "Language the AI writes in",
+    "hint": "The AI writes in this language. The interface language is separate.",
+    "warn_title": "Wrong language",
+    "dismiss": "Dismiss"
   }
 }

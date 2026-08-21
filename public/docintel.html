@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" data-platform="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document Intelligence — M-EasyTools AI+</title>
+<link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DOCUMENT INTELLIGENCE — the review surface.
+     ─────────────────────────────────────────────────────────────────────────
+     THERE IS NO "APPROVE ALL" BUTTON ON THIS PAGE, and there is no endpoint
+     behind one either.
+
+     The list carries NO approval tokens. A pending field arrives closed, and
+     opening it is a separate request naming that one proposal — which is the
+     request that mints its single-use token, alongside the quote it came from
+     and the value it would replace. So a token exists only because a person
+     opened that one card and read it. Approving spends that token and writes
+     one column; re-opening the same field re-mints and voids the old token,
+     because the older card's sentence may no longer be true.
+
+     A per-field dialog in front of a bulk endpoint is a dialog, not a gate —
+     so the bulk endpoint does not exist. See routes/docIntel.js.
+
+     COLOUR: every value below is a design-system token. Not one hex literal —
+     the orange comes from [data-platform="tools"] in the md5-pinned master and
+     from nowhere else (GAUNTLET.md §V).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style>
+  body { font-family: var(--font); background: var(--bg); color: var(--text); margin: 0; font-size: 15px; line-height: 1.55; }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1 { font-family: var(--font-display); font-size: 1.5rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-family: var(--font-display); font-size: 1rem; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 26px; max-width: 62ch; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; margin-bottom: 26px; }
+  .step { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .step-n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-text); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1px 7px; }
+  label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 5px; }
+  select, input[type=file], input[type=text] { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.9rem;
+    padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg); color: var(--text); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > * { flex: 1 1 220px; min-width: 0; }
+  button { font: inherit; font-size: 0.88rem; font-weight: 600; padding: 9px 16px; border-radius: var(--r-sm);
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+  button.quiet { background: transparent; color: var(--muted); }
+  .mt { margin-top: 14px; }
+  .card { border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 14px; background: var(--surface); }
+  .card.pending { border-left: var(--rail-w) solid var(--accent); }
+  .card.rejected { border-left: var(--rail-w) solid var(--border); background: var(--bg-soft); }
+  .card.accepted { border-left: var(--rail-w) solid var(--green); }
+  .field-name { font-weight: 600; }
+  .writes-to { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+  .val { font-family: var(--font-mono); font-size: 0.86rem; background: var(--bg-soft); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 7px 9px; margin: 8px 0; word-break: break-word; }
+  blockquote { margin: 8px 0; padding: 8px 12px; border-left: 2px solid var(--border); color: var(--muted); font-size: 0.88rem; }
+  .meta { font-size: 0.78rem; color: var(--muted); }
+  .meta b { color: var(--text); font-weight: 600; }
+  .warn { color: var(--amber-text); }
+  .err { color: var(--red-text); }
+  .okmsg { color: var(--green-text); }
+  .counts { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
+  .counts b { font-family: var(--font-mono); color: var(--text); }
+  .note { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 14px; }
+  .hidden { display: none; }
+  #log { font-family: var(--font-mono); font-size: 0.78rem; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Document Intelligence</h1>
+  <p class="sub">
+    Upload a document, choose the record it is about, and review what the model claims it found.
+    <b>Nothing is written until you approve a field.</b> Each field is approved on its own, against the
+    quote it came from — there is no approve-all, here or in the API behind it.
+  </p>
+
+  <div class="panel">
+    <div class="step"><span class="step-n">1</span><h2>Upload</h2></div>
+    <div class="row">
+      <div><label for="file">PDF, plain text, CSV or Markdown — up to 8 MB</label><input type="file" id="file" accept=".pdf,.txt,.csv,.md,.markdown,application/pdf,text/plain,text/csv,text/markdown"></div>
+    </div>
+    <div class="mt"><button class="primary" id="btn-upload">Upload</button></div>
+    <div class="note" id="capabilities">Checking what this deployment can read…</div>
+  </div>
+
+  <div class="panel hidden" id="panel-bind">
+    <div class="step"><span class="step-n">2</span><h2>Which record is this document about?</h2></div>
+    <p class="meta">A person decides this, not the model — nothing in a document can be trusted to say which of two
+      records it belongs to. Re-binding invalidates every approval already issued on this document.</p>
+    <div class="row mt">
+      <div><label for="category">Destination</label><select id="category"></select></div>
+      <div><label for="target">Record</label><select id="target"></select></div>
+    </div>
+    <div class="mt"><button id="btn-bind">Bind</button></div>
+    <div class="note" id="category-note"></div>
+  </div>
+
+  <div class="panel hidden" id="panel-propose">
+    <div class="step"><span class="step-n">3</span><h2>Read the document</h2></div>
+    <p class="meta">The model names a field and quotes the document. Every value it proposes is then cut out of the
+      document's own text at the place the quote was found — a claim that is not inside its own quote is rejected
+      before you see it, and the rejection is kept so you can see how often that happened.</p>
+    <div class="mt"><button class="primary" id="btn-propose">Extract proposals</button>
+      <button class="quiet" id="btn-refresh">Reload cards</button></div>
+  </div>
+
+  <div id="status" class="mt"></div>
+
+  <div class="panel hidden" id="panel-review">
+    <div class="step"><span class="step-n">4</span><h2>Approve field by field</h2></div>
+    <div class="counts" id="counts"></div>
+    <div id="cards"></div>
+    <div class="note">
+      Each field arrives closed and carries no approval until you open it. Opening one issues a single-use approval
+      bound to that field, that record and this account, which expires five minutes later. If the record's current
+      value moves after a card is drawn, that approval is refused and nothing is written — re-open the field to see
+      the new value.
+    </div>
+  </div>
+
+  <div class="panel"><div id="log" class="meta">Ready.</div></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var docId = null;
+  var fieldMap = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function say(msg, cls) {
+    var el = $('log');
+    el.className = 'meta ' + (cls || '');
+    el.textContent = msg;
+  }
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  /* THE ONE FETCH SITE IN THIS PAGE.
+     `r.ok` is read on the line after the call, before the body is used for
+     anything. A non-2xx never becomes data — it becomes a thrown error
+     carrying the server's own message, which is what gets shown. */
+  async function api(path, opts) {
+    var r = await fetch(path, opts || {});
+    var raw = await r.text();
+    var data = null;
+    if (raw) {
+      try { data = JSON.parse(raw); }
+      catch (e) { data = { reason: 'bad_response', message: raw.slice(0, 300) }; }
+    }
+    if (!r.ok) {
+      var err = new Error((data && data.message) || (data && data.reason) || ('HTTP ' + r.status));
+      err.reason = (data && data.reason) || ('http_' + r.status);
+      err.status = r.status;
+      throw err;
+    }
+    return data;
+  }
+
+  function jsonPost(path, body) {
+    return api(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+  }
+
+  /* ── capabilities, read from the server rather than restated here ─────── */
+  async function loadCapabilities() {
+    try {
+      var s = await api('/api/docintel/status');
+      var bits = ['Reads: ' + s.reads.join(', ') + '.'];
+      bits.push(s.modelConfigured
+        ? 'Extraction model: ' + s.model + '.'
+        : 'No extraction model configured — ' + s.reason);
+      bits.push(s.imageOcrReason);
+      bits.push(s.officeDocumentsReason);
+      $('capabilities').textContent = bits.join(' ');
+    } catch (e) {
+      $('capabilities').textContent = 'Could not read this deployment’s capabilities: ' + e.message;
+      $('capabilities').className = 'note err';
+    }
+  }
+
+  async function loadFieldMap() {
+    try {
+      fieldMap = await api('/api/docintel/field-map');
+      var sel = $('category');
+      sel.innerHTML = '';
+      fieldMap.categories.forEach(function (c) {
+        var o = document.createElement('option');
+        o.value = c.key;
+        o.textContent = c.label + ' — writes to ' + c.writesTo;
+        sel.appendChild(o);
+      });
+      onCategoryChange();
+    } catch (e) {
+      say('Could not load the field map: ' + e.message, 'err');
+    }
+  }
+
+  function currentCategory() {
+    if (!fieldMap) return null;
+    var key = $('category').value;
+    for (var i = 0; i < fieldMap.categories.length; i++) {
+      if (fieldMap.categories[i].key === key) return fieldMap.categories[i];
+    }
+    return null;
+  }
+
+  async function onCategoryChange() {
+    var cat = currentCategory();
+    if (!cat) return;
+    var names = cat.fields.map(function (f) { return f.label; }).join(', ');
+    $('category-note').textContent = cat.describe + ' Fields this can fill: ' + names + '. Nothing else in '
+      + cat.writesTo + ' is reachable — the allow-list is the only way a column name is ever produced.';
+    var sel = $('target');
+    sel.innerHTML = '<option>loading…</option>';
+    try {
+      var out = await api('/api/docintel/targets/' + encodeURIComponent(cat.key));
+      sel.innerHTML = '';
+      if (!out.targets || !out.targets.length) {
+        sel.innerHTML = '<option value="">no ' + esc(cat.label) + ' records yet</option>';
+        return;
+      }
+      out.targets.forEach(function (t) {
+        var o = document.createElement('option');
+        o.value = t.id;
+        o.textContent = t.label;
+        sel.appendChild(o);
+      });
+      sel.disabled = !!cat.selfOnly;
+    } catch (e) {
+      sel.innerHTML = '<option value="">' + esc(e.message) + '</option>';
+    }
+  }
+
+  /* ── 1. upload — the body IS the file ─────────────────────────────────── */
+  async function upload() {
+    var f = $('file').files[0];
+    if (!f) { say('Choose a file first.', 'warn'); return; }
+    $('btn-upload').disabled = true;
+    say('Uploading ' + f.name + '…');
+    try {
+      var out = await api('/api/docintel/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': f.type || 'application/octet-stream', 'X-Filename': f.name },
+        body: f,
+      });
+      docId = out.document.id;
+      $('panel-bind').classList.remove('hidden');
+      $('panel-propose').classList.remove('hidden');
+      var d = out.document;
+      say('Stored ' + d.filename + ' (' + d.byte_size + ' bytes). Text status: ' + d.text_status
+          + ' — ' + d.extraction_note, d.text_status === 'extracted' ? 'okmsg' : 'warn');
+      await loadFieldMap();
+    } catch (e) {
+      say('Upload refused: ' + e.message, 'err');
+    } finally {
+      $('btn-upload').disabled = false;
+    }
+  }
+
+  /* ── 2. bind ──────────────────────────────────────────────────────────── */
+  async function bind() {
+    if (!docId) return;
+    var cat = currentCategory();
+    if (!cat) return;
+    $('btn-bind').disabled = true;
+    try {
+      var out = await jsonPost('/api/docintel/documents/' + docId + '/bind',
+                               { category: cat.key, targetId: $('target').value });
+      say('Bound to ' + out.label + ' ' + out.targetId + '. Any approval issued before this is now void.', 'okmsg');
+      await refresh();
+    } catch (e) {
+      say('Could not bind: ' + e.message, 'err');
+    } finally {
+      $('btn-bind').disabled = false;
+    }
+  }
+
+  /* ── 3. propose ───────────────────────────────────────────────────────── */
+  async function propose() {
+    if (!docId) return;
+    $('btn-propose').disabled = true;
+    say('Reading the document…');
+    try {
+      var out = await jsonPost('/api/docintel/documents/' + docId + '/propose', {});
+      var msg = out.proposals + ' proposal(s) kept, ' + out.autoRejected + ' auto-rejected, over '
+              + out.excerpts + ' excerpt(s) in ' + out.calls + ' model call(s).';
+      if (out.modelCallFailures && out.modelCallFailures.length) {
+        msg += ' ' + out.modelCallFailures.length + ' excerpt(s) failed and were NOT read: '
+             + out.modelCallFailures.join('; ');
+        say(msg, 'warn');
+      } else {
+        say(msg, 'okmsg');
+      }
+      await refresh();
+    } catch (e) {
+      say('Extraction refused: ' + e.message, 'err');
+    } finally {
+      $('btn-propose').disabled = false;
+    }
+  }
+
+  /* ── 4. the cards. Loading this page MINTS the approvals. ─────────────── */
+  async function refresh() {
+    if (!docId) return;
+    try {
+      var out = await api('/api/docintel/documents/' + docId);
+      render(out);
+    } catch (e) {
+      say('Could not load proposals: ' + e.message, 'err');
+    }
+  }
+
+  function render(out) {
+    $('panel-review').classList.remove('hidden');
+    var c = out.counts;
+    $('counts').innerHTML =
+        '<span>awaiting your approval <b>' + c.pending + '</b></span>'
+      + '<span>approved <b>' + c.accepted + '</b></span>'
+      + '<span>you rejected <b>' + c.rejected + '</b></span>'
+      + '<span>auto-rejected before you saw them <b>' + c.auto_rejected + '</b></span>';
+
+    var host = $('cards');
+    host.innerHTML = '';
+    if (!out.proposals.length) {
+      host.innerHTML = '<p class="meta">No proposals yet.</p>';
+      return;
+    }
+    out.proposals.forEach(function (p) { host.appendChild(cardFor(p)); });
+  }
+
+  function cardFor(p) {
+    var el = document.createElement('div');
+    var cls = p.status === 'pending' ? 'pending' : (p.status === 'accepted' ? 'accepted' : 'rejected');
+    el.className = 'card ' + cls;
+
+    var head = '<div><span class="field-name">' + esc(p.label) + '</span> '
+             + '<span class="writes-to">' + esc(p.writesTo || 'no destination') + '</span></div>';
+
+    if (p.status === 'pending' && p.openable) {
+      /* CLOSED UNTIL A PERSON OPENS IT. No approval token exists for this
+         field yet — the list carried none, because the server mints one only
+         when this single card is opened. Opening it is the act that produces
+         the token, which is why the token can never belong to a card nobody
+         read. */
+      el.innerHTML = head
+        + '<div class="val">' + esc(p.value) + '</div>'
+        + '<p class="meta">Proposed for <b>' + esc(p.writesTo) + '</b>. Open the field to see the quote it came '
+        + 'from, what it would replace, and to approve it.</p>';
+      var open = document.createElement('button');
+      open.textContent = 'Open this field';
+      open.addEventListener('click', function () { openField(p, el, head); });
+      var bar0 = document.createElement('div');
+      bar0.className = 'mt';
+      bar0.appendChild(open);
+      el.appendChild(bar0);
+      return el;
+    }
+
+    if (p.status === 'pending') {
+      el.innerHTML = head + '<p class="meta warn">Pending, but no approval can be issued — the document is not '
+                   + 'bound to a record yet, so nothing can say what this would overwrite.</p>';
+      return el;
+    }
+
+    if (p.status === 'accepted') {
+      el.innerHTML = head + '<div class="val">' + esc(p.value) + '</div>'
+                   + '<p class="meta okmsg">Written to ' + esc(p.writtenTarget) + ' at ' + esc(p.acceptedAt) + '.</p>';
+      return el;
+    }
+
+    el.innerHTML = head
+      + '<p class="meta">The model typed <b>' + esc(p.modelTyped) + '</b>'
+      + (p.evidence ? ' and offered this as evidence:' : '.') + '</p>'
+      + (p.evidence ? '<blockquote>' + esc(p.evidence) + '</blockquote>' : '')
+      + '<p class="meta ' + (p.status === 'auto_rejected' ? 'warn' : '') + '">'
+      + (p.status === 'auto_rejected' ? 'Auto-rejected before you saw it: ' : 'You rejected this: ')
+      + esc(p.rejectReason) + '</p>';
+    return el;
+  }
+
+  /* OPEN ONE FIELD. This is the request that mints this field’s approval
+     token, and it names exactly one proposal. There is no call anywhere in
+     this page that opens several. */
+  async function openField(p, el, head) {
+    try {
+      var out = await api('/api/docintel/proposals/' + p.id + '/card');
+      var c = out.card;
+      el.innerHTML = head
+        + '<div class="val">' + esc(c.value) + '</div>'
+        + '<blockquote>' + esc(c.evidence) + '</blockquote>'
+        + '<p class="meta">Cut from block ' + esc(c.evidenceBlock) + ' of the document, which reads '
+        + '<b>' + esc(c.documentSaid) + '</b> there. The model typed <b>' + esc(c.modelTyped) + '</b>; '
+        + 'only the document’s own characters are written.</p>'
+        + '<p class="meta">Writes to <b>' + esc(c.writesTo) + '</b> on ' + esc(c.targetLabel) + ' '
+        + esc(c.targetId) + '.</p>'
+        + '<p class="meta">This replaces: <b>'
+        + (c.overwrites === null || c.overwrites === undefined ? 'nothing — the field is empty' : esc(c.overwrites))
+        + '</b></p>'
+        + '<p class="meta">This approval expires at ' + esc(c.acceptNonceExpiresAt) + ' and can be used once.</p>';
+      var approve = document.createElement('button');
+      approve.className = 'primary';
+      approve.textContent = 'Approve this one field';
+      /* The token lives on this one closure and nowhere else. There is no
+         array of them anywhere in this page and no control that spends more
+         than one. */
+      approve.addEventListener('click', function () { accept(c, approve); });
+      var reject = document.createElement('button');
+      reject.className = 'quiet';
+      reject.textContent = 'Reject';
+      reject.addEventListener('click', function () { rejectOne(c, reject); });
+      var bar = document.createElement('div');
+      bar.className = 'mt';
+      bar.appendChild(approve);
+      bar.appendChild(reject);
+      el.appendChild(bar);
+    } catch (e) {
+      say('Could not open ' + p.label + ': ' + e.message, 'err');
+    }
+  }
+
+  /* ONE field. ONE nonce. The button is disabled the instant it is clicked,
+     because the token is spent by being presented — a second click would be
+     refused, and refusing a user's own second click is worse UX than not
+     letting them make one. */
+  async function accept(p, btn) {
+    btn.disabled = true;
+    say('Approving ' + p.label + '…');
+    try {
+      var out = await jsonPost('/api/docintel/proposals/' + p.id + '/accept', { nonce: p.acceptNonce });
+      say('Wrote ' + out.writesTo + ' on record ' + out.targetId + '. It previously held: '
+          + (out.replaced === null ? 'nothing' : out.replaced), 'okmsg');
+    } catch (e) {
+      say('Not written — ' + e.message, e.reason === 'confirm_invalid' ? 'warn' : 'err');
+    }
+    await refresh();
+  }
+
+  async function rejectOne(p, btn) {
+    btn.disabled = true;
+    try {
+      await jsonPost('/api/docintel/proposals/' + p.id + '/reject', { reason: 'Rejected by reviewer' });
+      say('Rejected ' + p.label + '. Nothing was written.', 'okmsg');
+    } catch (e) {
+      say('Could not reject: ' + e.message, 'err');
+    }
+    await refresh();
+  }
+
+  $('btn-upload').addEventListener('click', upload);
+  $('btn-bind').addEventListener('click', bind);
+  $('btn-propose').addEventListener('click', propose);
+  $('btn-refresh').addEventListener('click', refresh);
+  $('category').addEventListener('change', onCategoryChange);
+
+  loadCapabilities();
+})();
+</script>
+</body>
+</html>

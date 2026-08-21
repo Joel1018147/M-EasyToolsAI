@@ -644,5 +644,12 @@
         "desc": "Semua data dipadam secara kekal selepas tempoh tangguh 30 hari. Ini tidak boleh dibatalkan."
       }
     }
+  },
+  "genlang": {
+    "label": "Bahasa output",
+    "aria": "Bahasa yang digunakan AI untuk menulis",
+    "hint": "AI akan menulis dalam bahasa ini. Bahasa antara muka adalah berasingan.",
+    "warn_title": "Bahasa tidak tepat",
+    "dismiss": "Tutup"
   }
 }

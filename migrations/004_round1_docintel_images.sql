@@ -203,3 +203,50 @@ CREATE INDEX IF NOT EXISTS idx_image_gen_user_window
 
 CREATE INDEX IF NOT EXISTS idx_image_gen_status
   ON image_generations (status);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- AUDIT LOG
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ADDED AT INTEGRATION, closing a gap Lane A reported rather than worked around.
+--
+-- M-Ai lets a language model perform writes against a customer's real rows.
+-- Every one of them is reversible, owner-scoped and human-confirmed — but until
+-- now the only record that a write happened at all was one structured line on
+-- the process log. That is greppable for Railway's retention window and it is
+-- not queryable, not joinable, and not permanent. "Which of my releases did the
+-- assistant change last month, and who approved it" had no answer.
+--
+-- Lane A could not add this: migrations are Foundation-owned, precisely so that
+-- two lanes cannot write colliding DDL. It reported the gap instead of reaching
+-- across, which is the boundary working.
+--
+-- Deliberately GENERAL, not mai_*. Document Intelligence writes business values
+-- from extracted documents on a human's per-field approval, and that is the same
+-- question with a different noun. One table both features write to beats two
+-- tables nobody joins.
+CREATE TABLE IF NOT EXISTS audit_log (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  team_id      INTEGER REFERENCES teams(id),
+  actor        TEXT NOT NULL,          -- 'mai' | 'docintel' | a human surface
+  action       TEXT NOT NULL,          -- e.g. 'mai:set_pr_release_status'
+  entity       TEXT NOT NULL,          -- the table or feature written
+  entity_id    TEXT,
+
+  -- The exact sentence the human was shown before approving. NOT a reconstruction:
+  -- an audit row that says what we would have shown is not evidence of what was
+  -- shown. Null for actions that carry no confirmation step.
+  approved_shown TEXT,
+  approval_ref   TEXT,                 -- non-secret handle; never the token itself
+
+  -- What actually changed, previous value first. Recorded for FAILED writes too:
+  -- an unrecorded failed write is the one an investigation cannot find later.
+  ok           BOOLEAN NOT NULL DEFAULT TRUE,
+  detail       TEXT,
+
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_user   ON audit_log (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor  ON audit_log (actor, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log (entity, entity_id);

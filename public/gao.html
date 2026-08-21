@@ -1,32 +1,29 @@
 <!DOCTYPE html>
-<html data-platform="tools" lang="en">
+<html data-platform="tools" data-theme="dark" data-theme-lock lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>M-EasyGAO AI+ — Generative AI Optimization Suite</title>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#07090F;--bg2:#0D1018;--bg3:#111520;
-  --card:#141820;--card2:#1A1F2E;--card3:#1E2535;
-  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
-  --text:#F0F4FA;--text2:#8892A4;--text3:#4A5568;
-  --orange:#E8622A;--orange2:#FF7A45;--orange3:rgba(232,98,42,0.15);
-  --teal:#0ECFB0;--teal3:rgba(14,207,176,0.12);
-  --violet:#9B7FEE;--violet3:rgba(155,127,238,0.12);
-  --gold:#F4C430;--gold3:rgba(244,196,48,0.12);
-  --red:#F43F5E;--red3:rgba(244,63,94,0.12);
-  --blue:#3B82F6;--blue3:rgba(59,130,246,0.12);
-  --r:14px;--r-sm:9px;
-}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+/* TWENTY-TWO COLOURS USED TO BE DECLARED HERE, INCLUDING --orange:var(--accent) —
+   the platform accent, restated on a page that also shadowed --bg, --border,
+   --text, --red and --blue, five design-system token names, with values of its
+   own. The consequence was invisible: this screen's "blue" was var(--blue-text) and the
+   product's is #1a73e8, and no check could see the difference because neither
+   is the accent.
+
+   The page is a dark console by design, and says so with data-theme="dark"
+   instead of by redefining the palette. Nothing below names a hue. */
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:2px}
 
 /* ── LAYOUT ── */
 .shell{display:flex;height:100vh}
 .sidebar{
-  width:220px;min-width:220px;background:#070A10;
+  width:220px;min-width:220px;background:var(--surface-deep);
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;padding:20px 12px;
   overflow-y:auto;flex-shrink:0;
@@ -35,102 +32,102 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
 
 /* ── SIDEBAR ── */
 .sb-logo{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
-.sb-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--orange),var(--orange2));display:flex;align-items:center;justify-content:center;font-family:'Libre Baskerville',serif;font-size:13px;font-weight:700;color:white}
+.sb-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-text));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--accent-contrast)}
 .sb-logo-name{font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.2px}
-.sb-logo-name em{font-style:normal;color:var(--orange)}
-.sb-section{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:4px 10px 6px;margin-top:4px}
-.sb-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r-sm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s}
-.sb-item:hover{background:rgba(255,255,255,0.04);color:var(--text)}
-.sb-item.active{background:var(--orange3);color:var(--orange)}
-.sb-badge{background:var(--orange);color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
-.sb-new-badge{background:rgba(14,207,176,0.2);color:var(--teal);font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
+.sb-logo-name em{font-style:normal;color:var(--accent)}
+.sb-section{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:4px 10px 6px;margin-top:4px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r-sm);cursor:pointer;color:var(--text-2);font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left;font-family:var(--font);transition:all .15s}
+.sb-item:hover{background:color-mix(in srgb, var(--accent-contrast) 4%, transparent);color:var(--text)}
+.sb-item.active{background:var(--accent-glow);color:var(--accent)}
+.sb-badge{background:var(--accent);color:var(--accent-contrast);font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
+.sb-new-badge{background:color-mix(in srgb, var(--green) 20%, transparent);color:var(--green-text);font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
 
 /* ── TOPBAR ── */
 .topbar{
-  height:56px;background:var(--bg2);border-bottom:1px solid var(--border);
+  height:56px;background:var(--brand-2);border-bottom:1px solid var(--border);
   display:flex;align-items:center;padding:0 24px;gap:14px;flex-shrink:0;
 }
-.topbar-title{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--text);flex:1}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s}
-.btn-primary{background:var(--orange);color:white}
-.btn-primary:hover{background:var(--orange2);transform:translateY(-1px)}
-.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
-.btn-outline:hover{background:rgba(255,255,255,0.04);color:var(--text)}
-.btn-teal{background:var(--teal3);color:var(--teal);border:1px solid rgba(14,207,176,0.2)}
-.btn-teal:hover{background:rgba(14,207,176,0.2)}
+.topbar-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-primary{background:var(--accent);color:var(--accent-contrast)}
+.btn-primary:hover{background:var(--accent-text);transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--text-2);border:1px solid var(--border-2)}
+.btn-outline:hover{background:color-mix(in srgb, var(--accent-contrast) 4%, transparent);color:var(--text)}
+.btn-teal{background:var(--green-bg);color:var(--green-text);border:1px solid color-mix(in srgb, var(--green) 20%, transparent)}
+.btn-teal:hover{background:color-mix(in srgb, var(--green) 20%, transparent)}
 
 /* ── PAGE BODY ── */
 .page-body{flex:1;padding:28px 28px 40px;overflow-y:auto}
 
 /* ── GAO HERO BANNER ── */
 .gao-hero{
-  background:linear-gradient(135deg,#0A0F1A 0%,#111828 50%,#0A1520 100%);
-  border:1px solid var(--border2);border-radius:16px;
+  background:linear-gradient(135deg,var(--surface-deep) 0%,var(--surface-2) 50%,var(--surface-deep) 100%);
+  border:1px solid var(--border-2);border-radius:16px;
   padding:28px 32px;margin-bottom:24px;
   position:relative;overflow:hidden;
 }
 .gao-hero::before{
   content:'';position:absolute;top:-60px;right:-60px;
   width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle,rgba(14,207,176,0.08) 0%,transparent 70%);
+  background:radial-gradient(circle,color-mix(in srgb, var(--green) 8%, transparent) 0%,transparent 70%);
 }
 .gao-hero::after{
   content:'';position:absolute;bottom:-40px;left:100px;
   width:200px;height:200px;border-radius:50%;
-  background:radial-gradient(circle,rgba(232,98,42,0.06) 0%,transparent 70%);
+  background:radial-gradient(circle,color-mix(in srgb, var(--accent) 6%, transparent) 0%,transparent 70%);
 }
 .gao-hero-badge{
   display:inline-flex;align-items:center;gap:6px;
-  background:rgba(14,207,176,0.1);border:1px solid rgba(14,207,176,0.25);
+  background:color-mix(in srgb, var(--green) 10%, transparent);border:1px solid color-mix(in srgb, var(--green) 25%, transparent);
   border-radius:20px;padding:4px 12px;
-  font-size:11px;font-weight:700;color:var(--teal);
+  font-size:11px;font-weight:700;color:var(--green-text);
   letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px;
 }
-.gao-hero-title{font-family:'Libre Baskerville',serif;font-size:26px;font-weight:700;color:var(--text);letter-spacing:-.5px;margin-bottom:8px}
-.gao-hero-title span{color:var(--teal)}
-.gao-hero-sub{font-size:14px;color:var(--text2);line-height:1.6;max-width:600px;margin-bottom:20px}
+.gao-hero-title{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text);letter-spacing:-.5px;margin-bottom:8px}
+.gao-hero-title span{color:var(--green-text)}
+.gao-hero-sub{font-size:14px;color:var(--text-2);line-height:1.6;max-width:600px;margin-bottom:20px}
 .gao-hero-stats{display:flex;gap:24px}
 .gao-stat{text-align:center}
-.gao-stat-num{font-family:'Libre Baskerville',serif;font-size:22px;font-weight:700;color:var(--text)}
-.gao-stat-num span{color:var(--teal)}
-.gao-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.gao-stat-num{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text)}
+.gao-stat-num span{color:var(--green-text)}
+.gao-stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
 
 /* ── SECTION TITLES ── */
 .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.section-title{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--text)}
-.section-sub{font-size:12px;color:var(--text3)}
+.section-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text)}
+.section-sub{font-size:12px;color:var(--muted)}
 
 /* ── AI VISIBILITY SCORE ── */
 .visibility-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .vis-card{
-  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
   padding:16px;position:relative;overflow:hidden;
 }
 .vis-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--vc-color)}
-.vis-platform{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.vis-score{font-family:'Libre Baskerville',serif;font-size:36px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px}
-.vis-score span{font-size:16px;color:var(--text3)}
-.vis-label{font-size:11px;color:var(--text3);margin-bottom:10px}
-.vis-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.vis-platform{font-size:11px;font-weight:700;color:var(--text-2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.vis-score{font-family:var(--font-display);font-size:36px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px}
+.vis-score span{font-size:16px;color:var(--muted)}
+.vis-label{font-size:11px;color:var(--muted);margin-bottom:10px}
+.vis-bar{height:4px;background:color-mix(in srgb, var(--accent-contrast) 6%, transparent);border-radius:2px;overflow:hidden}
 .vis-bar-fill{height:100%;border-radius:2px;background:var(--vc-color);transition:width 1s ease}
 .vis-delta{font-size:11px;font-weight:600;margin-top:6px}
-.vis-delta.up{color:#22C55E}.vis-delta.down{color:var(--red)}
+.vis-delta.up{color:var(--green-text)}.vis-delta.down{color:var(--red-text)}
 
 /* ── PROMPT TRACKER ── */
-.prompt-table{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
-.pt-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 120px;gap:0;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);padding:10px 16px}
-.pt-col{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.prompt-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
+.pt-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 120px;gap:0;background:color-mix(in srgb, var(--accent-contrast) 2%, transparent);border-bottom:1px solid var(--border);padding:10px 16px}
+.pt-col{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .pt-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 120px;gap:0;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;cursor:pointer}
 .pt-row:last-child{border-bottom:none}
-.pt-row:hover{background:rgba(255,255,255,0.02)}
+.pt-row:hover{background:color-mix(in srgb, var(--accent-contrast) 2%, transparent)}
 .pt-prompt{font-size:13px;font-weight:500;color:var(--text)}
-.pt-prompt-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.pt-score{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.pt-prompt-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.pt-score{font-size:13px;font-weight:700;font-family:var(--r2-mono)}
 .pt-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
-.badge-high{background:rgba(34,197,94,0.1);color:#22C55E}
-.badge-med{background:var(--gold3);color:var(--gold)}
-.badge-low{background:var(--red3);color:var(--red)}
-.badge-none{background:rgba(255,255,255,0.05);color:var(--text3)}
+.badge-high{background:color-mix(in srgb, var(--green) 10%, transparent);color:var(--green-text)}
+.badge-med{background:var(--amber-bg);color:var(--amber-text)}
+.badge-low{background:var(--red-bg);color:var(--red-text)}
+.badge-none{background:color-mix(in srgb, var(--accent-contrast) 5%, transparent);color:var(--muted)}
 .llm-dots{display:flex;gap:4px}
 .llm-dot{width:8px;height:8px;border-radius:50%}
 .llm-dot.active{opacity:1}.llm-dot.inactive{opacity:.2}
@@ -138,66 +135,66 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
 
 /* ── CITATION MAP ── */
 .citation-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.citation-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.citation-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px}
 .citation-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .cite-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
 .cite-row:last-child{border-bottom:none}
 .cite-icon{width:28px;height:28px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
 .cite-domain{font-size:12px;font-weight:600;color:var(--text);flex:1}
-.cite-sub{font-size:10px;color:var(--text3)}
-.cite-bar-wrap{width:80px;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+.cite-sub{font-size:10px;color:var(--muted)}
+.cite-bar-wrap{width:80px;height:5px;background:color-mix(in srgb, var(--accent-contrast) 5%, transparent);border-radius:3px;overflow:hidden}
 .cite-bar-fill{height:100%;border-radius:3px}
-.cite-pct{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text2);width:32px;text-align:right}
+.cite-pct{font-size:11px;font-weight:700;font-family:var(--r2-mono);color:var(--text-2);width:32px;text-align:right}
 
 /* ── COMPETITOR COMPARISON ── */
-.comp-table{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
-.comp-header{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:0;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);padding:10px 16px}
+.comp-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
+.comp-header{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:0;background:color-mix(in srgb, var(--accent-contrast) 2%, transparent);border-bottom:1px solid var(--border);padding:10px 16px}
 .comp-row{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:0;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center}
 .comp-row:last-child{border-bottom:none}
-.comp-row.highlight{background:rgba(232,98,42,0.04);border-left:2px solid var(--orange)}
+.comp-row.highlight{background:color-mix(in srgb, var(--accent) 4%, transparent);border-left:2px solid var(--accent)}
 .comp-name{font-size:13px;font-weight:600;color:var(--text)}
-.comp-name-sub{font-size:10px;color:var(--text3)}
+.comp-name-sub{font-size:10px;color:var(--muted)}
 .comp-score-bar{display:flex;align-items:center;gap:8px}
-.mini-bar{height:5px;border-radius:3px;flex:1;background:rgba(255,255,255,0.05);overflow:hidden}
+.mini-bar{height:5px;border-radius:3px;flex:1;background:color-mix(in srgb, var(--accent-contrast) 5%, transparent);overflow:hidden}
 .mini-bar-fill{height:100%;border-radius:3px}
-.mini-val{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text2);width:28px}
+.mini-val{font-size:11px;font-weight:700;font-family:var(--r2-mono);color:var(--text-2);width:28px}
 
 /* ── INPUT PANEL ── */
-.input-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px}
+.input-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px}
 .ip-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .ip-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
 .ip-field{}
-.ip-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.ip-input,.ip-select{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:var(--r-sm);padding:9px 12px;font-size:13px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;outline:none}
-.ip-input:focus,.ip-select:focus{border-color:rgba(14,207,176,0.4);background:rgba(255,255,255,0.06)}
-.ip-input::placeholder{color:var(--text3)}
-.ip-select option{background:var(--card)}
-.ip-textarea{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:var(--r-sm);padding:9px 12px;font-size:13px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;outline:none;resize:none;min-height:80px}
-.ip-textarea:focus{border-color:rgba(14,207,176,0.4)}
-.ip-textarea::placeholder{color:var(--text3)}
+.ip-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.ip-input,.ip-select{width:100%;background:color-mix(in srgb, var(--accent-contrast) 4%, transparent);border:1px solid var(--border-2);border-radius:var(--r-sm);padding:9px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none}
+.ip-input:focus,.ip-select:focus{border-color:color-mix(in srgb, var(--green) 40%, transparent);background:color-mix(in srgb, var(--accent-contrast) 6%, transparent)}
+.ip-input::placeholder{color:var(--muted)}
+.ip-select option{background:var(--surface)}
+.ip-textarea{width:100%;background:color-mix(in srgb, var(--accent-contrast) 4%, transparent);border:1px solid var(--border-2);border-radius:var(--r-sm);padding:9px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;resize:none;min-height:80px}
+.ip-textarea:focus{border-color:color-mix(in srgb, var(--green) 40%, transparent)}
+.ip-textarea::placeholder{color:var(--muted)}
 .llm-checkboxes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.llm-cb{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.llm-cb{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:1px solid var(--border-2);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
 .llm-cb.selected{border-color:var(--vc-color);background:rgba(var(--vc-rgb),0.1);color:var(--vc-color)}
-.llm-cb-gpt{--vc-color:#22C55E;--vc-rgb:34,197,94}
-.llm-cb-claude{--vc-color:#9B7FEE;--vc-rgb:155,127,238}
-.llm-cb-gemini{--vc-color:#3B82F6;--vc-rgb:59,130,246}
-.llm-cb-perplexity{--vc-color:#F4C430;--vc-rgb:244,196,48}
-.llm-cb-deepseek{--vc-color:#0ECFB0;--vc-rgb:14,207,176}
+.llm-cb-gpt{--vc-color:var(--green-text);--vc-rgb:34,197,94}
+.llm-cb-claude{--vc-color:var(--purple-text);--vc-rgb:155,127,238}
+.llm-cb-gemini{--vc-color:var(--blue-text);--vc-rgb:59,130,246}
+.llm-cb-perplexity{--vc-color:var(--amber-text);--vc-rgb:244,196,48}
+.llm-cb-deepseek{--vc-color:var(--green-text);--vc-rgb:14,207,176}
 
 /* ── GAO RESULT ── */
-.gao-result{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:24px;overflow:hidden;display:none}
+.gao-result{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:24px;overflow:hidden;display:none}
 .gao-result.show{display:block}
-.gr-header{padding:14px 18px;background:rgba(14,207,176,0.05);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.gr-title{font-size:13px;font-weight:700;color:var(--teal)}
-.gr-body{padding:18px;font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap}
+.gr-header{padding:14px 18px;background:color-mix(in srgb, var(--green) 5%, transparent);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.gr-title{font-size:13px;font-weight:700;color:var(--green-text)}
+.gr-body{padding:18px;font-size:13px;color:var(--text-2);line-height:1.8;white-space:pre-wrap}
 .gr-llm-results{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--border)}
 .gr-llm{padding:14px;border-right:1px solid var(--border);text-align:center}
 .gr-llm:last-child{border-right:none}
-.gr-llm-name{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.gr-llm-score{font-family:'Libre Baskerville',serif;font-size:24px;font-weight:700;margin-bottom:2px}
-.gr-llm-sub{font-size:10px;color:var(--text3)}
+.gr-llm-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.gr-llm-score{font-family:var(--font-display);font-size:24px;font-weight:700;margin-bottom:2px}
+.gr-llm-sub{font-size:10px;color:var(--muted)}
 .loading-dots{display:inline-flex;gap:4px}
-.loading-dots span{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:ld .9s infinite}
+.loading-dots span{width:6px;height:6px;border-radius:50%;background:var(--green-text);animation:ld .9s infinite}
 .loading-dots span:nth-child(2){animation-delay:.15s}
 .loading-dots span:nth-child(3){animation-delay:.3s}
 @keyframes ld{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1.2)}}
@@ -205,63 +202,63 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
 /* ── TABS ── */
 .gao-tab{
   padding:14px 18px;background:none;border:none;
-  font-size:13px;font-weight:500;color:var(--text2);
-  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:13px;font-weight:500;color:var(--text-2);
+  cursor:pointer;font-family:var(--font);
   border-bottom:2px solid transparent;margin-bottom:-1px;
   white-space:nowrap;transition:all .15s;
 }
 .gao-tab:hover{color:var(--text)}
-.gao-tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:700}
+.gao-tab.active{color:var(--green-text);border-bottom-color:var(--green-text);font-weight:700}
 
 /* Tab panels */
 .tab-panel{display:none}.tab-panel.active{display:block}
 
 /* Entity extractor */
 .entity-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.entity-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.entity-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px}
 .entity-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;min-height:60px}
 .entity-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.et-person{background:rgba(59,130,246,0.12);color:#3B82F6;border:1px solid rgba(59,130,246,0.25)}
-.et-brand{background:rgba(232,98,42,0.12);color:var(--orange);border:1px solid rgba(232,98,42,0.25)}
-.et-topic{background:rgba(14,207,176,0.12);color:var(--teal);border:1px solid rgba(14,207,176,0.25)}
-.et-place{background:rgba(155,127,238,0.12);color:var(--violet);border:1px solid rgba(155,127,238,0.25)}
-.et-product{background:rgba(244,196,48,0.12);color:var(--gold);border:1px solid rgba(244,196,48,0.25)}
-.et-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:rgba(255,255,255,0.1)}
+.et-person{background:color-mix(in srgb, var(--blue) 12%, transparent);color:var(--blue-text);border:1px solid color-mix(in srgb, var(--blue) 25%, transparent)}
+.et-brand{background:color-mix(in srgb, var(--accent) 12%, transparent);color:var(--accent);border:1px solid color-mix(in srgb, var(--accent) 25%, transparent)}
+.et-topic{background:color-mix(in srgb, var(--green) 12%, transparent);color:var(--green-text);border:1px solid color-mix(in srgb, var(--green) 25%, transparent)}
+.et-place{background:color-mix(in srgb, var(--purple) 12%, transparent);color:var(--purple-text);border:1px solid color-mix(in srgb, var(--purple) 25%, transparent)}
+.et-product{background:color-mix(in srgb, var(--amber) 12%, transparent);color:var(--amber-text);border:1px solid color-mix(in srgb, var(--amber) 25%, transparent)}
+.et-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:color-mix(in srgb, var(--accent-contrast) 10%, transparent)}
 
 /* Link suggester */
 .link-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
 .link-row:last-child{border-bottom:none}
 .link-phrase{font-size:13px;font-weight:600;color:var(--text);flex:1}
-.link-url{font-size:11px;color:var(--teal);font-family:'JetBrains Mono',monospace;margin-top:3px}
-.link-reason{font-size:11px;color:var(--text2);margin-top:3px}
-.link-copy{padding:4px 10px;border-radius:6px;background:var(--teal3);color:var(--teal);border:1px solid rgba(14,207,176,0.2);font-size:11px;font-weight:600;cursor:pointer}
+.link-url{font-size:11px;color:var(--green-text);font-family:var(--r2-mono);margin-top:3px}
+.link-reason{font-size:11px;color:var(--text-2);margin-top:3px}
+.link-copy{padding:4px 10px;border-radius:6px;background:var(--green-bg);color:var(--green-text);border:1px solid color-mix(in srgb, var(--green) 20%, transparent);font-size:11px;font-weight:600;cursor:pointer}
 
 /* Enricher */
 .enricher-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ec-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.ec-head{padding:12px 16px;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
-.ec-body{padding:14px;font-size:13px;color:var(--text2);line-height:1.8;min-height:200px;white-space:pre-wrap}
+.ec-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ec-head{padding:12px 16px;background:color-mix(in srgb, var(--accent-contrast) 2%, transparent);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px}
+.ec-body{padding:14px;font-size:13px;color:var(--text-2);line-height:1.8;min-height:200px;white-space:pre-wrap}
 
 /* History chart */
-.history-chart{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px}
+.history-chart{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px}
 .hc-bars{display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:16px}
 .hc-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
 .hc-bar{width:100%;border-radius:4px 4px 0 0;transition:height .5s ease;min-width:20px}
-.hc-label{font-size:10px;color:var(--text3);white-space:nowrap}
-.hc-val{font-size:10px;font-weight:700;color:var(--text2)}
+.hc-label{font-size:10px;color:var(--muted);white-space:nowrap}
+.hc-val{font-size:10px;font-weight:700;color:var(--text-2)}
 
 /* Schema tabs */
 .schema-type-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.stt{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;background:none}
-.stt.active,.stt:hover{background:var(--teal3);color:var(--teal);border-color:rgba(14,207,176,0.3)}
-.schema-output{background:#0A0F1A;border:1px solid var(--border);border-radius:var(--r);padding:16px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:#a8d8a8;max-height:240px;overflow-y:auto;display:none}
+.stt{padding:6px 14px;border-radius:20px;border:1px solid var(--border-2);font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;transition:all .15s;background:none}
+.stt.active,.stt:hover{background:var(--green-bg);color:var(--green-text);border-color:color-mix(in srgb, var(--green) 30%, transparent)}
+.schema-output{background:var(--surface-deep);border:1px solid var(--border);border-radius:var(--r);padding:16px;font-family:var(--r2-mono);font-size:11px;line-height:1.8;color:var(--green-text);max-height:240px;overflow-y:auto;display:none}
 .schema-output.show{display:block}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border2);color:var(--text);padding:12px 18px;border-radius:var(--r-sm);font-size:13px;font-weight:600;transform:translateY(60px);opacity:0;transition:all .3s;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border-2);color:var(--text);padding:12px 18px;border-radius:var(--r-sm);font-size:13px;font-weight:600;transform:translateY(60px);opacity:0;transition:all .3s;z-index:999;box-shadow:0 8px 24px color-mix(in srgb, var(--brand) 40%, transparent)}
 .toast.show{transform:translateY(0);opacity:1}
-.toast.success{border-color:rgba(14,207,176,0.3);color:var(--teal)}
-.toast.error{border-color:rgba(244,63,94,0.3);color:var(--red)}
+.toast.success{border-color:color-mix(in srgb, var(--green) 30%, transparent);color:var(--green-text)}
+.toast.error{border-color:color-mix(in srgb, var(--red) 30%, transparent);color:var(--red-text)}
 </style>
 </head>
 <body>
@@ -296,7 +293,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
   </div>
 
   <!-- TAB NAV -->
-  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg2);padding:0 24px;overflow-x:auto;flex-shrink:0">
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--brand-2);padding:0 24px;overflow-x:auto;flex-shrink:0">
     <button class="gao-tab active" onclick="switchTab('overview')" id="tab-overview">📊 GAO Overview</button>
     <button class="gao-tab" onclick="switchTab('entity')" id="tab-entity">🏷️ Entity Extractor</button>
     <button class="gao-tab" onclick="switchTab('links')" id="tab-links">🔗 Internal Link Suggester</button>
@@ -310,7 +307,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
   <div class="tab-panel active" id="panel-overview">
     <div class="gao-hero">
       <div class="gao-hero-badge">
-        <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 2s infinite"></span>
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--green-text);display:inline-block;animation:pulse 2s infinite"></span>
         GAO — Generative AI Optimization
       </div>
       <div class="gao-hero-title">Make your brand visible inside <span>ChatGPT, Claude, Gemini</span> & AI Search</div>
@@ -374,11 +371,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
       </div>
       <div class="gr-body" id="gr-body"></div>
       <div class="gr-llm-results">
-        <div class="gr-llm"><div class="gr-llm-name">ChatGPT</div><div class="gr-llm-score" id="sc-gpt" style="color:#22C55E">--</div><div class="gr-llm-sub">Visibility</div></div>
-        <div class="gr-llm"><div class="gr-llm-name">Claude</div><div class="gr-llm-score" id="sc-claude" style="color:var(--violet)">--</div><div class="gr-llm-sub">Visibility</div></div>
-        <div class="gr-llm"><div class="gr-llm-name">Gemini</div><div class="gr-llm-score" id="sc-gemini" style="color:var(--blue)">--</div><div class="gr-llm-sub">Visibility</div></div>
-        <div class="gr-llm"><div class="gr-llm-name">Perplexity</div><div class="gr-llm-score" id="sc-perplexity" style="color:var(--gold)">--</div><div class="gr-llm-sub">Visibility</div></div>
-        <div class="gr-llm"><div class="gr-llm-name">DeepSeek</div><div class="gr-llm-score" id="sc-deepseek" style="color:var(--teal)">--</div><div class="gr-llm-sub">Visibility</div></div>
+        <div class="gr-llm"><div class="gr-llm-name">ChatGPT</div><div class="gr-llm-score" id="sc-gpt" style="color:var(--green-text)">--</div><div class="gr-llm-sub">Visibility</div></div>
+        <div class="gr-llm"><div class="gr-llm-name">Claude</div><div class="gr-llm-score" id="sc-claude" style="color:var(--purple-text)">--</div><div class="gr-llm-sub">Visibility</div></div>
+        <div class="gr-llm"><div class="gr-llm-name">Gemini</div><div class="gr-llm-score" id="sc-gemini" style="color:var(--blue-text)">--</div><div class="gr-llm-sub">Visibility</div></div>
+        <div class="gr-llm"><div class="gr-llm-name">Perplexity</div><div class="gr-llm-score" id="sc-perplexity" style="color:var(--amber-text)">--</div><div class="gr-llm-sub">Visibility</div></div>
+        <div class="gr-llm"><div class="gr-llm-name">DeepSeek</div><div class="gr-llm-score" id="sc-deepseek" style="color:var(--green-text)">--</div><div class="gr-llm-sub">Visibility</div></div>
       </div>
     </div>
 
@@ -391,28 +388,28 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
       <div class="section-sub">Brand citation frequency across LLMs</div>
     </div>
     <div class="visibility-grid" id="vis-grid">
-      <div class="vis-card" style="--vc-color:#22C55E">
+      <div class="vis-card" style="--vc-color:var(--green-text)">
         <div class="vis-platform">🤖 ChatGPT</div>
         <div class="vis-score" id="vis-gpt">--<span>%</span></div>
         <div class="vis-label">AI Share of Voice</div>
         <div class="vis-bar"><div class="vis-bar-fill" id="vbar-gpt" style="width:0%"></div></div>
         <div class="vis-delta up" id="vdelta-gpt">Run analysis first</div>
       </div>
-      <div class="vis-card" style="--vc-color:#9B7FEE">
+      <div class="vis-card" style="--vc-color:var(--purple-text)">
         <div class="vis-platform">🟣 Claude</div>
         <div class="vis-score" id="vis-claude">--<span>%</span></div>
         <div class="vis-label">AI Share of Voice</div>
         <div class="vis-bar"><div class="vis-bar-fill" id="vbar-claude" style="width:0%"></div></div>
         <div class="vis-delta up" id="vdelta-claude">Run analysis first</div>
       </div>
-      <div class="vis-card" style="--vc-color:#3B82F6">
+      <div class="vis-card" style="--vc-color:var(--blue-text)">
         <div class="vis-platform">💎 Gemini</div>
         <div class="vis-score" id="vis-gemini">--<span>%</span></div>
         <div class="vis-label">AI Share of Voice</div>
         <div class="vis-bar"><div class="vis-bar-fill" id="vbar-gemini" style="width:0%"></div></div>
         <div class="vis-delta up" id="vdelta-gemini">Run analysis first</div>
       </div>
-      <div class="vis-card" style="--vc-color:#F4C430">
+      <div class="vis-card" style="--vc-color:var(--amber-text)">
         <div class="vis-platform">🔍 Perplexity</div>
         <div class="vis-score" id="vis-perplexity">--<span>%</span></div>
         <div class="vis-label">AI Share of Voice</div>
@@ -437,16 +434,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
       </div>
       <div class="pt-row">
         <div><div class="pt-prompt">Enter prompts above and run analysis</div><div class="pt-prompt-sub">Your prompt tracking data will appear here</div></div>
-        <div class="pt-score" style="color:var(--text3)">--</div>
+        <div class="pt-score" style="color:var(--muted)">--</div>
         <div><span class="pt-badge badge-none">Pending</span></div>
         <div class="llm-dots">
-          <div class="llm-dot inactive" style="background:#22C55E"></div>
-          <div class="llm-dot inactive" style="background:#9B7FEE"></div>
-          <div class="llm-dot inactive" style="background:#3B82F6"></div>
-          <div class="llm-dot inactive" style="background:#F4C430"></div>
-          <div class="llm-dot inactive" style="background:#0ECFB0"></div>
+          <div class="llm-dot inactive" style="background:var(--green-text)"></div>
+          <div class="llm-dot inactive" style="background:var(--purple-text)"></div>
+          <div class="llm-dot inactive" style="background:var(--blue-text)"></div>
+          <div class="llm-dot inactive" style="background:var(--amber-text)"></div>
+          <div class="llm-dot inactive" style="background:var(--green-text)"></div>
         </div>
-        <div class="pt-score" style="color:var(--text3)">--</div>
+        <div class="pt-score" style="color:var(--muted)">--</div>
         <div class="pt-action"><button class="btn btn-outline" style="padding:4px 10px;font-size:11px" disabled>Analyze</button></div>
       </div>
     </div>
@@ -454,15 +451,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
     <!-- CITATION MAP + COMPETITOR -->
     <div class="citation-grid">
       <div class="citation-card">
-        <div class="citation-title">🔗 Citation Source Map <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:4px">Who AI cites in your niche</span></div>
+        <div class="citation-title">🔗 Citation Source Map <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px">Who AI cites in your niche</span></div>
         <div id="citation-list">
-          <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Run Citation Audit to see which sources AI cites in your niche</div>
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Run Citation Audit to see which sources AI cites in your niche</div>
         </div>
       </div>
       <div class="citation-card">
-        <div class="citation-title">⚔️ Competitor AI Visibility <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:4px">vs your brand</span></div>
+        <div class="citation-title">⚔️ Competitor AI Visibility <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px">vs your brand</span></div>
         <div id="competitor-list">
-          <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Run GAO Analysis to compare competitor visibility</div>
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Run GAO Analysis to compare competitor visibility</div>
         </div>
       </div>
     </div>
@@ -489,16 +486,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
       <div class="entity-grid">
         <div class="entity-card">
           <div class="ip-label" style="margin-bottom:4px">Extracted Entities</div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Click any entity to analyze its AI visibility</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Click any entity to analyze its AI visibility</div>
           <div class="entity-list" id="entity-list">
-            <div style="color:var(--text3);font-size:13px;padding:10px 0">Paste content above and click Extract Entities</div>
+            <div style="color:var(--muted);font-size:13px;padding:10px 0">Paste content above and click Extract Entities</div>
           </div>
         </div>
         <div class="entity-card">
           <div class="ip-label" style="margin-bottom:4px">Entity Analysis</div>
           <div class="gao-result show" id="entity-result" style="margin-bottom:0">
             <div class="gr-header"><div class="gr-title">Entity Analysis</div></div>
-            <div class="gr-body" id="entity-result-body" style="min-height:120px;color:var(--text3);font-size:13px">Select an entity to see its GAO analysis</div>
+            <div class="gr-body" id="entity-result-body" style="min-height:120px;color:var(--muted);font-size:13px">Select an entity to see its GAO analysis</div>
           </div>
         </div>
       </div>
@@ -643,7 +640,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
           <div class="ec-body" id="enrich-original"></div>
         </div>
         <div class="ec-panel">
-          <div class="ec-head" style="color:var(--teal)">✨ AI-Enriched Version</div>
+          <div class="ec-head" style="color:var(--green-text)">✨ AI-Enriched Version</div>
           <div class="ec-body" id="enrich-output" style="color:var(--text)"></div>
         </div>
       </div>
@@ -665,32 +662,32 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
       <div class="history-chart">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div style="font-size:13px;font-weight:700;color:var(--text)">AI Visibility Trend — Last 7 Analyses</div>
-          <div style="font-size:11px;color:var(--text3)">Run GAO analyses regularly to build your history</div>
+          <div style="font-size:11px;color:var(--muted)">Run GAO analyses regularly to build your history</div>
         </div>
         <div class="hc-bars" id="history-bars">
           <!-- Populated by JS -->
         </div>
         <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#22C55E"></div><span style="font-size:11px;color:var(--text2)">ChatGPT</span></div>
-          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--violet)"></div><span style="font-size:11px;color:var(--text2)">Claude</span></div>
-          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--blue)"></div><span style="font-size:11px;color:var(--text2)">Gemini</span></div>
-          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--gold)"></div><span style="font-size:11px;color:var(--text2)">Perplexity</span></div>
-          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--teal)"></div><span style="font-size:11px;color:var(--text2)">DeepSeek</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--green-text)"></div><span style="font-size:11px;color:var(--text-2)">ChatGPT</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--purple-text)"></div><span style="font-size:11px;color:var(--text-2)">Claude</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--blue-text)"></div><span style="font-size:11px;color:var(--text-2)">Gemini</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--amber-text)"></div><span style="font-size:11px;color:var(--text-2)">Perplexity</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:var(--green-text)"></div><span style="font-size:11px;color:var(--text-2)">DeepSeek</span></div>
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
-        <div class="vis-card" style="--vc-color:var(--teal)">
+        <div class="vis-card" style="--vc-color:var(--green-text)">
           <div class="vis-platform">📈 Best Score Ever</div>
           <div class="vis-score" id="hist-best">--<span>%</span></div>
           <div class="vis-label" id="hist-best-date">No data yet</div>
         </div>
-        <div class="vis-card" style="--vc-color:#22C55E">
+        <div class="vis-card" style="--vc-color:var(--green-text)">
           <div class="vis-platform">📊 Latest Score</div>
           <div class="vis-score" id="hist-latest">--<span>%</span></div>
           <div class="vis-label" id="hist-trend">Run your first analysis</div>
         </div>
-        <div class="vis-card" style="--vc-color:var(--gold)">
+        <div class="vis-card" style="--vc-color:var(--amber-text)">
           <div class="vis-platform">🔢 Total Analyses</div>
           <div class="vis-score" id="hist-count">0<span></span></div>
           <div class="vis-label">GAO analyses run</div>
@@ -708,7 +705,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
           <div class="pt-col">Action</div>
         </div>
         <div id="history-table-body">
-          <div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">No GAO analyses saved yet. Run a GAO Analysis in the Overview tab to start building your history.</div>
+          <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No GAO analyses saved yet. Run a GAO Analysis in the Overview tab to start building your history.</div>
         </div>
       </div>
     </div>
@@ -719,7 +716,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
 </div><!-- end shell -->
 
 <div class="toast" id="toast"></div>
-<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
+<style>
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Both animations on this page LOOP — the three-dot loading indicator and the
+   live-status pulse. §41's global rule collapses a duration to 0.01ms, which
+   freezes a loop at an arbitrary frame; a dot stuck at 20% opacity reads as a
+   rendering fault. A loop is switched OFF and left in a readable state. */
+@media (prefers-reduced-motion: reduce){
+  .loading-dots span{animation:none;opacity:1;transform:none}
+  [style*="animation:pulse"],[class*="pulse"]{animation:none;opacity:1}
+}
+</style>
 
 <script>
 // ── Auth check ────────────────────────────────────────────
@@ -913,7 +920,7 @@ function meanScore(scores){
 }
 
 function updateVisibilityScores(scores){
-  const colors = {gpt:'#22C55E',claude:'#9B7FEE',gemini:'#3B82F6',perplexity:'#F4C430',deepseek:'#0ECFB0'};
+  const colors = {gpt:'var(--green-text)',claude:'var(--purple-text)',gemini:'var(--blue-text)',perplexity:'var(--amber-text)',deepseek:'var(--green-text)'};
   for(const [key,score] of Object.entries(scores)){
     const numEl = document.getElementById('vis-'+key);
     const barEl = document.getElementById('vbar-'+key);
@@ -962,7 +969,7 @@ function updatePromptTable(prompts,brand){
     const score = visScores[i%5];
     const sent = sentiments[i%5];
     const bc = badgeClasses[i%5];
-    const rankColor = score>50?'#22C55E':score>30?'#F4C430':'#F43F5E';
+    const rankColor = score>50?'var(--green-text)':score>30?'var(--amber-text)':'var(--red-text)';
     html += `<div class="pt-row">
       <div>
         <div class="pt-prompt">${p}</div>
@@ -971,11 +978,11 @@ function updatePromptTable(prompts,brand){
       <div class="pt-score" style="color:${rankColor}">${score}%</div>
       <div><span class="pt-badge ${bc}">${sent}</span></div>
       <div class="llm-dots">
-        <div class="llm-dot ${score>40?'active':'inactive'}" style="background:#22C55E"></div>
-        <div class="llm-dot ${score>50?'active':'inactive'}" style="background:#9B7FEE"></div>
-        <div class="llm-dot ${score>35?'active':'inactive'}" style="background:#3B82F6"></div>
-        <div class="llm-dot ${score>60?'active':'inactive'}" style="background:#F4C430"></div>
-        <div class="llm-dot ${score>45?'active':'inactive'}" style="background:#0ECFB0"></div>
+        <div class="llm-dot ${score>40?'active':'inactive'}" style="background:var(--green-text)"></div>
+        <div class="llm-dot ${score>50?'active':'inactive'}" style="background:var(--purple-text)"></div>
+        <div class="llm-dot ${score>35?'active':'inactive'}" style="background:var(--blue-text)"></div>
+        <div class="llm-dot ${score>60?'active':'inactive'}" style="background:var(--amber-text)"></div>
+        <div class="llm-dot ${score>45?'active':'inactive'}" style="background:var(--green-text)"></div>
       </div>
       <div class="pt-score" style="color:${rankColor}">#${Math.floor(score/10)+1}</div>
       <div class="pt-action"><button class="btn btn-teal" style="padding:4px 10px;font-size:11px" onclick="analyzePrompt('${p.replace(/'/g,"\\'")}')">Analyze</button></div>
@@ -1203,19 +1210,19 @@ function renderHistory() {
   const history = JSON.parse(localStorage.getItem('gao_history')||'[]');
   const tbody = document.getElementById('history-table-body');
   if(!history.length) {
-    tbody.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">No GAO analyses saved yet. Run a GAO Analysis in the Overview tab.</div>';
+    tbody.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No GAO analyses saved yet. Run a GAO Analysis in the Overview tab.</div>';
     renderHistoryChart([]);
     return;
   }
   tbody.innerHTML = history.map((h,i)=>{
     const date = new Date(h.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'});
-    const color = h.avg>=50?'#22C55E':h.avg>=30?'var(--gold)':'var(--red)';
+    const color = h.avg>=50?'var(--green-text)':h.avg>=30?'var(--amber-text)':'var(--red-text)';
     return `<div class="pt-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 100px">
       <div class="pt-prompt">${h.brand}</div>
-      <div style="font-size:12px;color:var(--text2)">${date}</div>
-      <div class="pt-score" style="color:${color}">${h.avg}%<span style="font-size:10px;color:var(--text3);display:block">${h.answered ? `from ${h.answered} of ${h.engines} engines` : 'denominator unknown'}</span></div>
-      <div style="font-size:12px;color:var(--text2);text-transform:capitalize">${h.bestLLM} (${h.bestScore}%)</div>
-      <div style="font-size:12px;color:var(--text2)">${h.promptCount||0} prompts</div>
+      <div style="font-size:12px;color:var(--text-2)">${date}</div>
+      <div class="pt-score" style="color:${color}">${h.avg}%<span style="font-size:10px;color:var(--muted);display:block">${h.answered ? `from ${h.answered} of ${h.engines} engines` : 'denominator unknown'}</span></div>
+      <div style="font-size:12px;color:var(--text-2);text-transform:capitalize">${h.bestLLM} (${h.bestScore}%)</div>
+      <div style="font-size:12px;color:var(--text-2)">${h.promptCount||0} prompts</div>
       <div><button class="btn btn-outline" style="padding:4px 10px;font-size:11px" onclick="deleteHistory(${i})">🗑️</button></div>
     </div>`;
   }).join('');
@@ -1234,14 +1241,14 @@ function renderHistory() {
 function renderHistoryChart(data) {
   const container = document.getElementById('history-bars');
   if(!data.length) {
-    container.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;width:100%;padding:20px">Run analyses to see your trend</div>';
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;width:100%;padding:20px">Run analyses to see your trend</div>';
     return;
   }
   const maxVal = Math.max(...data.map(h=>h.avg), 10);
   container.innerHTML = data.map(h=>{
     const height = Math.round((h.avg/maxVal)*100);
     const date = new Date(h.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-    const color = h.avg>=50?'#22C55E':h.avg>=30?'var(--gold)':'var(--red)';
+    const color = h.avg>=50?'var(--green-text)':h.avg>=30?'var(--amber-text)':'var(--red-text)';
     return `<div class="hc-bar-wrap">
       <div class="hc-val">${h.avg}%</div>
       <div class="hc-bar" style="height:${height}%;background:${color};opacity:.8"></div>
@@ -1311,7 +1318,7 @@ ${content.substring(0,3000)}`}]})});
     // Auto store for copy
     window._lastEntities = entities;
   } catch(e){
-    listEl.innerHTML = `<div style="color:var(--red);font-size:13px">Error: ${e.message}</div>`;
+    listEl.innerHTML = `<div style="color:var(--red-text);font-size:13px">Error: ${e.message}</div>`;
     toast('Error: '+e.message,'error');
   }
 }
@@ -1615,7 +1622,7 @@ function copyEnriched() {
 renderHistory();
 
 // Check if logged in
-fetch('/api/auth/me').then(r=>{ if(!r.ok) document.querySelector('.gao-hero-sub').innerHTML += '<br><strong style="color:var(--orange)">⚠️ Please <a href="/login" style="color:var(--teal)">sign in</a> to run live GAO analysis.</strong>'; });
+fetch('/api/auth/me').then(r=>{ if(!r.ok) document.querySelector('.gao-hero-sub').innerHTML += '<br><strong style="color:var(--accent)">⚠️ Please <a href="/login" style="color:var(--green-text)">sign in</a> to run live GAO analysis.</strong>'; });
 </script>
 
 <!-- ══ GAO i18n ══ -->

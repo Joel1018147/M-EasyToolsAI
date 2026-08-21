@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Billing — M-EasyTools AI+</title>
 <link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
 
 <!-- Dark mode init — runs before first paint to avoid flash -->
 <script>
@@ -97,7 +98,10 @@
   color: var(--green);
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid rgba(22,163,74,0.2);
+  /* was rgba(22,163,74,0.2) — the status green written out a second time.
+     The token first, so a browser without color-mix still lands on one. */
+  border: 1px solid var(--green-bg);
+  border: 1px solid color-mix(in srgb, var(--green) 22%, transparent);
 }
 
 /* Responsive: hide sidebar on mobile */

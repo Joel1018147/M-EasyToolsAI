@@ -15,6 +15,7 @@
  *   Modus.btn.load(btnEl)            Modus.btn.done(btnEl)
  *   Modus.tag.init(containerEl)
  *   Modus.drawer.open(id)            Modus.drawer.close(id)
+ *   Modus.reveal.init(root)          scroll reveal (design system §50.7)
  *
  * Auto-init on DOMContentLoaded:
  *   - Tabs (.tabs containers)
@@ -25,6 +26,8 @@
  *   - Sortable tables (.table[data-sort-table])
  *   - Alerts with close buttons
  *   - Character counters (data-maxlength)
+ *   - Scroll reveal (.reveal) — sets [data-reveal="on"] only when the browser
+ *     has an IntersectionObserver, so the resting state stays VISIBLE
  */
 
 (function (global) {
@@ -697,6 +700,12 @@
   }
 
   function initTheme() {
+    /* A page that writes data-theme-lock on <html> has DECIDED its theme —
+       the landing page is a dark surface by design and the seller panel is a
+       dark console. Without this, a stored dashboard preference of "light"
+       would silently repaint them on the visitor's second session, which is
+       a preference leaking somewhere it was never expressed. */
+    if (document.documentElement.hasAttribute('data-theme-lock')) return;
     try {
       const saved = localStorage.getItem('mds-theme');
       if (saved) { setTheme(saved); return; }
@@ -783,6 +792,58 @@
   const tag = { init: initTagInput };
 
   /* ────────────────────────────────────────────────────────────────────
+     SCROLL REVEAL  (design system §50.7)
+
+     THE ORDER HERE IS THE WHOLE POINT, AND IT IS EASY TO GET BACKWARDS.
+     .reveal rests at opacity:1. It is hidden ONLY under
+     [data-reveal="on"], and this function is the only thing that sets that
+     attribute — after it has confirmed the browser actually has an
+     IntersectionObserver to turn it back on with.
+
+     Written the usual way round (opacity:0 in CSS, revealed by JS) the page
+     is blank whenever the script does not run: a CSP that blocks it, a
+     bundle that 404s, a JS error thrown two lines earlier. M-EasyDo shipped
+     that form and left 7,000px of its landing page permanently invisible.
+     Same class, same visual result, opposite failure mode.
+
+     Stagger is deliberately NOT done by writing --r2-i onto each child: the
+     visual contract fails the build on any --r2-* declaration in a lane
+     surface, and an inline style IS a declaration. Pages do it with
+     :nth-child transition-delays instead.
+  ──────────────────────────────────────────────────────────────────── */
+
+  function initReveal(root) {
+    const scope = root || document;
+    const nodes = qsa('.reveal', scope);
+    if (!nodes.length) return null;
+
+    // No observer means no way to reveal, so never hide in the first place.
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return null;
+
+    document.documentElement.setAttribute('data-reveal', 'on');
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        io.unobserve(entry.target);           // reveal once; this is not a scroll effect
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+
+    nodes.forEach((n) => {
+      // Anything already on screen at load is shown immediately rather than
+      // waiting for a scroll that may never come on a short viewport.
+      const box = n.getBoundingClientRect();
+      if (box.top < (window.innerHeight || 0) && box.bottom > 0) n.classList.add('is-visible');
+      else io.observe(n);
+    });
+
+    return io;
+  }
+
+  const reveal = { init: initReveal };
+
+  /* ────────────────────────────────────────────────────────────────────
      CHARACTER COUNTER
   ──────────────────────────────────────────────────────────────────── */
 
@@ -857,6 +918,9 @@
     // Form live validation
     qsa('[data-validate-live]').forEach(el => initFormLiveValidation(el));
 
+    // Scroll reveal — no-op on any page that has no .reveal elements
+    initReveal(document);
+
     // Close modal when clicking outside
     qsa('.modal-overlay').forEach(overlay => {
       if (overlay.getAttribute('data-no-dismiss') !== 'true') {
@@ -883,6 +947,7 @@
     theme,
     btn,
     tag,
+    reveal,
     version: '2.0.0',
   };
 

@@ -1,27 +1,24 @@
 <!DOCTYPE html>
-<html data-platform="tools" lang="en">
+<html data-platform="tools" lang="en" data-theme="dark" data-theme-lock>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>M-EasyTools AI+ · Seller Panel</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
 <style>
-  :root {
-    --bg:      #0a0d14;
-    --surface: #111520;
-    --card:    #161b27;
-    --border:  #1e2535;
-    --accent:  #E8622A;
-    --accent2: #C44B1F;
-    --green:   #10b981;
-    --red:     #ef4444;
-    --amber:   #f59e0b;
-    --text:    #e8eaf0;
-    --muted:   #6b7280;
-    --dim:     #374151;
-  }
+  /* THE PALETTE THAT WAS HERE IS GONE, AND THIS IS THE POINT OF THE ROUND.
+     It redeclared --bg, --surface, --border, --text, --muted AND --accent at
+     :root, so the design system's tokens were shadowed on the one page in the
+     product that had the platform accent written out in full: --accent:
+     #E8622A, a second source of truth for a colour the md5-pinned master locks
+     for twelve platforms. The day that master moves, every other surface would
+     follow and this one would not.
+
+     <html data-theme="dark"> gets the same dark ground from the system.
+     Nothing below names a hue. */
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
@@ -30,26 +27,26 @@
     min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
     background: var(--bg);
-    background-image: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(232,98,42,0.12) 0%, transparent 70%);
+    background-image: radial-gradient(ellipse 60% 40% at 50% 0%, var(--accent-glow) 0%, transparent 70%);
   }
   .login-box { width: 360px; text-align: center; }
   .login-badge {
     display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(232,98,42,0.1); border: 1px solid rgba(232,98,42,0.25);
+    background: var(--accent-bg); border: 1px solid var(--r2-accent-edge);
     border-radius: 20px; padding: 5px 14px;
-    font-size: 11px; font-family: 'DM Mono', monospace;
+    font-size: 11px; font-family: var(--r2-mono);
     color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px;
   }
   .login-title {
-    font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800;
+    font-family: var(--font-display); font-size: 32px; font-weight: 800;
     color: var(--text); margin-bottom: 8px; letter-spacing: -0.5px;
   }
   .login-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
   .login-field { position: relative; margin-bottom: 16px; }
   .login-field input {
-    width: 100%; background: var(--card); border: 1px solid var(--border);
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
     border-radius: 10px; padding: 14px 16px 14px 44px;
-    font-size: 14px; color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 14px; color: var(--text); font-family: var(--r2-mono);
     letter-spacing: 2px; outline: none; transition: border-color 0.2s;
   }
   .login-field input:focus { border-color: var(--accent); }
@@ -59,14 +56,14 @@
   }
   .login-error { color: var(--red); font-size: 12px; margin-bottom: 12px; display: none; }
   .btn-login {
-    width: 100%; background: var(--accent); color: #fff;
+    width: 100%; background: var(--accent); color: var(--accent-contrast);
     border: none; border-radius: 10px; padding: 14px;
-    font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; font-family: var(--font);
     cursor: pointer; transition: background 0.2s, transform 0.1s;
   }
-  .btn-login:hover { background: var(--accent2); }
+  .btn-login:hover { background: var(--accent-2); }
   .btn-login:active { transform: scale(0.98); }
-  .btn-login:disabled { background: var(--dim); cursor: not-allowed; }
+  .btn-login:disabled { background: var(--border-2); cursor: not-allowed; }
 
   /* ── Main panel ── */
   #main-panel { display: none; }
@@ -80,23 +77,23 @@
   .topbar-brand { display: flex; align-items: center; gap: 10px; }
   .brand-dot {
     width: 28px; height: 28px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
     border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800; color: #fff;
+    font-family: var(--font-display); font-size: 12px; font-weight: 800; color: var(--accent-contrast);
   }
-  .brand-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+  .brand-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); }
   .brand-tag {
-    font-family: 'DM Mono', monospace; font-size: 10px;
-    background: rgba(232,98,42,0.15); color: var(--accent);
-    border: 1px solid rgba(232,98,42,0.3); border-radius: 4px;
+    font-family: var(--r2-mono); font-size: 10px;
+    background: var(--accent-bg); color: var(--accent-text);
+    border: 1px solid var(--r2-accent-edge); border-radius: 4px;
     padding: 2px 7px; letter-spacing: 1px; text-transform: uppercase;
   }
   .topbar-right { display: flex; align-items: center; gap: 12px; }
-  #topbar-count { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+  #topbar-count { font-family: var(--r2-mono); font-size: 12px; color: var(--muted); }
   .btn-logout {
     background: none; border: 1px solid var(--border); color: var(--muted);
     border-radius: 8px; padding: 6px 12px; font-size: 12px;
-    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.2s; font-family: var(--font);
   }
   .btn-logout:hover { border-color: var(--red); color: var(--red); }
 
@@ -106,15 +103,15 @@
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
   @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
   .stat-card {
-    background: var(--card); border: 1px solid var(--border);
+    background: var(--surface-2); border: 1px solid var(--border);
     border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden;
   }
   .stat-card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0.6;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2)); opacity: 0.6;
   }
-  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
-  .stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-family: var(--r2-mono); margin-bottom: 8px; }
+  .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--text); }
   .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
   /* ── Section block ── */
@@ -126,11 +123,11 @@
   .section-hd.clickable { cursor: pointer; user-select: none; }
   .section-hd.clickable:hover .section-title { color: var(--accent); }
   .section-title {
-    font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700;
+    font-family: var(--font-display); font-size: 18px; font-weight: 700;
     color: var(--text); transition: color 0.15s;
   }
   .section-right { display: flex; align-items: center; gap: 12px; }
-  .section-count { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+  .section-count { font-family: var(--r2-mono); font-size: 12px; color: var(--muted); }
   .section-chevron { font-size: 11px; color: var(--muted); transition: transform 0.2s; }
   .section-chevron.collapsed { transform: rotate(-90deg); }
   .section-body.hidden { display: none; }
@@ -138,54 +135,54 @@
   /* ── Search bar ── */
   .search-wrap { position: relative; margin-bottom: 16px; }
   .search-wrap input {
-    width: 100%; background: var(--card); border: 1px solid var(--border);
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
     border-radius: 10px; padding: 11px 16px 11px 40px;
-    font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: var(--text); font-family: var(--font);
     outline: none; transition: border-color 0.2s;
   }
   .search-wrap input:focus { border-color: var(--accent); }
-  .search-wrap input::placeholder { color: var(--dim); }
+  .search-wrap input::placeholder { color: var(--border-2); }
   .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); }
 
   /* ── User cards ── */
   .users-list { display: flex; flex-direction: column; gap: 10px; }
   .user-card {
-    background: var(--card); border: 1px solid var(--border);
+    background: var(--surface-2); border: 1px solid var(--border);
     border-radius: 12px; padding: 16px 18px; transition: border-color 0.2s;
   }
   .user-card:hover { border-color: var(--accent); }
   .user-top { display: flex; align-items: center; gap: 12px; }
   .user-avatar {
     width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
     display: flex; align-items: center; justify-content: center;
-    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; color: #fff;
+    font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--accent-contrast);
   }
   .user-info { flex: 1; min-width: 0; }
   .user-name { font-size: 14px; font-weight: 600; color: var(--text); }
-  .user-email { font-size: 12px; color: var(--muted); margin-top: 1px; font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-email { font-size: 12px; color: var(--muted); margin-top: 1px; font-family: var(--r2-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .user-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .meta-pill {
-    font-size: 11px; font-family: 'DM Mono', monospace;
+    font-size: 11px; font-family: var(--r2-mono);
     color: var(--muted); background: var(--surface);
     border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px;
     white-space: nowrap;
   }
-  .pill-pro    { color: var(--accent); border-color: rgba(232,98,42,0.35); background: rgba(232,98,42,0.08); }
-  .pill-agency { color: var(--amber);  border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
-  .pill-active   { color: var(--green); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.06); }
-  .pill-inactive { color: var(--red);   border-color: rgba(239,68,68,0.3);  background: rgba(239,68,68,0.06); }
+  .pill-pro    { color: var(--accent-text); border-color: var(--r2-accent-edge); background: var(--accent-bg); }
+  .pill-agency { color: var(--amber-text); border-color: var(--amber); background: var(--amber-bg); }
+  .pill-active   { color: var(--green-text); border-color: var(--green); background: var(--green-bg); }
+  .pill-inactive { color: var(--red-text); border-color: var(--red); background: var(--red-bg); }
 
   /* ── Toggle switch ── */
   .toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
   .toggle-switch input { opacity: 0; width: 0; height: 0; }
   .toggle-track {
     position: absolute; inset: 0; border-radius: 20px;
-    background: var(--dim); transition: background 0.25s; cursor: pointer;
+    background: var(--border-2); transition: background 0.25s; cursor: pointer;
   }
   .toggle-thumb {
     position: absolute; top: 3px; left: 3px;
-    width: 14px; height: 14px; background: #fff; border-radius: 50%;
+    width: 14px; height: 14px; background: var(--surface); border-radius: 50%;
     transition: transform 0.25s; pointer-events: none;
   }
   .toggle-switch input:checked + .toggle-track { background: var(--green); }
@@ -197,12 +194,12 @@
     display: flex; align-items: center; justify-content: space-between;
     margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
   }
-  .page-info { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+  .page-info { font-family: var(--r2-mono); font-size: 12px; color: var(--muted); }
   .page-btns { display: flex; gap: 8px; }
   .page-btn {
-    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
     padding: 6px 14px; font-size: 12px; font-weight: 600;
-    color: var(--text); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    color: var(--text); cursor: pointer; font-family: var(--font);
     transition: all 0.2s;
   }
   .page-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -220,7 +217,7 @@
     transition: border-color 0.2s;
   }
   .module-toggle-item.on {
-    border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.05);
+    border-color: var(--green); background: var(--green-bg);
   }
   .module-toggle-item:hover { border-color: var(--accent); }
   .mod-left { display: flex; align-items: center; gap: 8px; }
@@ -228,11 +225,11 @@
   .mod-label { font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.3; }
 
   /* ── Documents table ── */
-  .docs-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .docs-table th { background: var(--surface); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); font-family: 'DM Mono', monospace; border-bottom: 1px solid var(--border); }
+  .docs-table { width: 100%; border-collapse: collapse; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .docs-table th { background: var(--surface); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); font-family: var(--r2-mono); border-bottom: 1px solid var(--border); }
   .docs-table td { padding: 11px 14px; font-size: 12px; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; }
   .docs-table tr:last-child td { border-bottom: none; }
-  .docs-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .docs-table tr:hover td { background: var(--surface-2); }
   .doc-title { font-weight: 600; font-size: 13px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* ── Empty / loading ── */
@@ -240,10 +237,20 @@
   .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
   .empty-state p { font-size: 13px; }
   .loading-bar { text-align: center; padding: 40px; color: var(--muted); }
-  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-bar .r3-working { justify-content: center; padding: 0; }
 
   /* ── Toast ── */
+  /* One row-action button, three status skins. These were four separate
+     style="" attributes carrying three hand-mixed palettes. */
+  .rowbtn { font-size: 10px; padding: 4px 8px; border-radius: 6px; cursor: pointer;
+    font-family: var(--font); font-weight: 600; background: var(--surface-2);
+    border: 1px solid var(--border); color: var(--text-2);
+    transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+  .rowbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .rowbtn.is-info { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); }
+  .rowbtn.is-good { background: var(--green-bg); border-color: var(--green); color: var(--green-text); }
+  .rowbtn.is-bad  { background: var(--red-bg); border-color: var(--red); color: var(--red-text); }
+
   #toast {
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(10px);
@@ -328,7 +335,7 @@
                oninput="filterUsers(this.value)">
       </div>
       <div class="users-list" id="users-list">
-        <div class="loading-bar"><div class="spinner"></div></div>
+        <div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>
       </div>
       <div class="pagination-row" id="users-pagination" style="display:none">
         <div class="page-info" id="users-page-info"></div>
@@ -349,7 +356,7 @@
         </div>
       </div>
       <div class="section-body" id="section-modules">
-        <div class="loading-bar"><div class="spinner"></div></div>
+        <div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>
       </div>
     </div>
 
@@ -363,7 +370,7 @@
         </div>
       </div>
       <div class="section-body" id="section-documents">
-        <div class="loading-bar"><div class="spinner"></div></div>
+        <div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>
       </div>
       <div class="pagination-row" id="docs-pagination" style="display:none">
         <div class="page-info" id="docs-page-info"></div>
@@ -397,7 +404,7 @@
           <input type="text" id="sub-search" placeholder="Search by name or email…" oninput="loadSubUsers(this.value)">
         </div>
         <div id="sub-table">
-          <div class="loading-bar"><div class="spinner"></div></div>
+          <div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>
         </div>
       </div>
     </div>
@@ -412,7 +419,7 @@
         </div>
       </div>
       <div class="section-body" id="section-prdist">
-        <div class="loading-bar"><div class="spinner"></div></div>
+        <div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>
       </div>
     </div>
 
@@ -426,7 +433,7 @@
         </div>
       </div>
       <div class="section-body" id="section-outlets">
-        <div class="loading-bar"><div class="spinner"></div></div>
+        <div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>
       </div>
     </div>
 
@@ -440,7 +447,7 @@
         </div>
       </div>
       <div class="section-body" id="section-journalists">
-        <div class="loading-bar"><div class="spinner"></div></div>
+        <div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>
       </div>
     </div>
 
@@ -543,7 +550,7 @@ async function loadStats() {
 async function loadUsers(page = 1) {
   currentPage = page;
   const el = document.getElementById('users-list');
-  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  el.innerHTML = '<div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>';
   try {
     const data = await apiFetch(`/api/seller/users?page=${page}&limit=25`);
     allUsers        = data.users  || [];
@@ -637,7 +644,7 @@ async function toggleUserActive(userId, checkbox) {
 // ── Platform Modules ──────────────────────────────────────────────────────────
 async function loadModules() {
   const el = document.getElementById('section-modules');
-  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  el.innerHTML = '<div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>';
   try {
     const data    = await apiFetch('/api/seller/modules');
     const modules = data.modules || [];
@@ -698,7 +705,7 @@ async function toggleModule(moduleId, checkbox) {
 async function loadDocuments(page = 1) {
   currentDocsPage = page;
   const el = document.getElementById('section-documents');
-  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  el.innerHTML = '<div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>';
   try {
     const data = await apiFetch(`/api/seller/documents?page=${page}&limit=20`);
     const { documents = [], total = 0 } = data;
@@ -723,9 +730,9 @@ async function loadDocuments(page = 1) {
             <td><span class="meta-pill">${esc(d.tool_name || '—')}</span></td>
             <td>
               <div style="font-weight:600;font-size:12px">${esc(d.user_name || '—')}</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${esc(d.user_email || '')}</div>
+              <div style="font-size:10px;color:var(--muted);font-family:var(--r2-mono)">${esc(d.user_email || '')}</div>
             </td>
-            <td style="font-family:'DM Mono',monospace;font-size:12px">${(d.word_count || 0).toLocaleString()}</td>
+            <td style="font-family:var(--r2-mono);font-size:12px">${(d.word_count || 0).toLocaleString()}</td>
             <td style="font-size:11px;color:var(--muted)">${fmtDate(d.created_at)}</td>
           </tr>`).join('')}
         </tbody>
@@ -816,7 +823,7 @@ async function loadSubStats() {
 
 async function loadSubUsers(search = '') {
   const el = document.getElementById('sub-table');
-  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  el.innerHTML = '<div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>';
   try {
     const url  = '/api/seller/subscription/users' + (search ? `?search=${encodeURIComponent(search)}` : '');
     const rows = await apiFetch(url);
@@ -832,7 +839,7 @@ function renderSubTable(rows) {
     el.innerHTML = '<div class="empty-state"><div class="empty-icon">💳</div><p>No subscriptions yet.</p></div>';
     return;
   }
-  const statusColor = { active: 'var(--green)', trial: '#3b82f6', grace: 'var(--amber)', expired: 'var(--red)' };
+  const statusColor = { active: 'var(--green-text)', trial: 'var(--blue-text)', grace: 'var(--amber-text)', expired: 'var(--red-text)' };
   el.innerHTML = `
     <table class="docs-table">
       <thead><tr>
@@ -842,15 +849,15 @@ function renderSubTable(rows) {
         <tr>
           <td>
             <div style="font-weight:600;font-size:13px">${esc(r.name)}</div>
-            <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${esc(r.email)}</div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--r2-mono)">${esc(r.email)}</div>
           </td>
-          <td><span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${statusColor[r.status]||'var(--muted)'}">${esc(r.status)}</span></td>
+          <td><span style="font-family:var(--r2-mono);font-size:11px;font-weight:700;color:${statusColor[r.status]||'var(--muted)'}">${esc(r.status)}</span></td>
           <td><span class="meta-pill">${esc(r.billing_cycle || 'trial')}</span></td>
           <td style="font-size:11px;color:var(--muted)">${fmtDate(r.paid_until || r.trial_ends_at)}</td>
           <td style="display:flex;gap:6px;flex-wrap:wrap">
-            <button onclick="extendTrial(${r.id})"  style="font-size:10px;padding:4px 8px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#3b82f6;border-radius:6px;cursor:pointer">+7d Trial</button>
-            <button onclick="activateSub(${r.id})"  style="font-size:10px;padding:4px 8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--green);border-radius:6px;cursor:pointer">Activate</button>
-            <button onclick="resetSub(${r.id})"     style="font-size:10px;padding:4px 8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;cursor:pointer">Reset</button>
+            <button onclick="extendTrial(${r.id})"  class="rowbtn is-info">+7d Trial</button>
+            <button onclick="activateSub(${r.id})"  class="rowbtn is-good">Activate</button>
+            <button onclick="resetSub(${r.id})"     class="rowbtn is-bad">Reset</button>
           </td>
         </tr>`).join('')}
       </tbody>
@@ -896,7 +903,7 @@ async function resetSub(userId) {
 // ── PR Distribution admin ─────────────────────────────────────────────────────
 async function loadPrDistributions() {
   const el = document.getElementById('section-prdist');
-  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  el.innerHTML = '<div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>';
   try {
     const data  = await apiFetch('/api/seller/pr/distributions');
     const dists = data.distributions || [];
@@ -916,19 +923,19 @@ async function loadPrDistributions() {
       el.innerHTML = statsHtml + '<div class="empty-state"><div class="empty-icon">🚀</div><p>No distributions yet.</p></div>';
       return;
     }
-    const statusColor = { pending: 'var(--amber)', processing: '#3b82f6', sent: 'var(--green)', published: 'var(--green)' };
+    const statusColor = { pending: 'var(--amber-text)', processing: 'var(--blue-text)', sent: 'var(--green-text)', published: 'var(--green-text)' };
     el.innerHTML = statsHtml + `
       <table class="docs-table">
         <thead><tr><th>Headline</th><th>Client</th><th>Package</th><th>Emails</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead>
         <tbody>${dists.map(d => `
           <tr>
             <td><div class="doc-title">${esc(d.headline)}</div><div style="font-size:10px;color:var(--muted)">${esc(d.company_name)}</div></td>
-            <td><div style="font-weight:600;font-size:12px">${esc(d.user_name)}</div><div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${esc(d.user_email)}</div></td>
+            <td><div style="font-weight:600;font-size:12px">${esc(d.user_name)}</div><div style="font-size:10px;color:var(--muted);font-family:var(--r2-mono)">${esc(d.user_email)}</div></td>
             <td><span class="meta-pill">${esc(d.package_name)} · RM${esc(d.package_price)}</span></td>
-            <td style="font-family:'DM Mono',monospace;font-size:12px">${d.emails_sent || 0}/${d.target_outlets || 0}</td>
-            <td><span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${statusColor[d.status] || 'var(--muted)'}">${esc(d.status)}</span></td>
+            <td style="font-family:var(--r2-mono);font-size:12px">${d.emails_sent || 0}/${d.target_outlets || 0}</td>
+            <td><span style="font-family:var(--r2-mono);font-size:11px;font-weight:700;color:${statusColor[d.status] || 'var(--muted)'}">${esc(d.status)}</span></td>
             <td style="font-size:11px;color:var(--muted)">${fmtDate(d.submitted_at)}</td>
-            <td><button onclick="confirmPublication(${d.id})" style="font-size:10px;padding:4px 8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--green);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Publication</button></td>
+            <td><button onclick="confirmPublication(${d.id})" class="rowbtn is-good">+ Publication</button></td>
           </tr>`).join('')}
         </tbody>
       </table>`;
@@ -957,7 +964,7 @@ async function confirmPublication(distId) {
 
 async function loadOutlets() {
   const el = document.getElementById('section-outlets');
-  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  el.innerHTML = '<div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>';
   try {
     const data = await apiFetch('/api/seller/pr/outlets');
     const outlets = data.outlets || [];
@@ -976,8 +983,8 @@ async function loadOutlets() {
             <td>${esc(o.category || '—')}</td>
             <td>${esc(o.region)}</td>
             <td><span class="meta-pill">${esc(o.tier)}</span></td>
-            <td style="font-family:'DM Mono',monospace;font-size:12px">${(o.reach_estimate || 0).toLocaleString()}</td>
-            <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${esc(o.contact_email)}</td>
+            <td style="font-family:var(--r2-mono);font-size:12px">${(o.reach_estimate || 0).toLocaleString()}</td>
+            <td style="font-size:11px;color:var(--muted);font-family:var(--r2-mono)">${esc(o.contact_email)}</td>
           </tr>`).join('')}
         </tbody>
       </table>`;
@@ -1007,7 +1014,7 @@ async function addOutlet() {
 
 async function loadJournalists() {
   const el = document.getElementById('section-journalists');
-  el.innerHTML = '<div class="loading-bar"><div class="spinner"></div></div>';
+  el.innerHTML = '<div class="loading-bar"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Loading…</span></div></div>';
   try {
     const data = await apiFetch('/api/seller/pr/journalists');
     const journos = data.journalists || [];
@@ -1027,7 +1034,7 @@ async function loadJournalists() {
             <td>${esc(j.beat || '—')}</td>
             <td>${esc(j.region)}</td>
             <td><span class="meta-pill">${esc(j.tier)}</span></td>
-            <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${esc(j.email)}</td>
+            <td style="font-size:11px;color:var(--muted);font-family:var(--r2-mono)">${esc(j.email)}</td>
           </tr>`).join('')}
         </tbody>
       </table>`;
