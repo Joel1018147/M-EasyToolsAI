@@ -42,7 +42,18 @@ const SCAN_TARGETS = [
   'db.js',
   path.join('routes'),
   path.join('middleware'),
-  path.join('helpers'), // doesn't exist yet on this platform; scanned if added later
+  path.join('helpers'), // now exists: groq.js, generation.js, lang.js, capabilities.js
+  // ── ADDED ROUND 1 ────────────────────────────────────────────────────────
+  // lib/ did not exist on this platform until Round 1, and this list is an
+  // ENUMERATION of directories — recurring-bugs #24, "a check that enumerates
+  // its subjects". Round 1 introduced lib/mai, lib/docintel and lib/image,
+  // which between them are the largest body of new server-side code this repo
+  // has ever taken in one round, and every line of it was outside the
+  // ecosystem's setTimeout guard while this line was missing.
+  //
+  // A guard that silently covers less than it appears to is worse than no
+  // guard, because the green tick is read as "scanned and clean".
+  path.join('lib'),
 ];
 
 // ── Explicit allowlist — every entry must carry a reason, never a blanket

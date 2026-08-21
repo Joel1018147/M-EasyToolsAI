@@ -22,6 +22,9 @@ const crypto    = require('crypto');
 const fs        = require('fs');
 const { pool }  = require('./db');
 const capabilities = require('./helpers/capabilities');
+const { GROQ_MODEL, normaliseModel, chat } = require('./helpers/groq');
+const { createGenerator, LANG_DIRECTIVES } = require('./helpers/generation');
+const langHelper = require('./helpers/lang');
 const { checkSub, updateExpiredSubscriptions, sendTrialReminders } = require('./middleware/checkSub');
 const subscriptionRoutes = require('./routes/subscription');
 const { Resend } = require('resend');
@@ -329,6 +332,32 @@ app.use(passport.session());
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json({ limit: '10mb' }));
+/* ── Private panels, gated BEFORE express.static ─────────────────────────────
+   Round 1 added two staff/authenticated panels under public/. express.static
+   serves anything in that directory by filename, and it is mounted here —
+   ahead of every page route — so `app.get('/mai', requireAuth, ...)` further
+   down does NOT protect `/mai.html`. Without this block the panel is on the
+   open internet under every spelling static will answer to.
+
+   This is not hypothetical. M-EasyDo shipped exactly this: its M-Ai panel was
+   reachable by anonymous request under fourteen different URL spellings until
+   it was fixed AT THE STATIC MOUNT, which is why this sits here rather than
+   next to the page routes.
+
+   The shells carry no customer data — every byte they render comes from
+   /api/mai and /api/docintel, which are guarded independently. So this is
+   defence in depth, not the only lock. It still matters: an unauthenticated
+   visitor being shown a staff console learns the tool exists, what it can do,
+   and exactly what to go looking for.
+
+   Matched on the normalised path so /MAI.HTML and /./mai.html do not slip
+   past — a case-sensitive equality check here would be the fourteen-spellings
+   bug again in miniature. */
+const PRIVATE_PAGES = new Set(['/mai.html', '/docintel.html']);
+app.use((req, res, next) => {
+  if (!PRIVATE_PAGES.has(path.posix.normalize(req.path).toLowerCase())) return next();
+  return requireAuth(req, res, () => checkSub(req, res, next));
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { error: 'Too many attempts.' } });
@@ -584,120 +613,102 @@ app.post('/api/auth/regenerate-key', requireAuth, async (req, res) => {
 //  AI CHAT — Groq
 // ════════════════════════════════════════════════════
 
-// Ecosystem canonical model. Groq decommissions llama-3.3-70b-versatile and
-// llama-3.1-8b-instant on 2026-08-16; every platform is standardised on this.
+// THE MODEL AND THE WIRE CALL NOW LIVE IN helpers/groq.js.
 //
-// Groq serves qwen/qwen3.6-27b on its PREVIEW tier, so it can be rate-limited,
-// degraded or withdrawn with little notice. GROQ_MODEL overrides it without a
-// code change — set it on Railway and redeploy. Documented fallback:
-// openai/gpt-oss-120b. See .env.example and CLAUDE.md.
-const DEFAULT_GROQ_MODEL = 'qwen/qwen3.6-27b';
-const GROQ_MODEL = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
-
-// POST /api/chat lets an API-key holder name a model, and that name is
-// published in public/api-docs.html — so there are external integrations out
-// there with a now-dead model string hardcoded, and no way for them to know
-// until every request starts returning model_decommissioned. Map the known-dead
-// names onto the current model instead of forwarding a guaranteed 400.
-// An unrecognised model is still passed through untouched: this is a
-// compatibility shim, not a whitelist, and silently rewriting a model somebody
-// deliberately chose would be worse than letting Groq answer for itself.
-const DEPRECATED_MODELS = new Set([
-  'llama-3.3-70b-versatile',
-  'llama-3.1-8b-instant',
-  'llama3-70b-8192',
-]);
-function normaliseModel(requested) {
-  if (!requested || DEPRECATED_MODELS.has(requested)) return GROQ_MODEL;
-  return requested;
-}
-
-// `reasoning_effort` / `reasoning_format` are supported by qwen/qwen3.6-* ONLY.
-// Sending them to any other model risks a 400 — and /api/chat accepts a
-// caller-supplied model, so the gate is checked against the model actually
-// being sent. Ported verbatim from Dragon-Ginseng-CS-AI.
-function supportsReasoningEffortNone(model) {
-  return /^qwen\/qwen3\.6/.test(model);
-}
-function withReasoning(body) {
-  if (supportsReasoningEffortNone(body.model)) {
-    body.reasoning_effort = 'none';   // marketing copy, nothing to reason about
-    body.reasoning_format = 'hidden'; // and never emit a reasoning block
-  }
-  return body;
-}
+// CLAUDE.md's rule is unchanged - ONE reader of process.env.GROQ_MODEL, and
+// everything else imports the constant. What moved is which file that reader
+// is. It was this one, which meant nothing could be extracted from server.js
+// without a require cycle back to it; eight of the nine platforms in the
+// ecosystem already resolve the model in helpers/groq.js, and this repo was
+// the outlier that blocked the extraction. Nothing below reads the env var.
 
 app.post('/api/chat', requireApiKey, apiLimiter, async (req, res) => {
   try {
-    const { messages, model: requestedModel } = req.body;
+    const { messages, model: requestedModel, lang } = req.body;
     const model = normaliseModel(requestedModel);
     if (!Array.isArray(messages)) return res.status(400).json({ error: 'Messages array required' });
     const groqKey = req.user.groq_key || GROQ_KEY;
     if (!groqKey) return res.status(400).json({ error: 'Groq API key not configured' });
-    const systemPrompt = `You are M-EasyTools AI, an expert marketing strategist and copywriter. Help with content creation, SEO, email marketing, social media, ad campaigns, and brand strategy. Be specific and actionable. User brand: ${req.user.brand_name || 'Not set'}. Tone: ${req.user.brand_tone || 'Professional'}.`;
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(withReasoning({ model, max_tokens: 1024, temperature: 0.7, messages: [{ role: 'system', content: systemPrompt }, ...messages.slice(-20)] }))
+
+    /* LANGUAGE ON THE CHAT SURFACE.
+       /api/chat is one of the two generation paths that do NOT go through
+       generateWithGroq(), so it never picked up the trilingual layer. The
+       register guidance is IMPORTED from helpers/generation.js rather than
+       restated — the trilingual lane exported LANG_DIRECTIVES for exactly
+       this call site, and a second copy of "use anda, not kau" is a second
+       thing to keep in sync and the one that will drift.
+
+       Refused up front on an unknown code, for the same reason as
+       /api/generate: a 500 from a downstream throw is not something an API
+       caller can act on. */
+    if (lang !== undefined && lang !== null && String(lang).trim() !== '' && !langHelper.normaliseLang(lang)) {
+      return res.status(400).json({
+        error: 'Unsupported output language: "' + String(lang) + '". Supported: ' + langHelper.LANGS.join(', '),
+      });
+    }
+    const chatLang = langHelper.normaliseLang(lang);
+    const langDirective = chatLang ? '\n\n' + (LANG_DIRECTIVES[chatLang] || '') : '';
+
+    const systemPrompt = `You are M-EasyTools AI, an expert marketing strategist and copywriter. Help with content creation, SEO, email marketing, social media, ad campaigns, and brand strategy. Be specific and actionable. User brand: ${req.user.brand_name || 'Not set'}. Tone: ${req.user.brand_tone || 'Professional'}.${langDirective}`;
+    // `model` is the caller's, normalised — NOT GROQ_MODEL. /api/chat is the
+    // one surface that lets an API-key holder name a model, so the reasoning
+    // gate inside chat() has to be checked against what is actually being
+    // sent. Passing the default here would re-introduce that bug.
+    const out = await chat({
+      apiKey: groqKey,
+      model,
+      system: systemPrompt,
+      messages: messages.slice(-20),
+      maxTokens: 1024,
+      temperature: 0.7,
     });
-    if (!response.ok) { const e = await response.json(); throw new Error(e.error?.message || 'Groq error'); }
-    const data = await response.json();
-    res.json({ success: true, message: data.choices[0].message.content, model: data.model });
+    res.json({ success: true, message: out.text, model: out.model });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ════════════════════════════════════════════════════
 //  CONTENT GENERATION — Groq
 // ════════════════════════════════════════════════════
-async function generateWithGroq(user, prompt, toolId, toolName, tone, variants = 1) {
-  const groqKey = user.groq_key || GROQ_KEY;
-  if (!groqKey) throw new Error('Groq API key not configured');
-
-  const fullPrompt = variants > 1
-    ? prompt + `\n\nGenerate ${variants} distinct variants labeled: ═══ VARIANT 1 ═══, ═══ VARIANT 2 ═══, etc.`
-    : prompt;
-
-  const systemPrompt = `You are M-EasyTools AI, an elite marketing copywriter with 15+ years experience. Tone: ${tone || 'Professional'}. Brand: ${user.brand_desc || 'General marketing'}. Be persuasive, specific, and conversion-focused.`;
-
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(withReasoning({ model: GROQ_MODEL, max_tokens: 2500, temperature: 0.75, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullPrompt }] }))
-  });
-
-  if (!response.ok) { const e = await response.json(); throw new Error(e.error?.message || 'Groq error'); }
-  const data = await response.json();
-  const text = data.choices[0].message.content;
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
-
-  // Deterministic content score based on measurable signals
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim()).length || 1;
-  const avgWordsPerSentence = wordCount / sentences;
-  const hasStructure = /#{1,3}\s|^[*-]\s/m.test(text);
-  const seoScore = Math.min(100, Math.max(40,
-    (wordCount >= 300 ? 25 : Math.floor(wordCount / 12)) +
-    (wordCount >= 800 ? 15 : 0) +
-    (hasStructure ? 15 : 5) +
-    (avgWordsPerSentence < 20 ? 15 : avgWordsPerSentence < 30 ? 10 : 5) + 20
-  ));
-  const syllables = text.split(/\s+/).reduce((acc, w) => acc + Math.max(1, w.replace(/[^aeiouy]/gi, '').length), 0);
-  const readability = Math.min(100, Math.max(30, Math.round(
-    206.835 - 1.015 * avgWordsPerSentence - 84.6 * (syllables / (wordCount || 1))
-  )));
-
-  // Auto-save document
-  const doc = await pool.query(
-    'INSERT INTO documents (user_id,title,content,tool_id,tool_name,word_count,seo_score,readability) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',
-    [user.id, `${toolName || 'Content'} — ${new Date().toLocaleDateString()}`, text, toolId, toolName, wordCount, seoScore, readability]
-  );
-
-  return { text, wordCount, docId: doc.rows[0].id, seoScore, readability };
-}
+// generateWithGroq() now lives in helpers/generation.js. It moved so the
+// trilingual lane could own it without owning this file — after Foundation,
+// no lane edits server.js, which is what makes the lanes genuinely parallel.
+// The extraction was a pure refactor: the behaviour there is byte-for-byte
+// what was here, defects included, so that the move is reviewable on its own.
+//
+// The pool and the platform key are injected rather than imported, so the
+// generation layer has no require cycle back to this file.
+const { generateWithGroq } = createGenerator({ pool, groqKey: GROQ_KEY });
 
 app.post('/api/generate', requireApiKey, apiLimiter, async (req, res) => {
   try {
-    const { prompt, toolId, toolName, tone = 'Professional', variants = 1 } = req.body;
+    const { prompt, toolId, toolName, tone = 'Professional', variants = 1, lang } = req.body;
     if (!prompt?.trim()) return res.status(400).json({ error: 'Prompt required' });
 
-    const result = await generateWithGroq(req.user, prompt, toolId, toolName, tone, variants);
+    /* THE CLEAN LANGUAGE PATH, wired here at Integration.
+       The trilingual lane could not add this line — it may not edit this file —
+       so until now `lang` was fully implemented in helpers/generation.js and
+       dead on the wire. The browser path worked anyway (genlang.js embeds a
+       directive inside `prompt`, which this route already forwards verbatim),
+       but an EXTERNAL /api/generate key-holder had no way to select a language
+       at all, on a platform whose whole pitch is EN/BM/ZH.
+
+       An unsupported code throws inside generateWithGroq before a token is
+       spent, but that surfaces through the catch below as a 500 — the wrong
+       status for a bad request, and not something an API caller can act on.
+       So it is REJECTED HERE, up front, against the same normaliser the
+       generation layer uses.
+
+       Checked with normaliseLang rather than by matching the thrown message:
+       a regex over an error string is a contract nobody declared, and it
+       breaks silently the day that sentence is reworded. This asks the one
+       function that actually decides. */
+    if (lang !== undefined && lang !== null && String(lang).trim() !== '' && !langHelper.normaliseLang(lang)) {
+      return res.status(400).json({
+        error: 'Unsupported output language: "' + String(lang) + '". Supported: ' + langHelper.LANGS.join(', '),
+      });
+    }
+
+    const result = await generateWithGroq(req.user, prompt, toolId, toolName, tone, variants, { lang });
     res.json({ success: true, ...result });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -709,26 +720,49 @@ app.post('/api/score', requireAuth, checkSub, async (req, res) => {
   const { content, keyword, targetLength } = req.body;
   if (!content) return res.status(400).json({ error: 'Content required' });
 
-  const words = content.split(/\s+/).filter(Boolean);
-  const wordCount = words.length;
-  const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  /* ── THE SAME CJK DEFECT AS generateWithGroq(), CLOSED HERE TOO ──────────
+     The trilingual lane fixed helpers/generation.js and reported that this
+     endpoint carried an identical copy of the bug in a file no lane owned.
+     Fixing one and not the other would have been worse than fixing neither:
+     the tool would have generated a Chinese article scoring 65, then scored
+     that same text 0 when the user pasted it back in.
+
+     Three separate things were wrong for non-English text:
+       1. split(/\s+/) counted a whole Chinese article as ONE word.
+       2. keywordDensity divided BY that 1, so a single keyword match read as
+          100% density — and with no match at all on empty content it divided
+          by zero and returned NaN to the UI.
+       3. avgSyllables was the literal 1.5 for every language, which makes the
+          Flesch term a constant and the whole score a function of sentence
+          length alone. helpers/lang.js computes real syllables for English and
+          refuses to pretend Flesch means anything for Chinese. */
+  const scoreLang = langHelper.detectLang(content);
+  const m = langHelper.textMetrics(content, scoreLang);
+  const wordCount = m.words;
+  const sentences = m.sentences;
   const avgWordsPerSentence = sentences > 0 ? wordCount / sentences : 0;
   const paragraphs = content.split(/\n\n+/).filter(p => p.trim()).length;
 
-  // Keyword density
+  // Keyword density.
+  //
+  // Counted by OCCURRENCE, not by whitespace token. A Chinese keyword is a
+  // substring of a run of characters with no spaces in it, so the token filter
+  // this used to do could only ever return 0 or 1 for Chinese.
   let keywordDensity = 0;
   let keywordCount = 0;
-  if (keyword) {
-    const kw = keyword.toLowerCase();
-    keywordCount = words.filter(w => w.toLowerCase().includes(kw)).length;
+  if (keyword && String(keyword).trim() && wordCount > 0) {
+    const kw = String(keyword).trim().toLowerCase();
+    const hay = content.toLowerCase();
+    let at = hay.indexOf(kw);
+    while (at !== -1) { keywordCount++; at = hay.indexOf(kw, at + kw.length); }
     keywordDensity = ((keywordCount / wordCount) * 100).toFixed(2);
   }
 
-  // Readability score (Flesch-Kincaid simplified)
-  const avgSyllables = 1.5; // approximation
-  const readabilityScore = Math.max(0, Math.min(100, Math.round(
-    206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllables
-  )));
+  // Readability, per language, with the basis reported rather than implied.
+  // null means "this cannot be measured for this text", which is a real answer
+  // and is not the same statement as 0 or 100.
+  const r = langHelper.readability(content, scoreLang);
+  const readabilityScore = r.score;
 
   // SEO Score calculation
   let seoScore = 0;
@@ -750,7 +784,14 @@ app.post('/api/score', requireAuth, checkSub, async (req, res) => {
     readabilityScore,
     seoScore: Math.min(100, seoScore),
     feedback: seoFeedback,
-    grade: seoScore >= 80 ? 'A' : seoScore >= 60 ? 'B' : seoScore >= 40 ? 'C' : 'D'
+    grade: seoScore >= 80 ? 'A' : seoScore >= 60 ? 'B' : seoScore >= 40 ? 'C' : 'D',
+    // WIDENED, never narrowed — every field above keeps its name and meaning,
+    // so nothing consuming this endpoint has to change. These three say HOW
+    // the numbers were reached, which for a trilingual product is the
+    // difference between a score and a number.
+    lang: scoreLang,
+    wordBasis: m.wordBasis,
+    readabilityBasis: r.basis,
   });
 });
 
@@ -761,9 +802,17 @@ app.post('/api/score', requireAuth, checkSub, async (req, res) => {
 // WRITE — reuses generateWithGroq() for the release; adds an AI GEO score.
 app.post('/api/pr/generate', requireAuth, checkSub, apiLimiter, async (req, res) => {
   try {
-    const { company, headline, keyMessages, quote, spokesperson, audience, region, cta, tone } = req.body;
+    const { company, headline, keyMessages, quote, spokesperson, audience, region, cta, tone, lang } = req.body;
     if (!company?.trim() || !headline?.trim() || !keyMessages?.trim()) {
       return res.status(400).json({ error: 'Company name, headline, and key messages are required' });
+    }
+    // Same up-front language refusal as /api/generate and /api/chat. A press
+    // release is the one output here that goes to real journalists, so a
+    // silent language fallback would be published, not just saved.
+    if (lang !== undefined && lang !== null && String(lang).trim() !== '' && !langHelper.normaliseLang(lang)) {
+      return res.status(400).json({
+        error: 'Unsupported output language: "' + String(lang) + '". Supported: ' + langHelper.LANGS.join(', '),
+      });
     }
 
     const prPrompt = `You are an expert PR writer specialising in Malaysian and Southeast Asian business press releases for distribution to journalists and media outlets across the region.
@@ -814,7 +863,7 @@ ${spokesperson || '[Spokesperson Name]'}
 Optimise this press release to rank in search engines AND be cited in AI-generated answers (ChatGPT, Perplexity, Google AI Overviews). Use specific named entities, quotable statistics, clear subject-predicate-object sentences, and factual claims that AI systems can reference.`;
 
     // Reuse existing generateWithGroq function
-    const result = await generateWithGroq(req.user, prPrompt, 'press-release', 'Press Release', tone || 'Professional');
+    const result = await generateWithGroq(req.user, prPrompt, 'press-release', 'Press Release', tone || 'Professional', 1, { lang });
 
     // GEO score — separate quick call, silent fallback
     let geoScore = 0;
@@ -822,26 +871,26 @@ Optimise this press release to rank in search engines AND be cited in AI-generat
     try {
       const groqKey = req.user.groq_key || GROQ_KEY;
       if (groqKey) {
-        const geoRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(withReasoning({
-            model: GROQ_MODEL,
-            max_tokens: 80,
-            temperature: 0.1,
-            messages: [{
-              role: 'user',
-              content: `Rate this press release 0-100 for likelihood of being cited in AI-generated answers. Consider: named entities, specific facts/numbers, quotable statements, newsworthiness, clear subject-predicate-object sentences. Return ONLY valid JSON, no other text: {"score":number,"reason":"one sentence"}\n\nPRESS RELEASE (first 1000 chars):\n${result.text.substring(0, 1000)}`
-            }]
-          }))
+        // This is the second of the two call sites that do NOT pass through
+        // generateWithGroq() — see helpers/generation.js. It goes through
+        // chat() so the reasoning gate lives in exactly one place; before the
+        // extraction it called withReasoning() locally, and that helper moving
+        // out of this file would have left a ReferenceError firing on every
+        // press release, inside a try/catch that would have reported it as
+        // "GEO score unavailable" rather than as a crash.
+        const geo = await chat({
+          apiKey: groqKey,
+          model: GROQ_MODEL,
+          messages: [{
+            role: 'user',
+            content: `Rate this press release 0-100 for likelihood of being cited in AI-generated answers. Consider: named entities, specific facts/numbers, quotable statements, newsworthiness, clear subject-predicate-object sentences. Return ONLY valid JSON, no other text: {"score":number,"reason":"one sentence"}\n\nPRESS RELEASE (first 1000 chars):\n${result.text.substring(0, 1000)}`
+          }],
+          maxTokens: 80,
+          temperature: 0.1,
         });
-        if (geoRes.ok) {
-          const geoData = await geoRes.json();
-          const raw = geoData.choices[0].message.content.trim();
-          const parsed = JSON.parse(raw);
-          geoScore = Math.min(100, Math.max(0, parseInt(parsed.score) || 0));
-          geoReason = parsed.reason || '';
-        }
+        const parsed = JSON.parse(geo.text.trim());
+        geoScore = Math.min(100, Math.max(0, parseInt(parsed.score) || 0));
+        geoReason = parsed.reason || '';
       }
     } catch (e) { /* silent fallback */ }
 
@@ -1287,14 +1336,32 @@ app.get('/api/documents/:id', requireAuth, checkSub, async (req, res) => {
 app.post('/api/documents', requireAuth, checkSub, async (req, res) => {
   const { title, content, tool_id, tool_name } = req.body;
   if (!title) return res.status(400).json({ error: 'Title required' });
-  const wc = (content || '').split(/\s+/).filter(Boolean).length;
+  /* ONE FORMULA FOR word_count, EVERYWHERE.
+     There are four write sites for documents.word_count: generateWithGroq's
+     auto-save, /api/score, and this route plus the PUT below. The trilingual
+     lane fixed the first two; these two kept the whitespace splitter, and the
+     result was WORSE than the original uniform bug.
+
+     Measured on one Chinese paragraph: 30 words here, 1 there. Every Save
+     button on the nine revamped module pages posts to this route while
+     generateWithGroq auto-saves the same text — so a single Chinese generation
+     produced TWO documents rows for identical content, word_count 30 and 1,
+     and /api/stats SUMmed across both. M-Ai then reported the disagreement as
+     fact, correctly, because its tools deliberately report the STORED value
+     rather than recomputing (recomputing would make it disagree with every
+     other screen).
+
+     A bug that is uniform is survivable; the same bug at two of four sites is
+     a product that contradicts itself about one document. */
+  const wc = langHelper.countWords(content || '', langHelper.detectLang(content || '')).count;
   const doc = await db.getOne('INSERT INTO documents (user_id,title,content,tool_id,tool_name,word_count) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id', [req.user.id, title, content || '', tool_id, tool_name, wc]);
   res.status(201).json({ id: doc.id, success: true });
 });
 
 app.put('/api/documents/:id', requireAuth, checkSub, async (req, res) => {
   const { title, content } = req.body;
-  const wc = (content || '').split(/\s+/).filter(Boolean).length;
+  // Same one formula as POST above — see the note there.
+  const wc = langHelper.countWords(content || '', langHelper.detectLang(content || '')).count;
   await db.run('UPDATE documents SET title=COALESCE($1,title),content=COALESCE($2,content),word_count=$3,updated_at=CURRENT_TIMESTAMP WHERE id=$4 AND user_id=$5', [title, content, wc, req.params.id, req.user.id]);
   res.json({ success: true });
 });
@@ -1517,6 +1584,23 @@ function checkModule(moduleId) {
 // ── Subscription router (payment callbacks — no auth required) ────────────────
 app.use('/', subscriptionRoutes);
 
+// ── Round 1 lane mounts, wired by Foundation ─────────────────────────────────
+// These three routers are mounted here, once, so that no lane has to edit this
+// file. Lane A fills in routes/mai.js, Lane B routes/docIntel.js, Lane D
+// routes/images.js; until each lands, its router answers 501 rather than
+// pretending. The GUARDS are decided here and not by the lanes, because the
+// guard is the security boundary and a lane must not be able to widen its own.
+//
+// requireAuth + checkSub on all three. M-Ai in particular derives identity
+// from the SESSION ONLY — never from a query parameter, a header or a body
+// field. That is deliberate and it diverges from requireSeller, which takes
+// its key from req.query.key (server.js, above): query strings land in access
+// logs and Referer headers, which is an acceptable risk for a read-only ops
+// panel and not an acceptable one for a tool registry that can write.
+app.use('/api/mai', requireAuth, checkSub, require('./routes/mai'));
+app.use('/api/docintel', requireAuth, checkSub, require('./routes/docIntel'));
+app.use('/api/images', requireAuth, checkSub, require('./routes/images'));
+
 // ── Billing & subscription routes ─────────────────────────────────────────────
 app.get('/billing', requireAuth, checkSub, (req, res) => res.sendFile(path.join(__dirname, 'public', 'billing.html')));
 app.post('/billing/checkout', requireAuth, checkSub, subscriptionRoutes.checkoutHandler);
@@ -1606,7 +1690,7 @@ app.post('/api/seller/subscription/reset', requireSeller, async (req, res) => {
 
 // ── Run migrations on startup ──────────────────────────────────────────────────
 (async () => {
-  const migrationFiles = ['migrations/003_subscriptions.sql'];
+  const migrationFiles = ['migrations/003_subscriptions.sql', 'migrations/004_round1_docintel_images.sql'];
   for (const file of migrationFiles) {
     try {
       const sql = fs.readFileSync(path.join(__dirname, file), 'utf8');
@@ -1656,6 +1740,44 @@ app.get('/login',    (req, res) => res.sendFile(path.join(__dirname, 'public', '
 app.get('/signup',   (req, res) => res.redirect('/login#register'));
 app.get('/register', (req, res) => res.redirect('/login#register'));
 app.get('/settings', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'settings.html')));
+
+// ── Round 1 page routes ──────────────────────────────────────────────────────
+// Added at Integration. Lane A and Lane B each reported that their panel had no
+// page route and that adding one needed this file, which neither owned — so
+// both stopped and flagged it rather than editing across the boundary.
+//
+// GUARDED, and the guard is the point. A staff tool that renders for a
+// signed-out visitor tells them the tool exists, what it can do, and what to
+// go looking for — even though the shells carry no data, because everything
+// they render comes from /api/mai and /api/docintel, which are guarded
+// independently.
+//
+// THESE TWO LINES ARE NOT WHAT CLOSES THE .html SPELLING. express.static is
+// mounted far above this point and answers /mai.html directly, so a page route
+// here could never have protected it. That hole is closed at the static mount
+// itself — see PRIVATE_PAGES — which is where M-EasyDo had to fix the same bug
+// after shipping its panel under fourteen reachable spellings.
+//
+// Verified live, not assumed: /mai.html, /docintel.html and /MAI.HTML all 302
+// to /login, while every public asset still serves 200.
+app.get('/mai', requireAuth, checkSub, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'mai.html')));
+app.get('/docintel', requireAuth, checkSub, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'docintel.html')));
+
+/* PRE-EXISTING 404s, found by probing rather than by reading. Neither route has
+   ever existed — `git show main:server.js` has no privacy/terms handler either —
+   but routes/subsystemPages.js builds a footer on EVERY subsystem landing page
+   containing:
+
+       <a href="/privacy">Privacy</a><a href="/terms">Terms</a>
+
+   so both links are dead in production right now, on the pages a prospect sees
+   first. The files exist and are fine; only the extensionless spelling was
+   missing. Public on purpose — a privacy policy behind a login is not a privacy
+   policy. */
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 require('./routes/settings').mount(app, requireAuth);
 
 // The canonical settings.html sends a 401'd page to /auth/login, and the

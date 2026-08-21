@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>M-EasyTools AI — Platform Pemasaran Pintar</title>
 <link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
 <style>
 /* ═══════════════════════════════════════════════
    M-EasyTools AI — Design System
@@ -13,156 +14,76 @@
    high-trust SaaS feel.
 ═══════════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0}
+/* ═══ THE PALETTE ═══════════════════════════════════════════════════════
+   TWENTY-SIX COLOURS AND A WHOLE SECOND DARK THEME USED TO BE DECLARED HERE,
+   and var(--accent) among them — the platform accent, written out a second time on
+   the busiest screen in the product. The md5-pinned master locks that value
+   for twelve platforms; a copy here is a copy that cannot follow it.
+
+   What follows is not a palette. It is an ALIAS LAYER: every one of this
+   page's historic names now resolves to a design-system token, so the
+   thirty-odd dark-mode selector overrides that used to sit below
+   are gone too — the system already carries a dark value for each token, and
+   the alias inherits it. One theme definition, not three.
+
+   The names are kept rather than renamed across 4,000 lines of markup because
+   a rename is a diff nobody can review; what matters is that not one of them
+   names a hue any more. */
 :root{
-  /* Core palette */
-  --cream:#FAF8F4;
-  --cream2:#F2EFE8;
-  --cream3:#E8E4DC;
-  --white:#FFFFFF;
-  --navy:#0D1B2A;
-  --navy2:#1A2D42;
-  --navy3:#243B55;
-  --steel:#3D5A73;
-  --slate:#607D94;
-  --mist:#8EA3B5;
-  --silver:#B8C8D5;
-  --fog:#D4DFE8;
-  --orange:#E8622A;
-  --orange2:#F07340;
-  --orange3:#FF8F66;
-  --orange-bg:rgba(232,98,42,0.08);
-  --orange-glow:rgba(232,98,42,0.15);
-  --teal:#1A8F7A;
-  --teal-bg:rgba(26,143,122,0.08);
-  --violet:#6B4FBB;
-  --violet-bg:rgba(107,79,187,0.08);
-  --gold:#C9941A;
-  --gold-bg:rgba(201,148,26,0.1);
-  --red:#C0392B;
-  --red-bg:rgba(192,57,43,0.08);
-  /* Spacing & shape */
-  --r:12px;--r-sm:8px;--r-lg:18px;--r-xl:24px;
-  /* Shadows */
-  --shadow-sm:0 1px 3px rgba(13,27,42,0.08),0 1px 2px rgba(13,27,42,0.04);
-  --shadow:0 4px 16px rgba(13,27,42,0.08),0 2px 6px rgba(13,27,42,0.05);
-  --shadow-lg:0 12px 40px rgba(13,27,42,0.12),0 4px 12px rgba(13,27,42,0.06);
+  --cream:var(--bg);
+  --cream2:var(--surface-2);
+  --cream3:var(--border);
+  --white:var(--surface);
+  --navy:var(--text);
+  --navy2:var(--text);
+  --navy3:var(--text-2);
+  --steel:var(--text-2);
+  --slate:var(--muted);
+  --mist:var(--muted);
+  --silver:var(--border-2);
+  --fog:var(--border);
+  --orange:var(--accent);
+  --orange2:var(--accent-2);
+  --orange3:var(--accent-text);
+  --orange-bg:var(--accent-bg);
+  --orange-glow:var(--accent-glow);
+  --teal:var(--green);
+  --teal-bg:var(--green-bg);
+  --violet:var(--purple);
+  --violet-bg:var(--purple-bg);
+  --gold:var(--amber);
+  --gold-bg:var(--amber-bg);
 }
+/* --red, --red-bg, --r, --r-sm, --r-lg, --r-xl and the three --shadow-* were
+   redeclared here with values the design system already ships under exactly
+   those names. Restating a token is how two of them drift, so they are simply
+   not restated. */
 
-/* ═══ DARK MODE THEME ═══════════════════════════ */
-[data-theme="dark"] {
-  --cream:#0F1923;
-  --cream2:#141E2A;
-  --cream3:#1A2535;
-  --white:#1C2940;
-  --navy:#E8EDF2;
-  --navy2:#CDD5DE;
-  --navy3:#B0BCC8;
-  --steel:#8EA3B5;
-  --slate:#7A96AA;
-  --mist:#5A7A90;
-  --silver:#3D5A73;
-  --fog:#243B55;
-  --orange:#FF7A4A;
-  --orange2:#FF9166;
-  --orange3:#FFB090;
-  --orange-bg:rgba(255,122,74,0.12);
-  --orange-glow:rgba(255,122,74,0.2);
-  --teal:#2BBFA0;
-  --teal-bg:rgba(43,191,160,0.1);
-  --violet:#9B7FEE;
-  --gold:#E8B840;
-  --red:#E05050;
-  --red-bg:rgba(224,80,80,0.1);
-  --shadow-sm:0 1px 4px rgba(0,0,0,0.3);
-  --shadow:0 4px 20px rgba(0,0,0,0.35);
-  --shadow-lg:0 12px 40px rgba(0,0,0,0.45);
-}
-
-[data-theme="dark"] .app-sidebar { background:#0A1018; }
-[data-theme="dark"] .app-sidebar::after { background:linear-gradient(180deg,transparent,rgba(255,255,255,0.04) 30%,rgba(255,255,255,0.04) 70%,transparent); }
-[data-theme="dark"] .app-topbar { background:#141E2A; border-bottom-color:#243B55; }
-[data-theme="dark"] .main-area { background:#0F1923; }
-[data-theme="dark"] .panel,.dash-grid .card,[data-theme="dark"] .m-card { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .form-panel { background:#141E2A; border-right-color:#243B55; }
-[data-theme="dark"] .output-panel { background:#0F1923; }
-[data-theme="dark"] .out-header { background:#141E2A; border-bottom-color:#243B55; }
-[data-theme="dark"] .f-input,[data-theme="dark"] .f-textarea,[data-theme="dark"] .f-select { background:#243B55; border-color:#3D5A73; color:#E8EDF2; }
-[data-theme="dark"] .f-input:focus,[data-theme="dark"] .f-textarea:focus,[data-theme="dark"] .f-select:focus { background:#1C2940; }
-[data-theme="dark"] .tone-tag { background:#243B55; border-color:#3D5A73; color:#8EA3B5; }
-[data-theme="dark"] .tone-tag.on { background:rgba(255,122,74,0.15); border-color:var(--orange); color:var(--orange); }
-[data-theme="dark"] .result-block { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .rb-head { background:#141E2A; border-bottom-color:#243B55; }
-[data-theme="dark"] .chat-window { background:#141E2A; border-color:#243B55; }
-[data-theme="dark"] .msg.ai .m-bubble { background:#243B55; border-color:#3D5A73; color:#CDD5DE; }
-[data-theme="dark"] .chat-input-bar { background:#141E2A; border-color:#243B55; }
-[data-theme="dark"] .chat-ta { background:#0F1923; border-color:#243B55; color:#E8EDF2; }
-[data-theme="dark"] .doc-table-wrap { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .data-table th { background:#141E2A; color:#5A7A90; border-color:#243B55; }
-[data-theme="dark"] .data-table td { border-color:#243B55; color:#CDD5DE; }
-[data-theme="dark"] .data-table tr:hover td { background:#243B55; }
-[data-theme="dark"] .settings-nav { background:#141E2A; border-right-color:#243B55; }
-[data-theme="dark"] .settings-content { background:#0F1923; }
-[data-theme="dark"] .s-row { border-bottom-color:#243B55; }
-[data-theme="dark"] .panel { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .panel-head { border-bottom-color:#243B55; }
-[data-theme="dark"] .recent-row:hover { background:#243B55; }
-[data-theme="dark"] .q-tile { background:#141E2A; border-color:#243B55; }
-[data-theme="dark"] .q-tile:hover { background:#1C2940; }
-[data-theme="dark"] .tool-card { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .tool-card:hover { background:#243B55; border-color:var(--orange); }
-[data-theme="dark"] .tools-canvas { background:#0F1923; }
-[data-theme="dark"] .cat-strip { background:#141E2A; border-bottom-color:#243B55; }
-[data-theme="dark"] .tools-header { background:#141E2A; border-bottom-color:#243B55; }
-[data-theme="dark"] .search-bar input { background:#243B55; border-color:#3D5A73; color:#E8EDF2; }
-[data-theme="dark"] .seo-intro { background:linear-gradient(135deg,#0A1018,#141E2A); }
-[data-theme="dark"] .seo-tile { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .seo-tile:hover { background:#243B55; }
-[data-theme="dark"] .tpl-card { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .tpl-card:hover { background:#243B55; }
-[data-theme="dark"] .plan-card { background:#1C2940; border-color:#243B55; }
-[data-theme="dark"] .billing-shell { background:#0F1923; }
-[data-theme="dark"] .current-plan-banner { background:linear-gradient(135deg,#0A1018,#141E2A); }
-[data-theme="dark"] .info-box { background:rgba(255,122,74,0.07); border-color:rgba(255,122,74,0.15); color:#8EA3B5; }
-[data-theme="dark"] .btn-outline { background:#1C2940; color:#CDD5DE; border-color:#3D5A73; }
-[data-theme="dark"] .btn-outline:hover { background:#243B55; }
-[data-theme="dark"] .docs-shell { background:#0F1923; }
-[data-theme="dark"] .seo-shell { background:#0F1923; }
-[data-theme="dark"] .tpl-shell { background:#0F1923; }
-[data-theme="dark"] .billing-shell { background:#0F1923; }
-[data-theme="dark"] .chat-shell { background:#0F1923; }
-[data-theme="dark"] .settings-layout { background:#0F1923; }
-[data-theme="dark"] #output-body { background:#0F1923; }
-[data-theme="dark"] .out-body { background:#0F1923; }
-[data-theme="dark"] .edit-textarea { color:#CDD5DE; }
-[data-theme="dark"] .form-section { border-bottom-color:#243B55; }
-[data-theme="dark"] .form-head { background:#141E2A; border-bottom-color:#243B55; }
-[data-theme="dark"] .form-footer { background:#141E2A; border-top-color:#243B55; }
-[data-theme="dark"] .page-body { background:#0F1923; }
 
 /* Theme toggle button */
 .theme-toggle {
   width:34px;height:34px;border-radius:50%;
-  border:1px solid rgba(255,255,255,0.12);
-  background:rgba(255,255,255,0.06);
-  color:rgba(255,255,255,0.6);
+  border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);
+  background:color-mix(in srgb, var(--accent-contrast) 6%, transparent);
+  color:color-mix(in srgb, var(--accent-contrast) 60%, transparent);
   cursor:pointer;font-size:16px;
   display:flex;align-items:center;justify-content:center;
   transition:all .2s;flex-shrink:0;
 }
-.theme-toggle:hover{background:rgba(255,255,255,0.12);color:white;}
+.theme-toggle:hover{background:color-mix(in srgb, var(--accent-contrast) 12%, transparent);color:var(--accent-contrast);}
 
 /* Lang toggle button */
 .lang-toggle {
   display:flex;align-items:center;gap:5px;
   padding:5px 10px;border-radius:20px;
-  border:1px solid rgba(255,255,255,0.12);
-  background:rgba(255,255,255,0.06);
-  color:rgba(255,255,255,0.6);
+  border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);
+  background:color-mix(in srgb, var(--accent-contrast) 6%, transparent);
+  color:color-mix(in srgb, var(--accent-contrast) 60%, transparent);
   cursor:pointer;font-size:11px;font-weight:700;
   font-family:var(--font);
   transition:all .2s;letter-spacing:.5px;flex-shrink:0;
 }
-.lang-toggle:hover{background:rgba(255,255,255,0.12);color:white;}
+.lang-toggle:hover{background:color-mix(in srgb, var(--accent-contrast) 12%, transparent);color:var(--accent-contrast);}
 .lang-flag{font-size:14px;}
 html,body{height:100%;overflow:hidden;background:var(--cream)}
 body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:column}
@@ -177,7 +98,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .app-shell{display:flex;flex:1;overflow:hidden}
 .app-sidebar{
   width:242px;min-width:242px;
-  background:var(--navy);
+  background:var(--brand);
   height:100vh;
   display:flex;flex-direction:column;
   overflow-y:auto;
@@ -186,46 +107,46 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .app-sidebar::after{
   content:'';
   position:absolute;top:0;right:0;bottom:0;width:1px;
-  background:linear-gradient(180deg,transparent,rgba(255,255,255,0.07) 30%,rgba(255,255,255,0.07) 70%,transparent);
+  background:linear-gradient(180deg,transparent,color-mix(in srgb, var(--accent-contrast) 7%, transparent) 30%,color-mix(in srgb, var(--accent-contrast) 7%, transparent) 70%,transparent);
 }
 .sidebar-logo{
   padding:22px 18px 20px;
   display:flex;align-items:center;gap:11px;
-  border-bottom:1px solid rgba(255,255,255,0.06);
+  border-bottom:1px solid color-mix(in srgb, var(--accent-contrast) 6%, transparent);
 }
 .logo-glyph{
   width:36px;height:36px;border-radius:10px;
-  background:linear-gradient(135deg,var(--orange),#C44E1E);
+  background:linear-gradient(135deg,var(--orange),var(--accent-2));
   display:flex;align-items:center;justify-content:center;
   font-family:var(--font);font-weight:700;font-size:17px;
-  color:white;flex-shrink:0;
-  box-shadow:0 4px 12px rgba(232,98,42,0.4);
+  color:var(--accent-contrast);flex-shrink:0;
+  box-shadow:0 4px 12px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .logo-name{
   font-family:var(--font);
-  font-size:19px;font-weight:700;color:white;
+  font-size:19px;font-weight:700;color:var(--accent-contrast);
   letter-spacing:-0.3px;line-height:1.1;
 }
 .logo-name em{font-style:normal;color:var(--orange3)}
-.logo-tag{font-size:9px;font-weight:600;letter-spacing:1px;color:rgba(255,255,255,0.35);text-transform:uppercase}
+.logo-tag{font-size:9px;font-weight:600;letter-spacing:1px;color:color-mix(in srgb, var(--accent-contrast) 35%, transparent);text-transform:uppercase}
 
 .sidebar-section-label{
   padding:18px 16px 5px;
   font-size:10px;font-weight:700;letter-spacing:1.4px;
-  text-transform:uppercase;color:rgba(255,255,255,0.28);
+  text-transform:uppercase;color:color-mix(in srgb, var(--accent-contrast) 28%, transparent);
 }
 .sidebar-item{
   display:flex;align-items:center;gap:10px;
   padding:9px 14px;margin:1px 8px;
   border-radius:var(--r-sm);
-  cursor:pointer;color:rgba(255,255,255,0.5);
+  cursor:pointer;color:color-mix(in srgb, var(--accent-contrast) 50%, transparent);
   font-size:13px;font-weight:500;
   border:none;background:none;width:calc(100% - 16px);text-align:left;
   font-family:var(--font);
   transition:all .15s;position:relative;
 }
-.sidebar-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8)}
-.sidebar-item.active{background:rgba(232,98,42,0.18);color:white}
+.sidebar-item:hover{background:color-mix(in srgb, var(--accent-contrast) 6%, transparent);color:color-mix(in srgb, var(--accent-contrast) 80%, transparent)}
+.sidebar-item.active{background:color-mix(in srgb, var(--accent) 18%, transparent);color:var(--accent-contrast)}
 .sidebar-item.active::before{
   content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);
   width:3px;height:18px;background:var(--orange);border-radius:0 2px 2px 0;
@@ -236,28 +157,28 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
   margin-left:auto;font-size:10px;font-weight:700;
   padding:2px 7px;border-radius:20px;
   background:var(--orange-glow);color:var(--orange3);
-  border:1px solid rgba(232,98,42,0.25);
+  border:1px solid color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .sidebar-footer{
   margin-top:auto;
   padding:14px 10px;
-  border-top:1px solid rgba(255,255,255,0.06);
+  border-top:1px solid color-mix(in srgb, var(--accent-contrast) 6%, transparent);
 }
 .user-tile{
   display:flex;align-items:center;gap:10px;
   padding:9px 10px;border-radius:var(--r-sm);cursor:pointer;
   transition:background .15s;
 }
-.user-tile:hover{background:rgba(255,255,255,0.05)}
+.user-tile:hover{background:color-mix(in srgb, var(--accent-contrast) 5%, transparent)}
 .u-avatar{
   width:32px;height:32px;border-radius:50%;
   background:linear-gradient(135deg,var(--violet),var(--teal));
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;color:white;flex-shrink:0;
+  font-size:12px;font-weight:700;color:var(--accent-contrast);flex-shrink:0;
 }
 .u-info{flex:1;min-width:0}
-.u-name{font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.u-plan{font-size:11px;color:rgba(255,255,255,0.35);margin-top:1px}
+.u-name{font-size:13px;font-weight:600;color:color-mix(in srgb, var(--accent-contrast) 85%, transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-plan{font-size:11px;color:color-mix(in srgb, var(--accent-contrast) 35%, transparent);margin-top:1px}
 
 /* ══ MAIN AREA ═════════════════════════════════ */
 .main-area{
@@ -285,12 +206,12 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
   font-family:var(--font);transition:all .18s;
   white-space:nowrap;
 }
-.btn-primary{background:var(--orange);color:white;box-shadow:0 2px 8px rgba(232,98,42,0.3)}
-.btn-primary:hover{background:var(--orange2);box-shadow:0 4px 14px rgba(232,98,42,0.4);transform:translateY(-1px)}
+.btn-primary{background:var(--orange);color:var(--accent-contrast);box-shadow:0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent)}
+.btn-primary:hover{background:var(--orange2);box-shadow:0 4px 14px color-mix(in srgb, var(--accent) 40%, transparent);transform:translateY(-1px)}
 .btn-outline{background:var(--white);color:var(--navy2);border:1px solid var(--fog)}
 .btn-outline:hover{background:var(--cream);border-color:var(--silver)}
-.btn-navy{background:var(--navy);color:white}
-.btn-navy:hover{background:var(--navy2)}
+.btn-navy{background:var(--brand);color:var(--accent-contrast)}
+.btn-navy:hover{background:var(--brand-2)}
 .btn-sm{padding:6px 14px;font-size:12px}
 
 /* ══ PAGES ═════════════════════════════════════ */
@@ -300,27 +221,27 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 
 /* ══ DASHBOARD ════════════════════════════════ */
 .dash-banner{
-  background:linear-gradient(135deg,var(--navy) 0%,var(--navy3) 100%);
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-3) 100%);
   padding:28px 32px;position:relative;overflow:hidden;
   flex-shrink:0;
 }
 .dash-banner::before{
   content:'';position:absolute;right:-60px;top:-60px;
   width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle,rgba(232,98,42,0.15) 0%,transparent 70%);
+  background:radial-gradient(circle,color-mix(in srgb, var(--accent) 15%, transparent) 0%,transparent 70%);
 }
 .dash-banner::after{
   content:'M';position:absolute;right:32px;bottom:-20px;
   font-family:var(--font);font-size:160px;font-weight:700;
-  color:rgba(255,255,255,0.03);line-height:1;
+  color:color-mix(in srgb, var(--accent-contrast) 3%, transparent);line-height:1;
 }
-.banner-hello{font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:.5px;margin-bottom:4px}
+.banner-hello{font-size:13px;font-weight:600;color:color-mix(in srgb, var(--accent-contrast) 45%, transparent);letter-spacing:.5px;margin-bottom:4px}
 .banner-title{
   font-family:var(--font);
-  font-size:26px;font-weight:700;color:white;
+  font-size:26px;font-weight:700;color:var(--accent-contrast);
   letter-spacing:-.4px;margin-bottom:6px;
 }
-.banner-sub{font-size:13px;color:rgba(255,255,255,0.5);max-width:480px;line-height:1.6}
+.banner-sub{font-size:13px;color:color-mix(in srgb, var(--accent-contrast) 50%, transparent);max-width:480px;line-height:1.6}
 .metrics-grid{
   display:grid;grid-template-columns:repeat(4,1fr);
   gap:14px;padding:24px 28px;flex-shrink:0;
@@ -386,7 +307,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .progress-wrap{padding:14px 20px}
 .progress-row{display:flex;justify-content:space-between;margin-bottom:6px}
 .progress-label{font-size:12px;font-weight:600;color:var(--slate)}
-.progress-pct{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--mist)}
+.progress-pct{font-size:12px;font-family:var(--r2-mono);color:var(--mist)}
 .progress-track{height:7px;background:var(--fog);border-radius:4px;overflow:hidden;margin-bottom:8px}
 .progress-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--orange3));border-radius:4px;transition:width .4s}
 .progress-note{font-size:11px;color:var(--mist)}
@@ -427,6 +348,12 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .cat-pill:hover{color:var(--navy);background:var(--cream)}
 .cat-pill.active{color:var(--orange);background:var(--orange-bg);border-bottom-color:var(--orange)}
 .tools-canvas{flex:1;overflow-y:auto;padding:22px 28px}
+/* Lane C's generation-language selector mounts here (GAUNTLET.md, "the one
+   cross-lane contract"). Empty until /js/genlang.js runs, and collapsed while
+   it is — a control that is present but inert is worse than one that is
+   absent, because the user believes the capability exists. */
+.genlang-slot{margin-bottom:10px}
+.genlang-slot:empty{display:none}
 .tools-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));
   gap:14px;
@@ -434,17 +361,15 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .tool-card{
   background:var(--white);border:1px solid var(--fog);
   border-radius:var(--r);padding:20px;cursor:pointer;
-  transition:all .22s;position:relative;overflow:hidden;
-  box-shadow:var(--shadow-sm);
+  transition:border-color var(--motion-base) var(--ease-out),background-color var(--motion-base) var(--ease-out);
+  position:relative;overflow:hidden;
 }
-.tool-card:hover{box-shadow:var(--shadow);transform:translateY(-3px);border-color:var(--orange)}
-.tool-card .tc-stripe{
-  position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--tc-color,var(--orange));opacity:0;transition:opacity .22s;
-}
-.tool-card:hover .tc-stripe{opacity:1}
+/* Daily-use surface: colour and border move, nothing translates. A coloured
+   rail on every card was hierarchy-by-decoration; the name and icon carry it. */
+.tool-card:hover{border-color:var(--accent);background:var(--surface-2)}
 .tc-icon{
   width:44px;height:44px;border-radius:11px;
+  background:var(--surface-2);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
   font-size:22px;margin-bottom:13px;
 }
@@ -453,6 +378,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .tc-badge{
   position:absolute;top:13px;right:13px;
   font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:var(--accent-bg);color:var(--accent-text);
 }
 
 /* ══ EDITOR ════════════════════════════════════ */
@@ -549,7 +475,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .rb-label{
   font-size:10px;font-weight:800;letter-spacing:.9px;
   text-transform:uppercase;color:var(--orange);
-  font-family:'JetBrains Mono',monospace;
+  font-family:var(--r2-mono);
 }
 .rb-acts{display:flex;gap:2px}
 .icon-btn{
@@ -585,14 +511,14 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
   display:flex;align-items:center;justify-content:center;
   font-size:12px;font-weight:700;
 }
-.msg.ai .m-av{background:var(--orange-bg);border:1px solid rgba(232,98,42,0.2);color:var(--orange)}
-.msg.user .m-av{background:var(--navy);color:white}
+.msg.ai .m-av{background:var(--orange-bg);border:1px solid color-mix(in srgb, var(--accent) 20%, transparent);color:var(--orange)}
+.msg.user .m-av{background:var(--brand);color:var(--accent-contrast)}
 .m-bubble{
   padding:12px 16px;border-radius:var(--r);
   font-size:13.5px;line-height:1.72;
 }
 .msg.ai .m-bubble{background:var(--cream);border:1px solid var(--fog);color:var(--navy2);border-bottom-left-radius:4px}
-.msg.user .m-bubble{background:var(--navy);color:rgba(255,255,255,0.92);border-bottom-right-radius:4px}
+.msg.user .m-bubble{background:var(--brand);color:color-mix(in srgb, var(--accent-contrast) 92%, transparent);border-bottom-right-radius:4px}
 .chat-input-bar{
   display:flex;gap:10px;align-items:flex-end;
   background:var(--white);
@@ -622,7 +548,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
   color:var(--mist);font-family:var(--font);transition:all .15s;
 }
 .filter-btn:hover{border-color:var(--orange);color:var(--orange)}
-.filter-btn.active{background:var(--orange);color:white;border-color:var(--orange)}
+.filter-btn.active{background:var(--orange);color:var(--accent-contrast);border-color:var(--orange)}
 .doc-table-wrap{background:var(--white);border:1px solid var(--fog);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)}
 .doc-table{width:100%;border-collapse:collapse}
 .doc-table th{
@@ -642,16 +568,16 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 /* ══ SEO ════════════════════════════════════════ */
 .seo-shell{flex:1;overflow-y:auto;padding:26px 28px}
 .seo-intro{
-  background:linear-gradient(135deg,var(--navy),var(--navy3));
+  background:linear-gradient(135deg,var(--brand),var(--brand-3));
   border-radius:var(--r-lg);padding:28px 32px;margin-bottom:24px;
   position:relative;overflow:hidden;
 }
 .seo-intro::before{
   content:'';position:absolute;right:-40px;top:-40px;width:220px;height:220px;
-  border-radius:50%;background:radial-gradient(circle,rgba(232,98,42,.15),transparent 70%);
+  border-radius:50%;background:radial-gradient(circle,color-mix(in srgb, var(--accent) 15%, transparent),transparent 70%);
 }
-.seo-intro-title{font-family:var(--font);font-size:22px;font-weight:700;color:white;margin-bottom:6px;letter-spacing:-.3px}
-.seo-intro-sub{font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;max-width:500px}
+.seo-intro-title{font-family:var(--font);font-size:22px;font-weight:700;color:var(--accent-contrast);margin-bottom:6px;letter-spacing:-.3px}
+.seo-intro-sub{font-size:13px;color:color-mix(in srgb, var(--accent-contrast) 50%, transparent);line-height:1.6;max-width:500px}
 .seo-tools-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .seo-tile{
   background:var(--white);border:1px solid var(--fog);border-radius:var(--r);
@@ -711,14 +637,14 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .toggle-sw::after{
   content:'';width:18px;height:18px;background:white;border-radius:50%;
   position:absolute;top:3px;left:3px;transition:transform .2s;
-  box-shadow:0 1px 3px rgba(0,0,0,0.2);
+  box-shadow:var(--shadow-sm);
 }
 .toggle-sw.on::after{transform:translateX(20px)}
 .api-row{display:flex;gap:10px;align-items:center;width:100%;margin-top:12px}
-.api-ok{font-size:12px;font-weight:700;color:var(--teal);display:none;font-family:'JetBrains Mono',monospace}
+.api-ok{font-size:12px;font-weight:700;color:var(--teal);display:none;font-family:var(--r2-mono)}
 .api-ok.show{display:block}
 .info-box{
-  background:var(--orange-bg);border:1px solid rgba(232,98,42,.15);
+  background:var(--orange-bg);border:1px solid color-mix(in srgb, var(--accent) 15%, transparent);
   border-radius:var(--r-sm);padding:14px 16px;
   font-size:12px;color:var(--steel);line-height:1.7;margin-top:12px;
 }
@@ -726,7 +652,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 /* ══ BILLING ════════════════════════════════════ */
 .billing-shell{flex:1;overflow-y:auto;padding:26px 28px}
 .current-plan-banner{
-  background:linear-gradient(135deg,var(--navy),var(--navy3));
+  background:linear-gradient(135deg,var(--brand),var(--brand-3));
   border-radius:var(--r-lg);padding:22px 28px;
   display:flex;align-items:center;justify-content:space-between;
   margin-bottom:24px;overflow:hidden;position:relative;
@@ -734,15 +660,15 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .current-plan-banner::after{
   content:'PRO';position:absolute;right:24px;top:50%;transform:translateY(-50%);
   font-family:var(--font);font-size:80px;font-weight:700;
-  color:rgba(255,255,255,0.04);
+  color:color-mix(in srgb, var(--accent-contrast) 4%, transparent);
 }
-.cpb-left .cpb-tag{font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:4px}
-.cpb-left .cpb-name{font-family:var(--font);font-size:22px;font-weight:700;color:white;letter-spacing:-.3px}
-.cpb-left .cpb-price{font-size:13px;color:rgba(255,255,255,.5);margin-top:3px}
+.cpb-left .cpb-tag{font-size:11px;font-weight:800;letter-spacing:1px;color:color-mix(in srgb, var(--accent-contrast) 40%, transparent);text-transform:uppercase;margin-bottom:4px}
+.cpb-left .cpb-name{font-family:var(--font);font-size:22px;font-weight:700;color:var(--accent-contrast);letter-spacing:-.3px}
+.cpb-left .cpb-price{font-size:13px;color:color-mix(in srgb, var(--accent-contrast) 50%, transparent);margin-top:3px}
 .cpb-right{text-align:right}
-.cpb-cred-label{font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.cpb-cred-val{font-family:var(--font);font-size:24px;font-weight:700;color:white}
-.cpb-bar{width:160px;height:5px;background:rgba(255,255,255,.15);border-radius:3px;margin-top:7px;margin-left:auto}
+.cpb-cred-label{font-size:11px;color:color-mix(in srgb, var(--accent-contrast) 40%, transparent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.cpb-cred-val{font-family:var(--font);font-size:24px;font-weight:700;color:var(--accent-contrast)}
+.cpb-bar{width:160px;height:5px;background:color-mix(in srgb, var(--accent-contrast) 15%, transparent);border-radius:3px;margin-top:7px;margin-left:auto}
 .cpb-fill{height:100%;background:var(--orange3);border-radius:3px}
 .plan-cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .plan-card{
@@ -761,16 +687,9 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .plan-features li{font-size:12px;color:var(--steel);padding:5px 0;display:flex;gap:8px;align-items:flex-start;line-height:1.5}
 .plan-features li::before{content:'✓';color:var(--teal);font-weight:800;flex-shrink:0}
 
-[data-theme="dark"] .dash-banner {
-  background:linear-gradient(135deg,#0A1525 0%,#1A2D42 100%);
-}
-[data-theme="dark"] .banner-hello { color:rgba(255,255,255,0.6); }
-[data-theme="dark"] .banner-title { color:#FFFFFF; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-[data-theme="dark"] .banner-sub { color:rgba(255,255,255,0.7); }
-[data-theme="dark"] .dash-banner::before { background:radial-gradient(ellipse,rgba(255,122,74,.2) 0%,transparent 70%); }
 .toast{
   position:fixed;bottom:22px;right:22px;
-  background:var(--navy);color:white;
+  background:var(--brand);color:var(--accent-contrast);
   padding:13px 20px;border-radius:var(--r-sm);
   font-size:13px;font-weight:600;
   transform:translateY(70px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);
@@ -780,6 +699,17 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .toast.show{transform:translateY(0);opacity:1}
 .toast.success{background:var(--teal)}
 .toast.error{background:var(--red)}
+
+@media (prefers-reduced-motion: reduce){
+  /* Looping: switched OFF and given a readable resting state. */
+  .spinner{animation:none;border-top-color:var(--accent);opacity:.9}
+  #ai-btn.ai-pulse{animation:none}
+  [class*="pulse"]{animation:none}
+  /* Entrance: lands on its final state. */
+  #ai-tooltip-app{animation:none}
+  /* Hover lifts are decoration on a screen someone opens forty times a week. */
+  .tool-card:hover,.btn-primary:hover,.q-tile:hover,.seo-tile:hover,.tpl-card:hover{transform:none}
+}
 
 /* ══ RESPONSIVE ═════════════════════════════════ */
 @media(max-width:1000px){
@@ -797,7 +727,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .pr-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
 .pr-pkg{background:var(--white);border:1.5px solid var(--fog);border-radius:var(--r);padding:22px;cursor:pointer;transition:all .2s;position:relative}
 .pr-pkg:hover{border-color:var(--orange);box-shadow:var(--shadow-sm)}
-.pr-pkg.selected{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,98,42,0.12)}
+.pr-pkg.selected{border-color:var(--orange);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent)}
 .pr-pkg.featured{border-color:var(--orange)}
 .pr-pkg-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
 .pr-pkg-price{font-size:28px;font-weight:800;color:var(--orange);letter-spacing:-.5px}
@@ -850,17 +780,17 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
   <button class="sidebar-item" onclick="window.location.href='gao.html'">
     <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2L9 6M9 12L9 16M2 9L6 9M12 9L16 9M4.5 4.5L7 7M11 11L13.5 13.5M13.5 4.5L11 7M7 11L4.5 13.5"/></svg>
     <span data-i18n="nav_gao">GAO Suite</span>
-    <span class="sidebar-item-badge" style="background:var(--teal);color:white">NEW</span>
+    <span class="sidebar-item-badge" style="background:var(--teal);color:var(--accent-contrast)">NEW</span>
   </button>
   <button class="sidebar-item" onclick="window.location.href='/audiobook?enter=1'">
     <span class="sidebar-item-icon" style="display:flex;align-items:center;justify-content:center;font-size:13px">🎙️</span>
     <span data-i18n="nav_audiobook">Audiobook AI+</span>
-    <span class="sidebar-item-badge" style="background:var(--orange);color:white">NEW</span>
+    <span class="sidebar-item-badge" style="background:var(--orange);color:var(--accent-contrast)">NEW</span>
   </button>
   <button class="sidebar-item" onclick="goTo('pr')">
     <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="1.5"/><path d="M5 7h8M5 10h5"/></svg>
     PR &amp; Media
-    <span class="sidebar-item-badge" style="background:#1D4ED8;color:white">New</span>
+    <span class="sidebar-item-badge" style="background:var(--blue-text);color:var(--accent-contrast)">New</span>
   </button>
   <button class="sidebar-item" onclick="goTo('bulk')">
     <svg class="sidebar-item-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="14" height="3" rx="1"/><rect x="2" y="7.5" width="14" height="3" rx="1"/><rect x="2" y="13" width="14" height="3" rx="1"/></svg>
@@ -881,37 +811,37 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
     <!-- Profile tile with dropdown -->
     <div style="position:relative">
       <!-- Profile Menu Dropdown -->
-      <div id="profile-menu" style="display:none;position:absolute;bottom:calc(100% + 8px);left:10px;right:10px;background:#1A2D42;border:1px solid rgba(255,255,255,0.12);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:100;">
+      <div id="profile-menu" style="display:none;position:absolute;bottom:calc(100% + 8px);left:10px;right:10px;background:var(--brand-3);border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-lg);z-index:100;">
         <!-- User info header -->
-        <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.08)">
-          <div style="font-size:13px;font-weight:700;color:white" id="pm-name">Loading...</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px" id="pm-email">...</div>
+        <div style="padding:14px 16px;border-bottom:1px solid color-mix(in srgb, var(--accent-contrast) 8%, transparent)">
+          <div style="font-size:13px;font-weight:700;color:var(--accent-contrast)" id="pm-name">Loading...</div>
+          <div style="font-size:11px;color:color-mix(in srgb, var(--accent-contrast) 40%, transparent);margin-top:2px" id="pm-email">...</div>
         </div>
         <!-- Dark/Light Mode -->
         <div style="padding:6px">
-          <button onclick="toggleTheme();event.stopPropagation();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'">
+          <button onclick="toggleTheme();event.stopPropagation();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:color-mix(in srgb, var(--accent-contrast) 70%, transparent);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='color-mix(in srgb, var(--accent-contrast) 7%, transparent)'" onmouseout="this.style.background='none'">
             <span id="pm-theme-icon" style="font-size:16px">🌙</span>
             <span id="pm-theme-label" data-i18n-pm="theme_dark">Mod Gelap</span>
-            <span id="pm-theme-status" style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(232,98,42,0.2);color:#FF7A4A">ON</span>
+            <span id="pm-theme-status" style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:color-mix(in srgb, var(--accent) 20%, transparent);color:var(--accent-text)">ON</span>
           </button>
           <!-- Language -->
           <div style="padding:8px 12px 4px">
-            <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Language</div>
+            <div style="font-size:10px;font-weight:700;color:color-mix(in srgb, var(--accent-contrast) 40%, transparent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Language</div>
             <div style="display:flex;gap:6px">
-              <button onclick="setLang('en');event.stopPropagation();" id="pm-lang-en" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇬🇧 English</button>
-              <button onclick="setLang('zh');event.stopPropagation();" id="pm-lang-zh" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇨🇳 中文</button>
-              <button onclick="setLang('bm');event.stopPropagation();" id="pm-lang-ms" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇲🇾 Malaysia</button>
+              <button onclick="setLang('en');event.stopPropagation();" id="pm-lang-en" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);background:color-mix(in srgb, var(--accent-contrast) 5%, transparent);color:color-mix(in srgb, var(--accent-contrast) 70%, transparent);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇬🇧 English</button>
+              <button onclick="setLang('zh');event.stopPropagation();" id="pm-lang-zh" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);background:color-mix(in srgb, var(--accent-contrast) 5%, transparent);color:color-mix(in srgb, var(--accent-contrast) 70%, transparent);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇨🇳 中文</button>
+              <button onclick="setLang('bm');event.stopPropagation();" id="pm-lang-ms" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);background:color-mix(in srgb, var(--accent-contrast) 5%, transparent);color:color-mix(in srgb, var(--accent-contrast) 70%, transparent);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);transition:all .15s">🇲🇾 Malaysia</button>
             </div>
           </div>
           <!-- Settings -->
-          <button onclick="goTo('settings');event.stopPropagation();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'">
+          <button onclick="goTo('settings');event.stopPropagation();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:color-mix(in srgb, var(--accent-contrast) 70%, transparent);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='color-mix(in srgb, var(--accent-contrast) 7%, transparent)'" onmouseout="this.style.background='none'">
             <span style="font-size:16px">⚙️</span>
             <span data-i18n="nav_settings">Settings</span>
           </button>
         </div>
         <!-- Divider + Logout -->
-        <div style="border-top:1px solid rgba(255,255,255,0.08);padding:6px">
-          <button onclick="logout();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:rgba(255,100,100,0.8);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='rgba(192,57,43,0.1)'" onmouseout="this.style.background='none'">
+        <div style="border-top:1px solid color-mix(in srgb, var(--accent-contrast) 8%, transparent);padding:6px">
+          <button onclick="logout();" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;color:var(--red-text);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);text-align:left;transition:background .15s;" onmouseover="this.style.background='var(--red-bg)'" onmouseout="this.style.background='none'">
             <span style="font-size:16px">🚪</span>
             <span id="signout-label" data-i18n="signout_label">Log keluar</span>
           </button>
@@ -925,7 +855,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
           <div class="u-name">Loading...</div>
           <div class="u-plan">Loading...</div>
         </div>
-        <span style="font-size:14px;color:rgba(255,255,255,0.4);margin-left:auto">⌃</span>
+        <span style="font-size:14px;color:color-mix(in srgb, var(--accent-contrast) 40%, transparent);margin-left:auto">⌃</span>
       </div>
     </div>
   </div>
@@ -1038,7 +968,8 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
         </div>
         <div id="form-fields"></div>
         <div class="form-footer">
-          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="generateContent()">
+          <div class="genlang-slot" data-genlang-mount></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="generateContent()">
             ✦ Generate Content
           </button>
         </div>
@@ -1406,13 +1337,13 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
           </div>
           <div style="margin-top:24px">
             <div class="sc-title" style="font-size:15px;margin-bottom:12px">API Reference</div>
-            <div style="background:var(--navy);border-radius:var(--r-sm);padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#a8d8a8;line-height:1.8;overflow-x:auto">
-              <div style="color:#888;margin-bottom:8px"># Generate Content</div>
+            <div style="background:var(--brand);border-radius:var(--r-sm);padding:16px;font-family:var(--r2-mono);font-size:12px;color:var(--green-text);line-height:1.8;overflow-x:auto">
+              <div style="color:var(--muted);margin-bottom:8px"># Generate Content</div>
               curl -X POST ${APP_URL || 'https://your-app.railway.app'}/api/generate \<br>
               &nbsp;&nbsp;-H "X-API-Key: YOUR_API_KEY" \<br>
               &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
               &nbsp;&nbsp;-d '{"prompt":"Write a blog post about AI","toolName":"Blog Writer","tone":"Professional"}'<br><br>
-              <div style="color:#888;margin-bottom:8px"># AI Chat</div>
+              <div style="color:var(--muted);margin-bottom:8px"># AI Chat</div>
               curl -X POST ${APP_URL || 'https://your-app.railway.app'}/api/chat \<br>
               &nbsp;&nbsp;-H "X-API-Key: YOUR_API_KEY" \<br>
               &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
@@ -1496,7 +1427,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
       <!-- Page header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
         <div>
-          <div style="font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-.3px">M-EasyPR AI+ <span style="font-size:12px;font-weight:700;background:rgba(29,78,216,0.1);color:#1D4ED8;padding:3px 10px;border-radius:20px;vertical-align:middle;margin-left:6px">BETA</span></div>
+          <div style="font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-.3px">M-EasyPR AI+ <span style="font-size:12px;font-weight:700;background:color-mix(in srgb, var(--blue) 10%, transparent);color:var(--blue-text);padding:3px 10px;border-radius:20px;vertical-align:middle;margin-left:6px">BETA</span></div>
           <div style="font-size:13px;color:var(--mist);margin-top:3px">Write, distribute, and track press releases across Malaysian and Southeast Asian media</div>
         </div>
         <div style="display:flex;gap:8px">
@@ -1565,9 +1496,9 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
               <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
                 <div class="pr-score-box"><span class="pr-score-label">Words</span><span class="pr-score-val" id="pr-s-words" style="color:var(--navy)">—</span></div>
                 <div class="pr-score-box"><span class="pr-score-label">SEO</span><span class="pr-score-val" id="pr-s-seo" style="color:var(--orange)">—</span><span style="font-size:11px;color:var(--mist)">/100</span></div>
-                <div class="pr-score-box"><span class="pr-score-label">🤖 GEO</span><span class="pr-score-val" id="pr-s-geo" style="color:#7C3AED">—</span><span style="font-size:11px;color:var(--mist)">/100</span></div>
-                <div style="flex:1;min-width:180px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:10px 14px">
-                  <div style="font-size:10px;font-weight:700;color:#7C3AED;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px">AI Citation Likelihood</div>
+                <div class="pr-score-box"><span class="pr-score-label">🤖 GEO</span><span class="pr-score-val" id="pr-s-geo" style="color:var(--purple-text)">—</span><span style="font-size:11px;color:var(--mist)">/100</span></div>
+                <div style="flex:1;min-width:180px;background:color-mix(in srgb, var(--purple) 6%, transparent);border:1px solid color-mix(in srgb, var(--purple) 20%, transparent);border-radius:8px;padding:10px 14px">
+                  <div style="font-size:10px;font-weight:700;color:var(--purple-text);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px">AI Citation Likelihood</div>
                   <div style="font-size:12px;color:var(--navy)" id="pr-s-georeason">—</div>
                 </div>
               </div>
@@ -1589,7 +1520,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 
       <!-- ── DISTRIBUTE TAB ── -->
       <div id="prpanel-distribute" style="display:none">
-        <div id="pr-dist-alert" style="display:none;background:rgba(232,98,42,0.07);border:1px solid rgba(232,98,42,0.2);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--orange);font-weight:600">
+        <div id="pr-dist-alert" style="display:none;background:color-mix(in srgb, var(--accent) 7%, transparent);border:1px solid color-mix(in srgb, var(--accent) 20%, transparent);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--orange);font-weight:600">
           ⚠️ Write a press release first (or select one from My PRs) before distributing.
         </div>
         <div id="pr-dist-selected-bar" style="display:none;background:var(--white);border:1px solid var(--fog);border-radius:var(--r);padding:14px 18px;margin-bottom:16px">
@@ -1614,7 +1545,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
             <div class="pr-pkg-feat" style="opacity:.4">✗ SEA reach</div>
           </div>
           <div class="pr-pkg featured" id="pkgcard-growth" onclick="prSelectPkg('growth')" style="position:relative">
-            <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--orange);color:white;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;white-space:nowrap">Most Popular</div>
+            <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--orange);color:var(--accent-contrast);font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;white-space:nowrap">Most Popular</div>
             <div class="pr-pkg-name">Growth</div>
             <div class="pr-pkg-price">RM 299</div>
             <div class="pr-pkg-sub">25 Media Outlets · MY + SEA</div>
@@ -1762,14 +1693,14 @@ function updateProfileMenuLabels() {
   if (themeStatus) themeStatus.textContent = isDark ? ts[0] : ts[1];
 
   // Language picker — highlight the active language (M-EasyDo-style 3-button UI)
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#E8622A';
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || 'var(--accent)';
   ['en', 'zh', 'bm'].forEach(function (l) {
     const btn = document.getElementById('pm-lang-' + (l === 'bm' ? 'ms' : l));
     if (!btn) return;
     const active = currentLang === l;
-    btn.style.background = active ? accent : 'rgba(255,255,255,0.05)';
-    btn.style.color = active ? '#fff' : 'rgba(255,255,255,0.7)';
-    btn.style.borderColor = active ? accent : 'rgba(255,255,255,0.12)';
+    btn.style.background = active ? accent : 'color-mix(in srgb, var(--accent-contrast) 5%, transparent)';
+    btn.style.color = active ? 'var(--surface)' : 'color-mix(in srgb, var(--accent-contrast) 70%, transparent)';
+    btn.style.borderColor = active ? accent : 'color-mix(in srgb, var(--accent-contrast) 12%, transparent)';
   });
 }
 
@@ -1810,8 +1741,8 @@ async function loadStats() {
 
 function renderRecentDocsTo(panel, docs) {
   const icons={'Blog Writer':'✍️','Email Campaign':'📧','Product Description':'🛍️','Ad Copy':'🎯','Social Media Posts':'📱','Sales Outreach Email':'💼','SEO Meta Generator':'🔍','Landing Page Copy':'🚀','Content Rewriter':'🔄','Keyword Cluster Builder':'💡'};
-  const bgs={'Blog Writer':'#EEF2FF','Email Campaign':'#ECFDF5','Product Description':'#FFF1F2','Ad Copy':'var(--orange-bg)','Social Media Posts':'#FEF3C7'};
-  const tcs={'Blog Writer':'#4F46E5','Email Campaign':'#059669','Product Description':'#E11D48','Ad Copy':'var(--orange)','Social Media Posts':'#B45309'};
+  const bgs={'Blog Writer':'var(--purple-bg)','Email Campaign':'var(--green-bg)','Product Description':'var(--red-bg)','Ad Copy':'var(--orange-bg)','Social Media Posts':'var(--amber-bg)'};
+  const tcs={'Blog Writer':'var(--purple-text)','Email Campaign':'var(--green-text)','Product Description':'var(--red-text)','Ad Copy':'var(--orange)','Social Media Posts':'var(--amber-text)'};
   panel.innerHTML=docs.map(d=>{
     const icon=icons[d.tool_name]||'📄';
     const bg=bgs[d.tool_name]||'var(--cream2)';
@@ -1848,34 +1779,34 @@ function goTo(page) {
 
 // ── Tool Catalogue ───────────────────────────────────────
 const TOOLS=[
-  {id:'blog-writer',name:'Blog Writer',desc:'Write full SEO-optimized blog posts from a title, keywords, and audience.',icon:'✍️',bg:'#EEF2FF',color:'#4F46E5',cat:'blog',badge:'Popular'},
-  {id:'landing-page',name:'Landing Page Copy',desc:'Conversion-focused landing page copy: headlines, body, social proof, and CTAs.',icon:'🚀',bg:'#FFF7ED',color:'#EA580C',cat:'blog',badge:''},
-  {id:'article-outline',name:'Article Outline',desc:'Detailed blog post or article outlines with H2/H3 structure.',icon:'📋',bg:'#F0FDF4',color:'#15803D',cat:'blog',badge:''},
-  {id:'social-media',name:'Social Media Posts',desc:'Posts for Instagram, LinkedIn, X (Twitter), Facebook, and TikTok.',icon:'📱',bg:'#FEF3C7',color:'#B45309',cat:'social',badge:'Popular'},
-  {id:'instagram-bio',name:'Instagram Bio',desc:'Punchy, click-worthy Instagram bios with clear value props.',icon:'💎',bg:'#FDF4FF',color:'#9333EA',cat:'social',badge:''},
-  {id:'youtube-script',name:'YouTube Script',desc:'Full video scripts: hook, story, value, and CTA.',icon:'🎬',bg:'#FEF2F2',color:'#DC2626',cat:'social',badge:''},
-  {id:'linkedin-post',name:'LinkedIn Post',desc:'Thought leadership posts and company updates for LinkedIn.',icon:'👔',bg:'#EFF6FF',color:'#1D4ED8',cat:'social',badge:''},
-  {id:'email-copy',name:'Email Campaign',desc:'Subject lines, body copy, and CTAs for any email type.',icon:'📧',bg:'#ECFDF5',color:'#059669',cat:'email',badge:'Popular'},
-  {id:'email-sequence',name:'Email Sequence',desc:'Complete 3-7 email drip sequences for onboarding or nurturing.',icon:'📬',bg:'#F0FDF4',color:'#047857',cat:'email',badge:''},
-  {id:'subject-lines',name:'Email Subject Lines',desc:'A/B-testable subject lines that boost open rates.',icon:'📮',bg:'#ECFDF5',color:'#059669',cat:'email',badge:''},
-  {id:'ad-copy',name:'Ad Copy',desc:'Facebook, Instagram, Google, and LinkedIn ads that convert.',icon:'🎯',bg:'#FEE2E2',color:'#DC2626',cat:'ads',badge:'Popular'},
-  {id:'google-ads',name:'Google Ads',desc:'Search ads with headlines (30 chars) and descriptions (90 chars).',icon:'🔎',bg:'#EFF6FF',color:'#2563EB',cat:'ads',badge:''},
-  {id:'push-notif',name:'Push Notification',desc:'Short, urgent copy that drives clicks and app opens.',icon:'🔔',bg:'#F5F3FF',color:'#7C3AED',cat:'ads',badge:''},
-  {id:'product-desc',name:'Product Description',desc:'Persuasive product copy for Shopify, Amazon, and marketplaces.',icon:'🛍️',bg:'#FFF1F2',color:'#E11D48',cat:'ecom',badge:'Popular'},
-  {id:'product-title',name:'Product Title',desc:'SEO-friendly product titles for Amazon and Shopify listings.',icon:'🏷️',bg:'#FFF1F2',color:'#BE185D',cat:'ecom',badge:''},
-  {id:'review-reply',name:'Review Responder',desc:'Professional responses to positive and negative customer reviews.',icon:'⭐',bg:'#FEFCE8',color:'#A16207',cat:'ecom',badge:''},
-  {id:'sales-email',name:'Sales Outreach',desc:'Cold email sequences with 3-touch follow-up series.',icon:'💼',bg:'#F0FDF4',color:'#16A34A',cat:'sales',badge:''},
-  {id:'cold-dm',name:'Cold Outreach DM',desc:'LinkedIn and Instagram DM templates for B2B prospecting.',icon:'📤',bg:'#ECFDF5',color:'#0D9488',cat:'sales',badge:''},
-  {id:'sales-pitch',name:'Sales Pitch Script',desc:'Concise elevator pitches and sales call scripts.',icon:'🎤',bg:'#FFF7ED',color:'#C2410C',cat:'sales',badge:''},
-  {id:'paraphrase',name:'Content Rewriter',desc:'Rewrite any content with a fresh perspective and unique voice.',icon:'🔄',bg:'#F5F3FF',color:'#7C3AED',cat:'rewrite',badge:''},
-  {id:'ai-humanizer',name:'AI Humanizer',desc:'Remove AI-detection patterns and add authentic human voice.',icon:'🤖',bg:'#FDF4FF',color:'#A21CAF',cat:'rewrite',badge:'New'},
-  {id:'summarizer',name:'Content Summarizer',desc:'Condense long articles into clear, concise summaries.',icon:'📉',bg:'#F0FDF4',color:'#166534',cat:'rewrite',badge:''},
-  {id:'seo-meta',name:'SEO Meta Tags',desc:'Title tags and meta descriptions for maximum search CTR.',icon:'🔍',bg:'#EFF6FF',color:'#2563EB',cat:'seo',badge:'SEO'},
-  {id:'keyword-ideas',name:'Keyword Clusters',desc:'Long-tail keywords, clusters, and intent mapping for any niche.',icon:'💡',bg:'#FEFCE8',color:'#CA8A04',cat:'seo',badge:'SEO'},
-  {id:'faq-writer',name:'FAQ Generator',desc:'SEO-rich FAQ sections for any product, service, or article.',icon:'❓',bg:'#F5F3FF',color:'#6D28D9',cat:'seo',badge:''},
-  {id:'press-release',name:'Press Release',desc:'Write journalist-ready press releases optimised for media pickup, SEO, and AI citation (GEO).',icon:'📰',bg:'#EFF6FF',color:'#1D4ED8',cat:'pr',badge:'New'},
-  {id:'pr-angle',name:'PR Angle Generator',desc:'Generate 5 distinct newsworthy angles for any product launch, company milestone, or brand story.',icon:'🎯',bg:'#F0FDF4',color:'#15803D',cat:'pr',badge:''},
-  {id:'media-pitch',name:'Media Pitch Email',desc:'Write compelling pitch emails to journalists and editors that get your story covered.',icon:'✉️',bg:'#FDF4FF',color:'#9333EA',cat:'pr',badge:''},
+  {id:'blog-writer',name:'Blog Writer',desc:'Write full SEO-optimized blog posts from a title, keywords, and audience.',icon:'✍️',cat:'blog',badge:'Popular'},
+  {id:'landing-page',name:'Landing Page Copy',desc:'Conversion-focused landing page copy: headlines, body, social proof, and CTAs.',icon:'🚀',cat:'blog',badge:''},
+  {id:'article-outline',name:'Article Outline',desc:'Detailed blog post or article outlines with H2/H3 structure.',icon:'📋',cat:'blog',badge:''},
+  {id:'social-media',name:'Social Media Posts',desc:'Posts for Instagram, LinkedIn, X (Twitter), Facebook, and TikTok.',icon:'📱',cat:'social',badge:'Popular'},
+  {id:'instagram-bio',name:'Instagram Bio',desc:'Punchy, click-worthy Instagram bios with clear value props.',icon:'💎',cat:'social',badge:''},
+  {id:'youtube-script',name:'YouTube Script',desc:'Full video scripts: hook, story, value, and CTA.',icon:'🎬',cat:'social',badge:''},
+  {id:'linkedin-post',name:'LinkedIn Post',desc:'Thought leadership posts and company updates for LinkedIn.',icon:'👔',cat:'social',badge:''},
+  {id:'email-copy',name:'Email Campaign',desc:'Subject lines, body copy, and CTAs for any email type.',icon:'📧',cat:'email',badge:'Popular'},
+  {id:'email-sequence',name:'Email Sequence',desc:'Complete 3-7 email drip sequences for onboarding or nurturing.',icon:'📬',cat:'email',badge:''},
+  {id:'subject-lines',name:'Email Subject Lines',desc:'A/B-testable subject lines that boost open rates.',icon:'📮',cat:'email',badge:''},
+  {id:'ad-copy',name:'Ad Copy',desc:'Facebook, Instagram, Google, and LinkedIn ads that convert.',icon:'🎯',cat:'ads',badge:'Popular'},
+  {id:'google-ads',name:'Google Ads',desc:'Search ads with headlines (30 chars) and descriptions (90 chars).',icon:'🔎',cat:'ads',badge:''},
+  {id:'push-notif',name:'Push Notification',desc:'Short, urgent copy that drives clicks and app opens.',icon:'🔔',cat:'ads',badge:''},
+  {id:'product-desc',name:'Product Description',desc:'Persuasive product copy for Shopify, Amazon, and marketplaces.',icon:'🛍️',cat:'ecom',badge:'Popular'},
+  {id:'product-title',name:'Product Title',desc:'SEO-friendly product titles for Amazon and Shopify listings.',icon:'🏷️',cat:'ecom',badge:''},
+  {id:'review-reply',name:'Review Responder',desc:'Professional responses to positive and negative customer reviews.',icon:'⭐',cat:'ecom',badge:''},
+  {id:'sales-email',name:'Sales Outreach',desc:'Cold email sequences with 3-touch follow-up series.',icon:'💼',cat:'sales',badge:''},
+  {id:'cold-dm',name:'Cold Outreach DM',desc:'LinkedIn and Instagram DM templates for B2B prospecting.',icon:'📤',cat:'sales',badge:''},
+  {id:'sales-pitch',name:'Sales Pitch Script',desc:'Concise elevator pitches and sales call scripts.',icon:'🎤',cat:'sales',badge:''},
+  {id:'paraphrase',name:'Content Rewriter',desc:'Rewrite any content with a fresh perspective and unique voice.',icon:'🔄',cat:'rewrite',badge:''},
+  {id:'ai-humanizer',name:'AI Humanizer',desc:'Remove AI-detection patterns and add authentic human voice.',icon:'🤖',cat:'rewrite',badge:'New'},
+  {id:'summarizer',name:'Content Summarizer',desc:'Condense long articles into clear, concise summaries.',icon:'📉',cat:'rewrite',badge:''},
+  {id:'seo-meta',name:'SEO Meta Tags',desc:'Title tags and meta descriptions for maximum search CTR.',icon:'🔍',cat:'seo',badge:'SEO'},
+  {id:'keyword-ideas',name:'Keyword Clusters',desc:'Long-tail keywords, clusters, and intent mapping for any niche.',icon:'💡',cat:'seo',badge:'SEO'},
+  {id:'faq-writer',name:'FAQ Generator',desc:'SEO-rich FAQ sections for any product, service, or article.',icon:'❓',cat:'seo',badge:''},
+  {id:'press-release',name:'Press Release',desc:'Write journalist-ready press releases optimised for media pickup, SEO, and AI citation (GEO).',icon:'📰',cat:'pr',badge:'New'},
+  {id:'pr-angle',name:'PR Angle Generator',desc:'Generate 5 distinct newsworthy angles for any product launch, company milestone, or brand story.',icon:'🎯',cat:'pr',badge:''},
+  {id:'media-pitch',name:'Media Pitch Email',desc:'Write compelling pitch emails to journalists and editors that get your story covered.',icon:'✉️',cat:'pr',badge:''},
 ];
 
 const FORMS={
@@ -1921,10 +1852,9 @@ function renderTools(list) {
     const name = (toolNames[idx] && toolNames[idx]) || tool.name;
     const desc = (toolDescs[idx] && toolDescs[idx]) || tool.desc;
     return `
-    <div class="tool-card" onclick="openTool('${tool.id}')" style="--tc-color:${tool.color}">
-      <div class="tc-stripe"></div>
-      ${tool.badge?`<span class="tc-badge" style="background:${tool.color}15;color:${tool.color}">${tool.badge}</span>`:''}
-      <div class="tc-icon" style="background:${tool.bg}">${tool.icon}</div>
+    <div class="tool-card" onclick="openTool('${tool.id}')">
+      ${tool.badge?`<span class="tc-badge">${tool.badge}</span>`:''}
+      <div class="tc-icon">${tool.icon}</div>
       <div class="tc-name">${name}</div>
       <div class="tc-desc">${desc}</div>
     </div>`;
@@ -2111,7 +2041,7 @@ function scrollChat(){const w=document.getElementById('chat-window');w.scrollTop
 function clearChat(){chatHistory=[];document.getElementById('chat-window').innerHTML=`<div class="msg ai"><div class="m-av" style="font-size:10px;font-weight:800;font-family:var(--font)">M</div><div class="m-bubble">${escHtml(t('chat_cleared'))}</div></div>`;}
 
 // ── Documents ────────────────────────────────────────────
-const TYPE_STYLE={'Blog Writer':'background:#EEF2FF;color:#4F46E5','Email Campaign':'background:#ECFDF5;color:#059669','Product Description':'background:#FFF1F2;color:#E11D48','Ad Copy':'background:var(--orange-bg);color:var(--orange)','Social Media Posts':'background:#FEF3C7;color:#B45309','Sales Outreach Email':'background:#F0FDF4;color:#16A34A','SEO Meta Generator':'background:#EFF6FF;color:#2563EB','Keyword Cluster Builder':'background:#FEFCE8;color:#CA8A04','Landing Page Copy':'background:#FFF7ED;color:#EA580C','Content Rewriter':'background:#F5F3FF;color:#7C3AED'};
+const TYPE_STYLE={'Blog Writer':'background:var(--purple-bg);color:var(--purple-text)','Email Campaign':'background:var(--green-bg);color:var(--green-text)','Product Description':'background:var(--red-bg);color:var(--red-text)','Ad Copy':'background:var(--orange-bg);color:var(--orange)','Social Media Posts':'background:var(--amber-bg);color:var(--amber-text)','Sales Outreach Email':'background:var(--green-bg);color:var(--green-text)','SEO Meta Generator':'background:var(--blue-bg);color:var(--blue-text)','Keyword Cluster Builder':'background:var(--amber-bg);color:var(--amber-text)','Landing Page Copy':'background:var(--accent-bg);color:var(--accent-2)','Content Rewriter':'background:var(--purple-bg);color:var(--purple-text)'};
 
 async function renderDocuments() {
   try {
@@ -2129,7 +2059,7 @@ async function renderDocuments() {
       return `<tr>
         <td style="font-weight:600;color:var(--navy)">${d.title}</td>
         <td><span class="doc-type-tag" style="${style}">${d.tool_name||'Content'}</span></td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mist)">${(d.word_count||0).toLocaleString()}</td>
+        <td style="font-family:var(--r2-mono);font-size:12px;color:var(--mist)">${(d.word_count||0).toLocaleString()}</td>
         <td style="font-size:12px;color:var(--mist)">${date}</td>
         <td style="display:flex;gap:6px">
           ${currentUser?.has_wp?`<button class="btn btn-outline btn-sm" style="padding:4px 8px;font-size:11px" onclick="publishDocWP(${d.id},'${d.title.replace(/'/g,"\\'")}')">🌐 WP</button>`:''}
@@ -2226,7 +2156,7 @@ function updateWPStatus(connected,url='') {
   const status=document.getElementById('wp-connected-status');
   const disconnectBtn=document.getElementById('wp-disconnect-btn');
   if(!status) return;
-  if(connected){status.innerHTML=`<div style="background:var(--teal-bg);border:1px solid rgba(26,143,122,.2);border-radius:var(--r-sm);padding:12px 16px;font-size:13px;color:var(--teal);margin-bottom:16px">✓ WordPress is connected ${url?'— '+url:''}</div>`;if(disconnectBtn)disconnectBtn.style.display='inline-flex';}
+  if(connected){status.innerHTML=`<div style="background:var(--teal-bg);border:1px solid color-mix(in srgb, var(--green) 20%, transparent);border-radius:var(--r-sm);padding:12px 16px;font-size:13px;color:var(--teal);margin-bottom:16px">✓ WordPress is connected ${url?'— '+url:''}</div>`;if(disconnectBtn)disconnectBtn.style.display='inline-flex';}
   else{status.innerHTML='';if(disconnectBtn)disconnectBtn.style.display='none';}
 }
 
@@ -2262,7 +2192,7 @@ function updateShopifyStatus(connected,domain='') {
   const status=document.getElementById('shopify-connected-status');
   const disconnectBtn=document.getElementById('shopify-disconnect-btn');
   if(!status) return;
-  if(connected){status.innerHTML=`<div style="background:var(--teal-bg);border:1px solid rgba(26,143,122,.2);border-radius:var(--r-sm);padding:12px 16px;font-size:13px;color:var(--teal);margin-bottom:16px">✓ Shopify is connected ${domain?'— '+domain:''}</div>`;if(disconnectBtn)disconnectBtn.style.display='inline-flex';}
+  if(connected){status.innerHTML=`<div style="background:var(--teal-bg);border:1px solid color-mix(in srgb, var(--green) 20%, transparent);border-radius:var(--r-sm);padding:12px 16px;font-size:13px;color:var(--teal);margin-bottom:16px">✓ Shopify is connected ${domain?'— '+domain:''}</div>`;if(disconnectBtn)disconnectBtn.style.display='inline-flex';}
   else{status.innerHTML='';if(disconnectBtn)disconnectBtn.style.display='none';}
 }
 
@@ -2296,7 +2226,7 @@ async function disconnectShopify() {
 function showDevKey(key) {
   const el=document.getElementById('dev-key-display');
   if(!el) return;
-  el.innerHTML=`<div style="background:var(--navy);border-radius:var(--r-sm);padding:14px 16px;margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.8px;margin-bottom:8px">YOUR API KEY</div><div style="display:flex;align-items:center;gap:10px"><code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#a8d8a8;flex:1;word-break:break-all">${key}</code><button class="btn btn-outline btn-sm" style="flex-shrink:0;color:white;border-color:rgba(255,255,255,.2)" onclick="navigator.clipboard.writeText('${key}').then(()=>toast('Copied!','success'))">Copy</button></div></div>`;
+  el.innerHTML=`<div style="background:var(--brand);border-radius:var(--r-sm);padding:14px 16px;margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:color-mix(in srgb, var(--accent-contrast) 40%, transparent);letter-spacing:.8px;margin-bottom:8px">YOUR API KEY</div><div style="display:flex;align-items:center;gap:10px"><code style="font-family:var(--r2-mono);font-size:11px;color:var(--green-text);flex:1;word-break:break-all">${key}</code><button class="btn btn-outline btn-sm" style="flex-shrink:0;color:var(--accent-contrast);border-color:color-mix(in srgb, var(--accent-contrast) 20%, transparent)" onclick="navigator.clipboard.writeText('${key}').then(()=>toast('Copied!','success'))">Copy</button></div></div>`;
   const enableBtn=document.getElementById('dev-enable-btn');
   const regenBtn=document.getElementById('dev-regen-btn');
   if(enableBtn)enableBtn.style.display='none';
@@ -2342,7 +2272,7 @@ async function loadTeam() {
           <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px">Members (${data.members.length})</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             ${data.members.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream);border-radius:var(--r-sm)">
-              <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white">${m.name.charAt(0)}</div>
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent-contrast)">${m.name.charAt(0)}</div>
               <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">${m.name}</div><div style="font-size:11px;color:var(--mist)">${m.email} · ${m.role}</div></div>
               ${m.id!==currentUser?.id?`<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="removeMember(${m.id})">Remove</button>`:'<span style="font-size:11px;color:var(--mist)">(you)</span>'}
             </div>`).join('')}
@@ -3745,7 +3675,7 @@ async function loadPrHistory() {
     document.getElementById('pr-hist-loading').style.display = 'none';
     if (!data.releases?.length) { document.getElementById('pr-hist-empty').style.display = 'block'; return; }
 
-    const statusColor = { draft:'var(--mist)', submitted:'var(--orange)', published:'#16a34a' };
+    const statusColor = { draft:'var(--mist)', submitted:'var(--orange)', published:'var(--green-text)' };
     const tbody = document.getElementById('pr-hist-tbody');
     tbody.innerHTML = data.releases.map(r => `
       <tr>
@@ -3753,8 +3683,8 @@ async function loadPrHistory() {
         <td>${r.company_name}</td>
         <td>${r.word_count || '—'}</td>
         <td style="color:var(--orange);font-weight:700">${r.seo_score || '—'}</td>
-        <td style="color:#7C3AED;font-weight:700">${r.geo_score || '—'}</td>
-        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${r.status==='published'?'rgba(22,163,74,0.1)':r.status==='submitted'?'rgba(232,98,42,0.1)':'var(--cream,#f9f7f4)'};color:${statusColor[r.status]||'var(--mist)'}">${r.dist_status||r.status||'draft'}</span></td>
+        <td style="color:var(--purple-text);font-weight:700">${r.geo_score || '—'}</td>
+        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${r.status==='published'?'color-mix(in srgb, var(--green) 10%, transparent)':r.status==='submitted'?'color-mix(in srgb, var(--accent) 10%, transparent)':'var(--cream)'};color:${statusColor[r.status]||'var(--mist)'}">${r.dist_status||r.status||'draft'}</span></td>
         <td style="color:var(--mist);font-size:12px">${new Date(r.created_at).toLocaleDateString()}</td>
         <td>
           <div style="display:flex;gap:6px">
@@ -3792,9 +3722,9 @@ async function prViewReport(distId) {
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
         <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Emails Sent</div><div class="pr-score-val" style="color:var(--navy)">${d.emails_sent||0}</div></div>
-        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Published</div><div class="pr-score-val" style="color:#16a34a">${published}</div></div>
+        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Published</div><div class="pr-score-val" style="color:var(--green-text)">${published}</div></div>
         <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Total Reach</div><div class="pr-score-val" style="color:var(--orange)">${totalReach}</div></div>
-        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Status</div><div class="pr-score-val" style="font-size:13px;color:${d.status==='published'?'#16a34a':'var(--orange)'}">${d.status}</div></div>
+        <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Status</div><div class="pr-score-val" style="font-size:13px;color:${d.status==='published'?'var(--green-text)':'var(--orange)'}">${d.status}</div></div>
       </div>
       ${outlets.length > 0 ? `
       <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">Published Outlets</div>
@@ -3834,27 +3764,28 @@ function prDownloadReport(data) {
   const outlets = data.outlets || [];
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html data-platform="tools"><head><title>PR Report — ${d.headline}</title>
-  <style>body{font-family:Arial,sans-serif;padding:40px;color:#1e293b}h1{font-size:20px;margin-bottom:4px}
-  .meta{color:#64748b;font-size:13px;margin-bottom:24px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-  .stat{border:1px solid #e2e8f0;border-radius:8px;padding:14px}.stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  <link rel="stylesheet" href="/css/modus-design-system.css">
+  <style>body{font-family:var(--font),system-ui,sans-serif;padding:40px;color:var(--text)}h1{font-size:20px;margin-bottom:4px}
+  .meta{color:var(--muted);font-size:13px;margin-bottom:24px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{border:1px solid var(--border);border-radius:8px;padding:14px}.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
   .stat-val{font-size:24px;font-weight:700}table{width:100%;border-collapse:collapse;font-size:13px}
-  th{text-align:left;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e2e8f0;font-size:11px;text-transform:uppercase}
-  td{padding:10px 12px;border-bottom:1px solid #e2e8f0}a{color:#E8622A}
-  .footer{margin-top:32px;font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:16px}
+  th{text-align:left;padding:8px 12px;background:var(--surface-2);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase}
+  td{padding:10px 12px;border-bottom:1px solid var(--border)}a{color:var(--accent)}
+  .footer{margin-top:32px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:16px}
   </style></head><body>
-  <div style="color:#E8622A;font-weight:700;font-size:12px;letter-spacing:1px;margin-bottom:8px">M-EasyPR AI+ · DISTRIBUTION REPORT</div>
+  <div style="color:var(--accent);font-weight:700;font-size:12px;letter-spacing:1px;margin-bottom:8px">M-EasyPR AI+ · DISTRIBUTION REPORT</div>
   <h1>${d.headline}</h1>
   <div class="meta">${d.company_name} · ${d.package_name} Package · Submitted ${new Date(d.submitted_at).toLocaleDateString()}</div>
   <div class="stats">
     <div class="stat"><div class="stat-label">Emails Sent</div><div class="stat-val">${d.emails_sent||0}</div></div>
-    <div class="stat"><div class="stat-label">Published</div><div class="stat-val" style="color:#16a34a">${data.publishedCount||0}</div></div>
-    <div class="stat"><div class="stat-label">Total Reach</div><div class="stat-val" style="color:#E8622A">${(data.totalReach||0).toLocaleString()}</div></div>
+    <div class="stat"><div class="stat-label">Published</div><div class="stat-val" style="color:var(--green-text)">${data.publishedCount||0}</div></div>
+    <div class="stat"><div class="stat-label">Total Reach</div><div class="stat-val" style="color:var(--accent)">${(data.totalReach||0).toLocaleString()}</div></div>
     <div class="stat"><div class="stat-label">Status</div><div class="stat-val" style="font-size:16px">${d.status}</div></div>
   </div>
   ${outlets.length>0?`<h2 style="font-size:15px;margin-bottom:12px">Published Outlets</h2>
   <table><thead><tr><th>Outlet</th><th>Publication URL</th><th>Date</th><th>Est. Reach</th></tr></thead><tbody>
   ${outlets.map(o=>`<tr><td>${o.outlet_name}</td><td><a href="${o.publication_url}">${o.publication_url||'—'}</a></td><td>${o.published_at?new Date(o.published_at).toLocaleDateString():'Pending'}</td><td>${(o.reach_estimate||0).toLocaleString()}</td></tr>`).join('')}
-  </tbody></table>`:'<p style="color:#64748b">No publications confirmed yet. Check back as outlets publish your story.</p>'}
+  </tbody></table>`:'<p style="color:var(--muted)">No publications confirmed yet. Check back as outlets publish your story.</p>'}
   <div class="footer">Generated by M-EasyPR AI+ · Modus AI Associates Sdn Bhd · modusaiassociates.com</div>
   </body></html>`);
   win.document.close();
@@ -3893,49 +3824,49 @@ initApp();
 
 <!-- ══ M-EasyTools AI Assistant — Floating Chat Bubble ══════════════════════ -->
 <style>
-#ai-btn{position:fixed !important;bottom:24px !important;right:24px !important;z-index:10003 !important;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#F97316,#ea6c10);border:none;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(249,115,22,0.5);transition:transform 0.2s;display:flex !important;align-items:center;justify-content:center;}
+#ai-btn{position:fixed !important;bottom:24px !important;right:24px !important;z-index:10003 !important;width:56px;height:56px;border-radius:50%;background:var(--accent);border:none;color:var(--accent-contrast);cursor:pointer;box-shadow:0 4px 20px color-mix(in srgb, var(--accent) 50%, transparent);transition:transform 0.2s;display:flex !important;align-items:center;justify-content:center;}
 #ai-btn:hover{transform:scale(1.1);}
-#ai-panel{position:fixed !important;bottom:92px !important;right:24px !important;z-index:10002 !important;width:360px;max-height:520px;background:#0d1b2a;border:1px solid rgba(255,255,255,0.12);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,0.6);display:none;flex-direction:column;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+#ai-panel{position:fixed !important;bottom:92px !important;right:24px !important;z-index:10002 !important;width:360px;max-height:520px;background:var(--brand);border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);border-radius:20px;box-shadow:var(--shadow-lg);display:none;flex-direction:column;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 #ai-panel.open{display:flex !important;}
-.ai-header{background:linear-gradient(135deg,#F97316,#ea6c10);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.ai-header{background:var(--accent);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
 .ai-header-left{display:flex;align-items:center;gap:10px;}
-.ai-avatar{width:32px;height:32px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;}
-.ai-header-title{font-size:15px;font-weight:700;color:#fff;}
-.ai-header-sub{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;}
-.ai-close{background:none;border:none;color:rgba(255,255,255,0.8);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;}
-.ai-close:hover{color:#fff;}
+.ai-avatar{width:32px;height:32px;background:color-mix(in srgb, var(--accent-contrast) 20%, transparent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--accent-contrast);}
+.ai-header-title{font-size:15px;font-weight:700;color:var(--accent-contrast);}
+.ai-header-sub{font-size:11px;color:color-mix(in srgb, var(--accent-contrast) 70%, transparent);margin-top:1px;}
+.ai-close{background:none;border:none;color:color-mix(in srgb, var(--accent-contrast) 80%, transparent);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;}
+.ai-close:hover{color:var(--accent-contrast);}
 .ai-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:200px;max-height:360px;}
 .ai-messages::-webkit-scrollbar{width:4px;}
 .ai-messages::-webkit-scrollbar-track{background:transparent;}
-.ai-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+.ai-messages::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--accent-contrast) 10%, transparent);border-radius:2px;}
 .ai-msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.55;}
-.ai-msg.user{background:#F97316;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
-.ai-msg.bot{background:rgba(255,255,255,0.06);color:#e8edf2;align-self:flex-start;border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,0.08);}
-.ai-msg.bot.loading{color:rgba(255,255,255,0.4);font-style:italic;}
+.ai-msg.user{background:var(--accent);color:var(--accent-contrast);align-self:flex-end;border-bottom-right-radius:4px;}
+.ai-msg.bot{background:color-mix(in srgb, var(--accent-contrast) 6%, transparent);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;border:1px solid color-mix(in srgb, var(--accent-contrast) 8%, transparent);}
+.ai-msg.bot.loading{color:color-mix(in srgb, var(--accent-contrast) 40%, transparent);font-style:italic;}
 .ai-suggestions{padding:0 16px 12px;display:flex;flex-wrap:wrap;gap:6px;}
-.ai-chip{background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.25);color:#fb923c;font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
-.ai-chip:hover{background:rgba(249,115,22,0.25);border-color:rgba(249,115,22,0.5);}
-.ai-input-row{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;align-items:center;}
-#ai-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;transition:border 0.2s;font-family:inherit;}
-#ai-input::placeholder{color:rgba(255,255,255,0.3);}
-#ai-input:focus{border-color:rgba(249,115,22,0.5);}
-#ai-send{background:#F97316;border:none;color:#fff;width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0;}
-#ai-send:hover{background:#ea6c10;}
-#ai-send:disabled{background:rgba(255,255,255,0.1);cursor:not-allowed;}
-#ai-tooltip-app{position:fixed;bottom:92px;right:20px;z-index:10002;background:#fff;color:#0d1b2a;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.18);white-space:nowrap;display:flex;align-items:center;gap:8px;border:1px solid rgba(249,115,22,0.2);animation:aiTipPop 0.4s ease;}
-#ai-tooltip-app::after{content:'';position:absolute;bottom:-7px;right:26px;border:7px solid transparent;border-top-color:#fff;border-bottom:none;}
+.ai-chip{background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid color-mix(in srgb, var(--accent) 25%, transparent);color:var(--accent-text);font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.ai-chip:hover{background:color-mix(in srgb, var(--accent) 25%, transparent);border-color:color-mix(in srgb, var(--accent) 50%, transparent);}
+.ai-input-row{padding:12px 16px;border-top:1px solid color-mix(in srgb, var(--accent-contrast) 7%, transparent);display:flex;gap:8px;align-items:center;}
+#ai-input{flex:1;background:color-mix(in srgb, var(--accent-contrast) 6%, transparent);border:1px solid color-mix(in srgb, var(--accent-contrast) 10%, transparent);border-radius:10px;padding:10px 14px;color:var(--accent-contrast);font-size:13px;outline:none;transition:border 0.2s;font-family:inherit;}
+#ai-input::placeholder{color:color-mix(in srgb, var(--accent-contrast) 30%, transparent);}
+#ai-input:focus{border-color:color-mix(in srgb, var(--accent) 50%, transparent);}
+#ai-send{background:var(--accent);border:none;color:var(--accent-contrast);width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0;}
+#ai-send:hover{background:var(--accent-2);}
+#ai-send:disabled{background:color-mix(in srgb, var(--accent-contrast) 10%, transparent);cursor:not-allowed;}
+#ai-tooltip-app{position:fixed;bottom:92px;right:20px;z-index:10002;background:var(--surface);color:var(--brand);padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:var(--shadow);white-space:nowrap;display:flex;align-items:center;gap:8px;border:1px solid color-mix(in srgb, var(--accent) 20%, transparent);animation:aiTipPop 0.4s ease;}
+#ai-tooltip-app::after{content:'';position:absolute;bottom:-7px;right:26px;border:7px solid transparent;border-top-color:var(--accent-contrast);border-bottom:none;}
 @keyframes aiTipPop{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-@keyframes aiPulseAnim{0%,100%{box-shadow:0 4px 20px rgba(249,115,22,0.5);}50%{box-shadow:0 0 0 10px rgba(249,115,22,0.12),0 4px 32px rgba(249,115,22,0.7);}}
+@keyframes aiPulseAnim{0%,100%{box-shadow:0 4px 20px color-mix(in srgb, var(--accent) 50%, transparent);}50%{box-shadow:0 0 0 10px color-mix(in srgb, var(--accent) 12%, transparent),0 4px 32px color-mix(in srgb, var(--accent) 70%, transparent);}}
 #ai-btn.ai-pulse{animation:aiPulseAnim 2s ease-in-out 3;}
 </style>
 
 <div id="ai-tooltip-app">
   <span style="font-size:18px">✦</span>
   <div>
-    <div style="font-size:13px;font-weight:700;color:#0d1b2a">AI Assistant</div>
-    <div style="font-size:11px;color:#6b7280;font-weight:400">Click to chat with AI!</div>
+    <div style="font-size:13px;font-weight:700;color:var(--brand)">AI Assistant</div>
+    <div style="font-size:11px;color:var(--muted);font-weight:400">Click to chat with AI!</div>
   </div>
-  <button onclick="document.getElementById('ai-tooltip-app').style.display='none'" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;line-height:1;padding:0 0 0 6px">×</button>
+  <button onclick="document.getElementById('ai-tooltip-app').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:0 0 0 6px">×</button>
 </div>
 
 <button id="ai-btn" onclick="toggleAI();document.getElementById('ai-tooltip-app').style.display='none'">
@@ -3986,7 +3917,7 @@ initApp();
     aiOpen = !aiOpen;
     const panel = document.getElementById('ai-panel');
     if(aiOpen){
-      panel.style.cssText = 'display:flex !important;flex-direction:column;position:fixed;bottom:92px;right:24px;z-index:99999;width:360px;max-height:520px;background:#0d1b2a;border:1px solid rgba(255,255,255,0.12);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,0.6);overflow:hidden;';
+      panel.style.cssText = 'display:flex !important;flex-direction:column;position:fixed;bottom:92px;right:24px;z-index:99999;width:360px;max-height:520px;background:var(--brand);border:1px solid color-mix(in srgb, var(--accent-contrast) 12%, transparent);border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden;';
       setTimeout(function(){const inp=document.getElementById('ai-input');if(inp)inp.focus();},100);
     } else {
       panel.style.display = 'none';
@@ -4070,5 +4001,6 @@ function loadSubBanner() {
 }
 loadSubBanner();
 </script>
+<script src="/js/genlang.js" defer></script>
 </body>
 </html>

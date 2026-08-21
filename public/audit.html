@@ -4,38 +4,63 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Translation Audit — M-EasyTools AI+</title>
+<link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
 <style>
+/* ── TRANSLATION AUDIT — DAILY-USE (Visual Bar §V) ────────────────────────
+   Another page that pasted the platform orange: #E8622A on .run-btn and
+   #FF7A45 in the <h1> and the progress gradient. Three literals, three
+   chances to disagree with the master. All gone.
+
+   It also invented a whole second dark palette (#07090F, #141820, #0ECFB0,
+   #F4C430, #F43F5E) that ignored the theme the rest of the product is in.
+   The system's own status colours mean the same three things and already
+   clear §6's contrast bar in both themes.
+   ──────────────────────────────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#07090F;color:#F0F4FA;min-height:100vh;padding:32px}
-h1{font-size:22px;font-weight:700;color:#FF7A45;margin-bottom:8px}
-.subtitle{font-size:13px;color:#8892A4;margin-bottom:32px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-bottom:32px}
-.card{background:#141820;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px}
-.card-title{font-size:14px;font-weight:700;color:#F0F4FA;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
-.badge-ok{background:rgba(14,207,176,0.15);color:#0ECFB0}
-.badge-warn{background:rgba(244,196,48,0.15);color:#F4C430}
-.badge-err{background:rgba(244,63,94,0.15);color:#F43F5E}
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding:32px;font-size:15px;line-height:1.55}
+h1{font-family:var(--font-display);font-size:var(--t-page);font-weight:var(--w-page);color:var(--text);letter-spacing:-0.018em;margin-bottom:8px}
+.subtitle{font-size:var(--t-second);color:var(--muted);margin-bottom:28px;max-width:var(--r2-measure)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:28px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.card-title{font-size:var(--t-card);font-weight:var(--w-card);color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.badge{padding:3px 9px;border-radius:999px;font-size:var(--t-meta);font-weight:700}
+.badge-ok{background:var(--green-bg);color:var(--green-text)}
+.badge-warn{background:var(--amber-bg);color:var(--amber-text)}
+.badge-err{background:var(--red-bg);color:var(--red-text)}
+.stat-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:var(--t-second)}
 .stat-row:last-child{border-bottom:none}
-.stat-label{color:#8892A4}
-.stat-val{font-weight:700;font-family:monospace}
-.progress-bar{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin-top:12px}
-.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#E8622A,#FF7A45);transition:width .5s}
-.section{margin-bottom:28px}
-.section-title{font-size:16px;font-weight:700;color:#F0F4FA;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
-table{width:100%;border-collapse:collapse;background:#141820;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.07)}
-th{background:rgba(255,255,255,0.03);padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#4A5568;text-align:left}
-td{padding:10px 14px;font-size:12px;border-top:1px solid rgba(255,255,255,0.04);font-family:monospace}
-tr:hover td{background:rgba(255,255,255,0.02)}
-.ok{color:#0ECFB0}.warn{color:#F4C430}.err{color:#F43F5E}
-.run-btn{padding:10px 20px;background:#E8622A;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;margin-bottom:20px}
-.run-btn:hover{background:#FF7A45}
+.stat-label{color:var(--muted)}
+.stat-val{font-weight:700;font-family:var(--r2-mono);font-variant-numeric:tabular-nums;color:var(--text)}
+.progress-bar{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-top:12px}
+/* Width only — the one property the daily-use split allows to move. */
+.progress-fill{height:100%;border-radius:3px;background:var(--accent);transition:width var(--motion-slow) var(--ease-out)}
+.progress-fill.is-ok{background:var(--green)}
+.progress-fill.is-warn{background:var(--amber)}
+.progress-fill.is-err{background:var(--red)}
+.section{margin-bottom:26px}
+.section-title{font-family:var(--font-display);font-size:var(--t-section);font-weight:var(--w-section);color:var(--text);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+th{background:var(--surface-2);padding:10px 14px;font-family:var(--r2-mono);font-size:var(--r2-eyebrow);font-weight:500;text-transform:uppercase;letter-spacing:0.11em;color:var(--muted);text-align:left}
+td{padding:10px 14px;font-size:var(--t-meta);border-top:1px solid var(--border);font-family:var(--r2-mono);color:var(--text-2)}
+tr:hover td{background:var(--surface-2)}
+.ok{color:var(--green-text)}.warn{color:var(--amber-text)}.err{color:var(--red-text)}
+.muted{color:var(--muted)}
+.run-btn{padding:10px 20px;background:var(--accent);color:var(--accent-contrast);border:none;border-radius:var(--r-sm);font-size:var(--t-second);font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:20px;transition:background-color var(--motion-fast) var(--ease-out)}
+.run-btn:hover{background:var(--accent-2)}
+.run-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.run-btn:disabled{opacity:.6;cursor:default}
 #report{display:none}
-.summary-box{background:linear-gradient(135deg,#0D1018,#141820);border:1px solid rgba(14,207,176,0.2);border-radius:12px;padding:20px;margin-bottom:24px;display:flex;gap:32px;align-items:center}
-.sum-num{font-size:36px;font-weight:700;font-family:'Libre Baskerville',serif;color:#F0F4FA}
-.sum-label{font-size:11px;color:#4A5568;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.pct-circle{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;border:3px solid #0ECFB0;color:#0ECFB0}
+.summary-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:22px;display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.sum-num{font-family:var(--r2-mono);font-size:var(--t-kpi);font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.sum-label{font-family:var(--r2-mono);font-size:var(--r2-eyebrow);color:var(--muted);text-transform:uppercase;letter-spacing:0.11em;margin-top:2px}
+.sum-figs{display:flex;gap:24px;flex-wrap:wrap}
+.sum-fig{text-align:center}
+.sum-grow{flex:1;min-width:220px}
+.sum-title{font-size:var(--t-card);font-weight:var(--w-card);margin-bottom:4px;color:var(--text)}
+.sum-sub{font-size:var(--t-second);color:var(--muted)}
+.pct-circle{width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--r2-mono);font-size:var(--t-section);font-weight:700;border:3px solid var(--accent);color:var(--accent-text);flex-shrink:0}
+.bar-cap{margin-top:10px;max-width:300px}
 </style>
 </head>
 <body>
@@ -85,15 +110,15 @@ async function runAudit() {
     report.innerHTML = `
       <div class="summary-box">
         <div class="pct-circle">${overallCoverage}%</div>
-        <div style="flex:1">
-          <div style="font-size:18px;font-weight:700;margin-bottom:4px">Overall Translation Coverage</div>
-          <div style="font-size:13px;color:#8892A4">Across ${total} unique translation keys · 3 languages</div>
-          <div class="progress-bar" style="margin-top:10px;max-width:300px"><div class="progress-fill" style="width:${overallCoverage}%"></div></div>
+        <div class="sum-grow">
+          <div class="sum-title">Overall Translation Coverage</div>
+          <div class="sum-sub">Across ${total} unique translation keys · 3 languages</div>
+          <div class="progress-bar bar-cap"><div class="progress-fill" style="width:${overallCoverage}%"></div></div>
         </div>
-        <div style="display:flex;gap:24px">
-          <div style="text-align:center"><div class="sum-num">${total}</div><div class="sum-label">Total Keys</div></div>
-          <div style="text-align:center"><div class="sum-num" style="color:#0ECFB0">${total - zhMissing.length - msMissing.length}</div><div class="sum-label">Translated</div></div>
-          <div style="text-align:center"><div class="sum-num" style="color:#F43F5E">${zhMissing.length + msMissing.length}</div><div class="sum-label">Missing</div></div>
+        <div class="sum-figs">
+          <div class="sum-fig"><div class="sum-num">${total}</div><div class="sum-label">Total Keys</div></div>
+          <div class="sum-fig"><div class="sum-num ok">${total - zhMissing.length - msMissing.length}</div><div class="sum-label">Translated</div></div>
+          <div class="sum-fig"><div class="sum-num err">${zhMissing.length + msMissing.length}</div><div class="sum-label">Missing</div></div>
         </div>
       </div>
 
@@ -121,7 +146,7 @@ async function runAudit() {
       <div class="section">
         <div class="section-title">🔍 Hardcoded String Scan</div>
         <div class="card">
-          <div style="font-size:13px;color:#8892A4;line-height:1.8">
+          <div class="sum-sub" style="line-height:1.8">
             ${checkHardcoded}
           </div>
         </div>
@@ -130,7 +155,7 @@ async function runAudit() {
     report.style.display = 'block';
 
   } catch(e) {
-    report.innerHTML = `<div class="card"><div class="stat-label" style="color:#F43F5E">Error: ${e.message}</div></div>`;
+    report.innerHTML = `<div class="card"><div class="stat-label err">Error: ${e.message}</div></div>`;
     report.style.display = 'block';
   }
 
@@ -164,7 +189,7 @@ function langCard(title, pct, total, missing, code, keys) {
       <div class="stat-row"><span class="stat-label">Coverage</span><span class="stat-val ${status === 'ok' ? 'ok' : status === 'warn' ? 'warn' : 'err'}">${pct}%</span></div>
       <div class="stat-row"><span class="stat-label">Translated Keys</span><span class="stat-val">${Object.keys(keys).length} / ${total}</span></div>
       <div class="stat-row"><span class="stat-label">Missing Keys</span><span class="stat-val ${missing.length > 0 ? 'err' : 'ok'}">${missing.length}</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#0ECFB0':pct>=80?'#F4C430':'#F43F5E'}"></div></div>
+      <div class="progress-bar"><div class="progress-fill is-${status}" style="width:${pct}%"></div></div>
     </div>`;
 }
 
@@ -182,8 +207,8 @@ function missingTable(title, missing, enKeys) {
       <table>
         <thead><tr><th>Key</th><th>English Value</th></tr></thead>
         <tbody>
-          ${missing.slice(0, 50).map(k => `<tr><td class="warn">${k}</td><td style="color:#8892A4">${String(enKeys[k]||'').substring(0,80)}</td></tr>`).join('')}
-          ${missing.length > 50 ? `<tr><td colspan="2" style="color:#4A5568;text-align:center">… and ${missing.length-50} more</td></tr>` : ''}
+          ${missing.slice(0, 50).map(k => `<tr><td class="warn">${k}</td><td class="muted">${String(enKeys[k]||'').substring(0,80)}</td></tr>`).join('')}
+          ${missing.length > 50 ? `<tr><td colspan="2" class="muted" style="text-align:center">… and ${missing.length-50} more</td></tr>` : ''}
         </tbody>
       </table>
     </div>`;

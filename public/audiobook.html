@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>M-EasyAudiobook AI+ Suite — M-EasyTools AI</title>
 <link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
 <style>
 /* ═══════════════════════════════════════════════
    M-EasyAudiobook AI+ Suite
@@ -12,20 +13,30 @@
    Modus Design System (data-platform="tools").
    ═══════════════════════════════════════════════ */
 .ab-hero{margin-bottom:20px}
+/* One mount per tool card, immediately above its Generate button — genlang.js
+   inserts its wrong-language warning directly AFTER the mount, so the mount has
+   to sit where a sentence of warning reads naturally, not in a page header.
+   NOTE FOR LANE C: this page ALSO renders its own per-tool "Output Language"
+   <select id="lang-${t.id}">, which generate() reads today. Two controls for one
+   setting is one setting with two homes — reconcile them rather than leaving
+   both. Lane E did not remove the native select because it is wired and working,
+   and removing it would break generation on this page.  */
+.genlang-slot{margin:0 0 10px}
+.genlang-slot:empty{display:none}
 .ab-hero-title{font-size:22px;font-weight:800;color:var(--text);margin:0 0 6px}
 .ab-hero-sub{font-size:13px;color:var(--text-2);line-height:1.6;max-width:640px}
 .ab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:18px;margin-top:20px}
 .ab-card-icon{width:34px;height:34px;border-radius:9px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .ab-card-head{display:flex;align-items:center;gap:11px;flex:1;min-width:0}
-.ab-card-desc{font-size:11px;color:var(--text-3);font-weight:500;margin-top:2px;line-height:1.45}
+.ab-card-desc{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px;line-height:1.45}
 .ab-out-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 6px}
 .ab-out-lbl{font-size:12px;font-weight:600;color:var(--text-2)}
 .ab-out-acts{display:flex;gap:6px}
 .ab-out{width:100%;min-height:120px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;line-height:1.65;resize:vertical;outline:none;white-space:pre-wrap;overflow:hidden}
 .ab-out:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
-.ab-out::placeholder{color:var(--text-3)}
+.ab-out::placeholder{color:var(--muted)}
 .ab-gen{width:100%;justify-content:center;margin-top:4px}
-.ab-meta{font-size:11px;color:var(--text-3);margin-top:6px;min-height:14px}
+.ab-meta{font-size:11px;color:var(--muted);margin-top:6px;min-height:14px}
 @media (max-width:768px){
   .ab-grid{grid-template-columns:1fr;gap:14px}
 }
@@ -400,6 +411,7 @@ function renderTools() {
         ${fulls.map(f => fieldHtml(t, f)).join('')}
         ${halves.length ? `<div class="form-grid">${halves.map(f => fieldHtml(t, f)).join('')}</div>` : ''}
         ${t.hideLang ? '' : langSelect}
+        <div class="genlang-slot" data-genlang-mount></div>
         <button class="btn btn-primary ab-gen" id="gen-${t.id}" onclick="generate('${t.id}')">🤖 Generate</button>
         <div class="ab-out-head">
           <span class="ab-out-lbl">Output</span>
@@ -537,5 +549,6 @@ async function init() {
 
 init();
 </script>
+<script src="/js/genlang.js" defer></script>
 </body>
 </html>

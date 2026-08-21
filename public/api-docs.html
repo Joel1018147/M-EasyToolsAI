@@ -4,55 +4,87 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>M-EasyTools AI — Developer API Docs</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:wght@700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/r2-tokens.css">
 <style>
+/* ── DEVELOPER API DOCS — DAILY-USE (Visual Bar §V) ───────────────────────
+   This page declared `--orange:#E8622A` at :root. That is the platform accent
+   written out a SECOND time, in the one place a reader would reasonably treat
+   as authoritative, and it would have gone on rendering the old orange for as
+   long as it took anyone to notice the master had moved. It is gone; every
+   accented thing below reads var(--accent).
+
+   Reference-set note (Raycast): the monospace here is load-bearing — paths,
+   methods, parameter names and keys are metadata, not prose. They use
+   var(--r2-mono), whose fallback chain names real installed faces before ever
+   reaching the generic `monospace`. Calm surface: no page-level @keyframes,
+   glass on the sticky top bar only.
+   ──────────────────────────────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--navy:#0D1B2A;--navy2:#1A2D42;--cream:#FAF8F4;--white:#fff;--orange:#E8622A;--teal:#1A8F7A;--fog:#D4DFE8;--mist:#8EA3B5;--r:12px;--r-sm:8px;--code-bg:#1A2D42}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--cream);color:var(--navy)}
-.topbar{background:var(--navy);padding:0 5%;height:56px;display:flex;align-items:center;gap:16px}
-.tb-logo{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:white;flex:1}
-.tb-logo em{font-style:normal;color:#FF8F66}
-.tb-a{color:rgba(255,255,255,.6);font-size:13px;text-decoration:none}
-.tb-a:hover{color:white}
-.layout{display:grid;grid-template-columns:240px 1fr;max-width:1200px;margin:0 auto;padding:32px 5%;gap:40px}
-.sidebar{position:sticky;top:80px;height:fit-content}
-.sb-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--mist);margin-bottom:10px;margin-top:20px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.55}
+
+.topbar{padding:0 5%;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:20;background:var(--r2-glass-bg);-webkit-backdrop-filter:blur(var(--r2-glass-blur));backdrop-filter:blur(var(--r2-glass-blur));border-bottom:1px solid var(--r2-glass-border)}
+.tb-logo{font-family:var(--font-display);font-size:var(--t-card);font-weight:700;color:var(--text);flex:1}
+.tb-logo em{font-style:normal;color:var(--accent-text)}
+.tb-a{color:var(--text-2);font-size:var(--t-second);text-decoration:none;font-weight:500;transition:color var(--motion-fast) var(--ease-out)}
+.tb-a:hover{color:var(--text)}
+
+.layout{display:grid;grid-template-columns:240px 1fr;max-width:var(--r2-max);margin:0 auto;padding:32px 5%;gap:40px}
+.sidebar{position:sticky;top:88px;height:fit-content}
+.sb-title{font-family:var(--r2-mono);font-size:var(--r2-eyebrow);font-weight:500;letter-spacing:0.11em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px}
 .sb-title:first-child{margin-top:0}
-.sb-link{display:block;font-size:13px;color:var(--mist);text-decoration:none;padding:5px 0;transition:color .15s}
-.sb-link:hover{color:var(--navy)}
-.sb-link.active{color:var(--orange);font-weight:600}
-.content section{margin-bottom:56px}
-h1{font-family:'Fraunces',serif;font-size:32px;font-weight:700;color:var(--navy);margin-bottom:12px}
-h2{font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:12px;padding-top:8px}
-h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:8px;margin-top:20px}
-p{font-size:14px;line-height:1.75;color:var(--navy2);margin-bottom:14px}
-.badge-method{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;margin-right:8px;font-family:'JetBrains Mono',monospace}
-.get{background:rgba(26,143,122,.12);color:var(--teal)}
-.post{background:rgba(232,98,42,.12);color:var(--orange)}
-.delete{background:rgba(192,57,43,.12);color:#C0392B}
-.put{background:rgba(107,79,187,.12);color:#6B4FBB}
-.endpoint{background:var(--white);border:1px solid var(--fog);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
-.ep-head{padding:14px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s}
-.ep-head:hover{background:var(--cream)}
-.ep-path{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--navy);font-weight:500}
-.ep-desc{font-size:12px;color:var(--mist);margin-left:auto}
-.ep-body{padding:18px;border-top:1px solid var(--fog);display:none}
+.sb-link{display:block;font-size:var(--t-second);color:var(--muted);text-decoration:none;padding:5px 0;transition:color var(--motion-fast) var(--ease-out)}
+.sb-link:hover{color:var(--text)}
+.sb-link.active{color:var(--accent-text);font-weight:600}
+
+.content section{margin-bottom:52px}
+h1{font-family:var(--font-display);font-size:var(--r2-headline);font-weight:700;letter-spacing:var(--r2-headline-tracking);color:var(--text);margin-bottom:12px}
+h2{font-family:var(--font-display);font-size:var(--t-page);font-weight:var(--w-page);color:var(--text);margin-bottom:12px;padding-top:8px;letter-spacing:-0.018em}
+h3{font-size:var(--t-card);font-weight:var(--w-card);color:var(--text);margin:20px 0 8px}
+p{font-size:var(--t-body);line-height:1.75;color:var(--text-2);margin-bottom:14px}
+
+.badge-method{display:inline-block;font-size:var(--t-meta);font-weight:700;padding:3px 10px;border-radius:6px;margin-right:8px;font-family:var(--r2-mono)}
+.get{background:var(--green-bg);color:var(--green-text)}
+.post{background:var(--accent-bg);color:var(--accent-text)}
+.delete{background:var(--red-bg);color:var(--red-text)}
+.put{background:var(--purple-bg);color:var(--purple-text)}
+
+.endpoint{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.ep-head{padding:14px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background-color var(--motion-fast) var(--ease-out)}
+.ep-head:hover{background:var(--surface-2)}
+.ep-head:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ep-path{font-family:var(--r2-mono);font-size:var(--t-body);color:var(--text);font-weight:500}
+.ep-desc{font-size:var(--t-meta);color:var(--muted);margin-left:auto}
+.ep-body{padding:18px;border-top:1px solid var(--border);display:none}
 .ep-body.open{display:block}
+
 .param-table{width:100%;border-collapse:collapse;margin-bottom:14px}
-.param-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mist);background:var(--cream);border-bottom:1px solid var(--fog)}
-.param-table td{padding:9px 12px;border-bottom:1px solid var(--fog);font-size:13px}
-.param-table td:first-child{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--orange)}
-.note{margin:0 0 14px;padding:11px 13px;border-left:3px solid var(--orange);background:var(--cream);border-radius:0 6px 6px 0;font-size:13px;line-height:1.6}
-.note code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--orange)}
-.param-req{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(232,98,42,.1);color:var(--orange)}
-.param-opt{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--cream);color:var(--mist)}
-pre{background:var(--code-bg);border-radius:var(--r-sm);padding:16px;overflow-x:auto;margin-bottom:14px}
-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:#E2F0FF;line-height:1.6}
-.inline-code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(13,27,42,.06);padding:2px 6px;border-radius:4px;color:var(--navy2)}
-.info-box{background:rgba(26,143,122,.08);border:1px solid rgba(26,143,122,.2);border-radius:var(--r-sm);padding:14px 16px;font-size:13px;color:var(--teal);margin-bottom:16px;line-height:1.6}
-.warn-box{background:rgba(232,98,42,.08);border:1px solid rgba(232,98,42,.2);border-radius:var(--r-sm);padding:14px 16px;font-size:13px;color:var(--orange);margin-bottom:16px;line-height:1.6}
-.copy-btn{float:right;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s}
-.copy-btn:hover{background:rgba(255,255,255,.2);color:white}
+.param-table th{text-align:left;padding:8px 12px;font-family:var(--r2-mono);font-size:var(--r2-eyebrow);font-weight:500;text-transform:uppercase;letter-spacing:0.11em;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--border)}
+.param-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:var(--t-second);color:var(--text-2)}
+.param-table td:first-child{font-family:var(--r2-mono);font-size:var(--t-meta);color:var(--accent-text)}
+.param-req{font-size:var(--r2-eyebrow);font-weight:700;padding:2px 6px;border-radius:4px;background:var(--accent-bg);color:var(--accent-text)}
+.param-opt{font-size:var(--r2-eyebrow);font-weight:700;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--muted)}
+
+.note{margin:0 0 14px;padding:11px 13px;border-left:3px solid var(--accent);background:var(--r2-accent-wash);border-radius:0 6px 6px 0;font-size:var(--t-second);line-height:1.6;color:var(--text-2)}
+.note code{font-family:var(--r2-mono);font-size:var(--t-meta);color:var(--accent-text)}
+
+/* The code block is a deliberately dark surface in both themes — a snippet a
+   developer copies reads as a terminal, and --brand is the system's own dark
+   ground, so this is still a token and not an invented navy. */
+pre{background:var(--brand);border:1px solid var(--brand-3);border-radius:var(--r-sm);padding:16px;overflow-x:auto;margin-bottom:14px}
+pre code{font-family:var(--r2-mono);font-size:var(--t-meta);color:var(--surface);line-height:1.6}
+.inline-code{font-family:var(--r2-mono);font-size:var(--t-meta);background:var(--surface-2);border:1px solid var(--border);padding:1px 6px;border-radius:4px;color:var(--text-2)}
+.copy-btn{float:right;background:var(--brand-3);border:none;color:var(--surface);font-size:var(--t-meta);padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--r2-mono);transition:background-color var(--motion-fast) var(--ease-out)}
+.copy-btn:hover{background:var(--brand-2)}
+.copy-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.info-box{background:var(--green-bg);border:1px solid var(--green);border-radius:var(--r-sm);padding:14px 16px;font-size:var(--t-second);color:var(--green-text);margin-bottom:16px;line-height:1.6}
+.warn-box{background:var(--accent-bg);border:1px solid var(--r2-accent-edge);border-radius:var(--r-sm);padding:14px 16px;font-size:var(--t-second);color:var(--text-2);margin-bottom:16px;line-height:1.6}
+
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr;gap:24px}
+  .sidebar{position:static}
+}
 </style>
 </head>
 <body>

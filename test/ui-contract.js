@@ -40,6 +40,33 @@ const fail = (m) => { checks++; failures++; console.error('  ✗ ' + m); };
 const head = (m) => console.log('\n── ' + m + ' ' + '─'.repeat(Math.max(0, 58 - m.length)));
 
 const stripHtmlComments = (s) => s.replace(/<!--[\s\S]*?-->/g, '');
+
+/* ── §7b RULE 1, THIRD INSTANCE ───────────────────────────────────────────
+   The header already records this trap being hit twice: once by HTML comments
+   ("1. data-platform on ..." counted as a tag) and once by JS comments. Round 1
+   hit it a third time, in the one comment syntax neither stripper covers —
+   a CSS block comment inside <style>.
+
+   Three pages now carry a comment in their stylesheet explaining WHY the page
+   must declare data-platform, and each names the tag in prose:
+
+     aichat.html   "...rendered in another platform's brand colour while the <html>
+                    tag claimed this one"          <- documenting the purple defect it fixed
+     seller.html   "<html data-theme='dark'> gets the same dark ground..."
+     pr-demo.html  a syntax sample
+
+   All three parsed as unmarked surfaces and failed the build. Prose that NAMES
+   a tag is not a tag — that is this file's own stated rule, and the scanner was
+   simply not enforcing it in CSS.
+
+   ONLY <style> IS STRIPPED, AND THE ASYMMETRY IS LOAD-BEARING. CSS cannot
+   declare a page surface, so nothing real is ever lost inside it. <script> CAN:
+   app.html renders `<html data-platform="tools">` from inside a script block,
+   which is a genuine runtime-rendered surface and is exactly why this section
+   scans app.html as a runtime source in the first place. Stripping scripts too
+   would have deleted a real check and turned this fix into a hole. Verified by
+   enumerating every <html tag in every page before changing anything. */
+const stripStyleBlocks = (s) => s.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '<style></style>');
 // JS comments too. Prose that NAMES a thing is not a use of it, and a scanner
 // that cannot tell those apart reports every documented fix as unfixed. This
 // is the same trap as the HTML-comment one above; both were hit on the first
@@ -128,7 +155,7 @@ head('§2  data-platform on every surface');
 {
   const surfaces = [];
   const collect = (file, src) => {
-    const clean = stripHtmlComments(src);
+    const clean = stripStyleBlocks(stripHtmlComments(src));
     (clean.match(/<html\b[^>]*>/g) || []).forEach((tag) => {
       // pr-demo.html documents the attribute's own syntax in a code sample.
       if (/do\|tools\|commerce/.test(tag)) return;
