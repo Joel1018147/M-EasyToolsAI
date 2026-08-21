@@ -104,6 +104,28 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .f-inp:focus-visible,.f-ta:focus-visible,.f-sel:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .f-ta{resize:vertical;min-height:76px;line-height:1.55}
 .f-sel{cursor:pointer}
+
+/* ── the image option, inside the Social Media Posts form ─────────────────
+      The image is part of the post, so its control is part of the post form:
+      one description written from the topic already typed, one aspect taken
+      from the platform already chosen. The standalone [data-imagegen-mount]
+      panel is hidden while this tool is open — two ways to make an image on
+      one screen, one of them starting from a blank box, is one too many.
+
+      Tokens only, accent-color included. A checkbox left to the user agent
+      would have been the one blue thing on an orange page. ─────────────── */
+.f-lbl-2{margin-top:12px}
+.f-hint{font-size:var(--t-meta);color:var(--muted);line-height:1.5;margin-top:7px}
+.f-hint[hidden],.img-detail[hidden]{display:none}
+.img-tog{display:flex;align-items:flex-start;gap:9px;cursor:pointer}
+.img-tog input{width:15px;height:15px;margin-top:3px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)}
+.img-tog input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.img-tog input:disabled{cursor:default;opacity:.5}
+.img-txt{font-size:var(--t-second);color:var(--muted);line-height:1.5}
+.img-txt b{display:block;font-size:var(--t-meta);font-weight:600;color:var(--text-2)}
+.rb-img{background:var(--surface-2)}
+.rb-img img{display:block;width:100%;height:auto}
+a.rb-btn{text-decoration:none}
 .tone-wrap{display:flex;flex-wrap:wrap;gap:5px}
 .tone-tag{padding:4px 11px;border-radius:999px;cursor:pointer;font-size:var(--t-meta);font-weight:600;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);transition:background-color var(--motion-fast) var(--ease-out),border-color var(--motion-fast) var(--ease-out),color var(--motion-fast) var(--ease-out)}
 .tone-tag:hover{border-color:var(--border-2);color:var(--text)}
@@ -192,6 +214,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <div class="out-panel">
     <div class="out-empty" id="out-empty"><div class="e-ico">📱</div><div class="e-title">Ready to Generate</div><div class="e-sub">Fill in the form on the left and click Generate.</div></div>
     <div class="out-load" id="out-load"><div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">AI is writing your social content…</span></div></div>
+    <div id="out-image"></div>
     <div id="out-results"></div>
   </div>
 </div>
@@ -261,11 +284,17 @@ function openTool(id){
   form.fields.forEach(f=>{const s=document.createElement('div');s.className='f-sec';let inp=f.type==='input'?`<input class="f-inp" id="ff-${f.id}" placeholder="${f.ph||''}">`:(f.type==='textarea'?`<textarea class="f-ta" id="ff-${f.id}" placeholder="${f.ph||''}" rows="4"></textarea>`:`<select class="f-sel" id="ff-${f.id}">${f.opts.map(o=>`<option>${o}</option>`).join('')}</select>`);s.innerHTML=`<div class="f-lbl">${f.label}</div>${inp}`;c.appendChild(s);});
   const ts=document.createElement('div');ts.className='f-sec';ts.innerHTML=`<div class="f-lbl">Tone of Voice</div><div class="tone-wrap">${['Professional','Friendly','Witty','Bold','Empathetic','Casual'].map(t=>`<div class="tone-tag ${t===activeTone?'on':''}" onclick="setTone('${t}',this)">${t}</div>`).join('')}</div>`;c.appendChild(ts);
   const vs=document.createElement('div');vs.className='f-sec';vs.innerHTML=`<div class="f-lbl">Variants</div><select class="f-sel" id="ff-variants"><option>1 variant</option><option selected>2 variants</option><option>3 variants</option></select>`;c.appendChild(vs);
+  if(id===IMAGE_TOOL)buildImageSection(c);
+  /* One image control per screen. The drop-in [data-imagegen-mount] panel
+     stays for every other tool on this page, where an image is not part of
+     the deliverable and a blank prompt box is the honest offer. */
+  const igHost=document.querySelector('[data-imagegen-mount]');
+  if(igHost)igHost.hidden=(id===IMAGE_TOOL);
   resetOut();document.getElementById('view-tools').style.display='none';document.getElementById('view-editor').style.display='flex';
 }
 function backToTools(){document.getElementById('view-editor').style.display='none';document.getElementById('view-tools').style.display='block';}
-function setTone(t,el){activeTone=t;el.closest('.tone-wrap').querySelectorAll('.tone-tag').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
-function resetOut(){document.getElementById('out-empty').style.display='flex';document.getElementById('out-load').style.display='none';document.getElementById('out-results').innerHTML='';}
+function setTone(t,el){activeTone=t;el.closest('.tone-wrap').querySelectorAll('.tone-tag').forEach(c=>c.classList.remove('on'));el.classList.add('on');refreshImageDefaults();}
+function resetOut(){document.getElementById('out-empty').style.display='flex';document.getElementById('out-load').style.display='none';document.getElementById('out-results').innerHTML='';document.getElementById('out-image').innerHTML='';}
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function toast(msg,type='ok'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+type;setTimeout(()=>el.className='toast',3200);}
 async function generate(){
@@ -273,6 +302,13 @@ async function generate(){
   if(!Object.values(d)[0]){toast('Please fill in the first field','err');return;}
   const varCount=parseInt(document.getElementById('ff-variants')?.value||'1');
   const prompt=currentTool.form.prompt(d);
+  /* The image goes out alongside the text, not after it. Its description is
+     built from the form rather than from the generated posts, so it has
+     nothing to wait for, and one round trip costs about what the other does.
+     The two land in two containers and neither clears the other: a caption
+     that fails must not delete an image already paid for, and an image that
+     fails must not take the posts down with it. */
+  const img=startImage();
   document.getElementById('out-empty').style.display='none';document.getElementById('out-load').style.display='flex';document.getElementById('out-results').innerHTML='';
   const btn=document.getElementById('gen-btn');btn.disabled=true;btn.textContent='Generating…';
   try{
@@ -284,9 +320,226 @@ async function generate(){
     else texts=[data.text||''];
     document.getElementById('out-results').innerHTML=texts.map((txt,i)=>`<div class="res-block"><div class="rb-head"><span class="rb-lbl">Variant ${i+1} · ${txt.trim().split(/\s+/).filter(Boolean).length} words</span><div class="rb-acts"><button class="rb-btn" onclick="copyRes(this,${i})">📋 Copy</button><button class="rb-btn" onclick="saveRes(${i})">💾 Save</button></div></div><div class="rb-body" id="rb-${i}">${escHtml(txt.trim())}</div></div>`).join('');
     toast('Content generated! ✓','ok');
-  }catch(err){toast(err.message||'Generation failed','err');document.getElementById('out-load').style.display='none';document.getElementById('out-empty').style.display='flex';}
+  }catch(err){
+    toast(err.message||'Generation failed','err');
+    document.getElementById('out-load').style.display='none';
+    /* The empty state says "nothing here yet". With an image on screen or on
+       the way that is not true, so it stays hidden and the image keeps its
+       place — it is generated and billed independently of the caption. */
+    if(!img)document.getElementById('out-empty').style.display='flex';
+  }
   finally{btn.disabled=false;btn.textContent='✨ Generate Content';}
 }
+/* ═══ THE IMAGE OPTION ══════════════════════════════════════════════════════
+   Offered on the Social Media Posts tool and nowhere else on this page. A post
+   ships with a picture; an Instagram bio and a YouTube script do not, and an
+   option that appears everywhere is an option nobody reads.
+
+   WHAT LIVES HERE AND WHAT DOES NOT. Which platform wants which aspect, and
+   how a topic becomes an image description, are policy about social media —
+   they belong beside the form that collects the topic. The transport, the
+   legal size catalogue and the sentences a refusal is reported with live once
+   in /js/imagegen.js behind window.ImageGen, and this page holds no second
+   copy of any of them. An image path that reported a quota refusal one way
+   here and another way in the drop-in panel would be two things that drift.
+
+   The five legal sizes are NOT enumerated here. lib/image/sizes.js is their
+   single source of truth and ImageGen.sizes() carries them to this <select>;
+   the map below only says which of whatever came back each platform prefers,
+   and a platform whose preference is not in the catalogue silently keeps the
+   API's own default rather than forcing a value the server would reject. */
+const IMAGE_TOOL='social-media';
+const PLATFORM_ASPECT={
+  'Instagram':'1328*1328',      // square: the feed, and it crops safely to a story
+  'TikTok':'928*1664',          // 9:16, full screen
+  'LinkedIn':'1664*928',        // landscape reads widest in a scrolling feed
+  'X (Twitter)':'1664*928',
+  'Facebook':'1664*928',
+  'All platforms':'1328*1328',  // square is the one that survives every crop
+};
+/* Both start false on every openTool. Once the user types in the description
+   or picks an aspect, this page stops overwriting that choice — a field that
+   silently rewrites what someone just typed is worse than no default at all. */
+let imgPromptEdited=false,imgSizeEdited=false;
+/* The token of the most recent image request. Every render is gated on it, so
+   a second Generate while the first image is still in flight cannot have the
+   older answer paint over the newer one. */
+let imgRun=0;
+
+function buildImageSection(c){
+  imgPromptEdited=false;imgSizeEdited=false;
+  const s=document.createElement('div');s.className='f-sec';s.id='img-sec';
+  s.innerHTML=`<div class="f-lbl">Image</div>
+    <label class="img-tog"><input type="checkbox" id="ff-image-on"><span class="img-txt"><b>Also generate a matching image</b>One image, made alongside the posts and saved to your account. It counts against your image quota.</span></label>
+    <div class="f-hint" id="img-note" hidden></div>
+    <div class="img-detail" id="img-detail" hidden>
+      <div class="f-lbl f-lbl-2">Aspect</div>
+      <select class="f-sel" id="ff-image-size"></select>
+      <div class="f-lbl f-lbl-2">Image description</div>
+      <textarea class="f-ta" id="ff-image-prompt" rows="4" placeholder="Describe the image…"></textarea>
+      <div class="f-hint">Written from your topic, platform and tone, and sent exactly as you see it. Edit it and it stays as you left it.</div>
+    </div>`;
+  c.appendChild(s);
+
+  const on=document.getElementById('ff-image-on'),detail=document.getElementById('img-detail');
+  on.addEventListener('change',()=>{detail.hidden=!on.checked;if(on.checked)refreshImageDefaults();});
+  document.getElementById('ff-image-prompt').addEventListener('input',()=>{imgPromptEdited=true;});
+  document.getElementById('ff-image-size').addEventListener('change',()=>{imgSizeEdited=true;});
+  ['ff-topic','ff-platform','ff-goal'].forEach(id=>{const f=document.getElementById(id);if(!f)return;f.addEventListener('input',refreshImageDefaults);f.addEventListener('change',refreshImageDefaults);});
+
+  if(!window.ImageGen){disableImage('Image generation did not load on this page. The posts are unaffected.');return;}
+  /* Ask BEFORE the click whether this deployment can generate at all. A tick
+     box that answers "not configured" only after someone has written a
+     description and pressed Generate is a control that lied about existing.
+     ImageGen.ready() shares one request with the drop-in panel, so opening
+     this tool costs no extra round trip. */
+  window.ImageGen.ready().then(()=>{
+    const sel=document.getElementById('ff-image-size');
+    if(!sel)return;                                   // tool changed while in flight
+    if(window.ImageGen.error()){disableImage(window.ImageGen.error());return;}
+    sel.innerHTML='';
+    window.ImageGen.sizes().forEach(z=>{const o=document.createElement('option');o.value=z.value;o.textContent=z.label;if(z.isDefault)o.selected=true;sel.appendChild(o);});
+    const max=window.ImageGen.options()?.maxPromptChars;
+    if(max)document.getElementById('ff-image-prompt').maxLength=max;
+    refreshImageDefaults();
+  });
+}
+
+/* Off, and saying why. Not hidden: a control that vanishes and a control that
+   was never built look identical, and only one of them is worth asking about. */
+function disableImage(msg){
+  const on=document.getElementById('ff-image-on');if(!on)return;
+  on.checked=false;on.disabled=true;
+  const d=document.getElementById('img-detail');if(d)d.hidden=true;
+  const n=document.getElementById('img-note');if(n){n.textContent=msg;n.hidden=false;}
+}
+
+function refreshImageDefaults(){
+  const ta=document.getElementById('ff-image-prompt');if(!ta)return;
+  if(!imgPromptEdited)ta.value=derivedImagePrompt();
+  const sel=document.getElementById('ff-image-size');
+  if(sel&&!imgSizeEdited){
+    const want=PLATFORM_ASPECT[document.getElementById('ff-platform')?.value];
+    if(want&&[...sel.options].some(o=>o.value===want))sel.value=want;
+  }
+}
+
+/* The description the user READS is the description that gets SENT. The API
+   accepts a negative prompt and "no text, no watermark" is genuinely the right
+   guidance — image models render lettering badly, and the caption is the other
+   half of this tool's output anyway — but putting it in a hidden field would
+   mean the prompt stored against the image is not the one anybody saw. So it
+   goes in the visible box, where it can be read, kept or deleted. */
+function derivedImagePrompt(){
+  const topic=(document.getElementById('ff-topic')?.value||'').trim();
+  if(!topic)return '';
+  const platform=document.getElementById('ff-platform')?.value||'social media';
+  const goal=document.getElementById('ff-goal')?.value||'';
+  return `A ${activeTone.toLowerCase()} ${platform} image for: ${topic}.`
+    +(goal?` It has to carry this at a glance: ${goal.toLowerCase()}.`:'')
+    +` Photographic, sharp, bright even lighting, one clear subject, uncluttered background with room for a caption to sit over it.`
+    +` No text, no lettering, no logo and no watermark anywhere in the image.`;
+}
+
+/* What would be sent right now, or null if the option is off or unavailable. */
+function pendingImage(){
+  /* The tool is asked FIRST, before the controls. Every other tool on this page
+     clears the form body and rebuilds it, so in a browser the toggle is simply
+     gone — but resting an invariant on a node having been torn down means the
+     day someone reuses the form instead of rebuilding it, a YouTube script
+     quietly starts spending image quota. Which tool offers this is a rule, so
+     it is checked as one. */
+  if(!currentTool||currentTool.id!==IMAGE_TOOL)return null;
+  const on=document.getElementById('ff-image-on');
+  if(!on||on.disabled||!on.checked||!window.ImageGen)return null;
+  return {
+    prompt:(document.getElementById('ff-image-prompt')?.value||'').trim(),
+    size:document.getElementById('ff-image-size')?.value||'',
+    /* The run's output language, recorded against the row so an image says
+       which language surface produced it. lib/image stores it; it does not
+       rewrite the prompt with it. */
+    lang:(window.GenLang&&typeof window.GenLang.get==='function')?window.GenLang.get():''
+  };
+}
+
+/* Fire the image request. Returns true when this run has an image on screen or
+   on the way — generate() uses that to decide whether the "nothing here yet"
+   empty state is still true after a text failure. */
+function startImage(){
+  const req=pendingImage();
+  if(!req)return false;
+  if(!req.prompt){paintImageError('Describe the image, or switch the image option off. Nothing was sent and nothing was charged.');return true;}
+  const token=++imgRun;
+  paintImagePending();
+  window.ImageGen.generate(req).then(res=>{
+    if(token!==imgRun)return;
+    if(res.ok)paintImage(res.image,req);else paintImageError(res.message);
+  },()=>{
+    /* The second argument to .then, not a trailing .catch, so a bug thrown by
+       the render above is not reported to the user as a network failure. */
+    if(token!==imgRun)return;
+    paintImageError('Cannot reach the server, so no image was made. Anything above this is unaffected.');
+  });
+  return true;
+}
+
+function regenImage(){
+  if(!startImage())paintImageError('Switch the image option back on to generate another one.');
+}
+
+function imageBlock(label){
+  const host=document.getElementById('out-image');host.innerHTML='';
+  document.getElementById('out-empty').style.display='none';
+  const b=document.createElement('div');b.className='res-block';
+  const h=document.createElement('div');h.className='rb-head';
+  const l=document.createElement('span');l.className='rb-lbl';l.textContent=label;
+  const acts=document.createElement('div');acts.className='rb-acts';
+  h.appendChild(l);h.appendChild(acts);b.appendChild(h);host.appendChild(b);
+  return {block:b,acts};
+}
+
+function paintImagePending(){
+  const {block}=imageBlock('Image');
+  const body=document.createElement('div');body.className='rb-body';
+  body.innerHTML='<div class="r3-working"><div class="r3-working-dots"><i></i><i></i><i></i></div><span class="r2-thinking">Generating your image…</span></div>';
+  block.appendChild(body);
+}
+
+function paintImage(image,req){
+  const {block,acts}=imageBlock('Image · '+(image.size||''));
+
+  const open=document.createElement('a');open.className='rb-btn';open.href=image.url;open.target='_blank';open.rel='noopener';open.textContent='↗ Open';
+  const dl=document.createElement('a');dl.className='rb-btn';dl.href=image.url;dl.download='social-image-'+image.id;dl.textContent='⤓ Download';
+  const again=document.createElement('button');again.className='rb-btn';again.type='button';again.textContent='↻ Regenerate';
+  again.addEventListener('click',regenImage);
+  acts.appendChild(open);acts.appendChild(dl);acts.appendChild(again);
+
+  const body=document.createElement('div');body.className='rb-img';
+  const el=new Image();el.alt=req.prompt.slice(0,120);el.src=image.url;
+  body.appendChild(el);block.appendChild(body);
+
+  /* The server returns the caller's own remaining quota with the image. It is
+     printed because "how many do I have left" is the next question every time
+     and the answer is already in the response — asking for it again would be
+     a second round trip for a number we are holding. */
+  const left=quotaLine(image.usage);
+  if(left){const f=document.createElement('div');f.className='rb-body';f.textContent=left;block.appendChild(f);}
+}
+
+function paintImageError(msg){
+  const {block,acts}=imageBlock('Image · not generated');
+  const again=document.createElement('button');again.className='rb-btn';again.type='button';again.textContent='↻ Try again';
+  again.addEventListener('click',regenImage);acts.appendChild(again);
+  const body=document.createElement('div');body.className='rb-body';body.textContent=msg;
+  block.appendChild(body);
+}
+
+function quotaLine(usage){
+  const day=usage?.remaining?.day,month=usage?.remaining?.month;
+  if(typeof day!=='number')return '';
+  return day+' image generation'+(day===1?'':'s')+' left today'+(typeof month==='number'?', '+month+' this month':'')+'.';
+}
+
 function copyRes(btn,idx){const t=document.getElementById('rb-'+idx)?.textContent||'';navigator.clipboard.writeText(t).then(()=>{btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent='📋 Copy',2000)});}
 async function saveRes(idx){
   const text=document.getElementById('rb-'+idx)?.textContent||'';
