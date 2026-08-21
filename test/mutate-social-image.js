@@ -11,22 +11,26 @@
  * that makes the suite throw before it prints a score is a kill, and reading
  * the score would record it as a survivor.
  *
- * Two of these mutations were survivors on the first run and both were the
- * harness's fault rather than the product's, which is the whole argument for
- * this file existing:
+ * ── WHAT THIS ROUND ADDED, AND WHY ────────────────────────────────────────
+ * M14 and M15 are the mutations that would have caught the bug that shipped.
+ * The feature was built into public/social.html only, while public/app.html
+ * defines the SAME social-media tool behind the dashboard tile everyone
+ * actually clicks. The suite passed, the deploy was green, and the option was
+ * invisible to real users. So there is now a mutation that unwires the hub and
+ * one that unloads its script — if either survives, the suite has stopped
+ * covering the surface that matters most.
  *
- *   M5 — the fake DOM kept the children an innerHTML assignment should have
- *        destroyed, so a stale image painted OVER a newer one was still
- *        findable underneath it and the guard looked alive with the guard
- *        deleted.
- *   M8 — the suite asserted the option was INERT on other tools rather than
- *        ABSENT from them, so building it everywhere changed nothing it read.
- *
- * A third, an attempt to bolt a hidden negative prompt onto the page's request
- * object, is genuinely inert: ImageGen.generate() builds its body from an
- * allowlist of three fields, so an extra key on the page never reaches the
- * wire. M2 is therefore aimed at the wire itself, which is where the invariant
- * actually lives.
+ * Earlier survivors, kept documented because each was the harness's fault
+ * rather than the product's, which is the argument for this file existing:
+ *   • the fake DOM kept the children an innerHTML assignment should have
+ *     destroyed, so a stale image painted OVER a newer one was still findable
+ *     underneath it and the token guard looked alive with the guard deleted;
+ *   • the suite asserted the option was INERT on other tools rather than
+ *     ABSENT from them, so building it everywhere changed nothing it read;
+ *   • bolting a hidden negative prompt onto the page's request object is
+ *     genuinely inert, because ImageGen.generate() builds its body from an
+ *     allowlist of three fields — so M2 is aimed at the wire, where the
+ *     invariant actually lives.
  */
 const fs = require('fs');
 const path = require('path');
@@ -34,11 +38,13 @@ const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 const APP = path.join(__dirname, '..');
-const PAGE = path.join(APP, 'public/social.html');
+const HUB = path.join(APP, 'public/app.html');
+const SOC = path.join(APP, 'public/social.html');
+const POST = path.join(APP, 'public/js/postimage.js');
 const IGEN = path.join(APP, 'public/js/imagegen.js');
 const SUITE = path.join(__dirname, 'social-image-contract.js');
 
-const TARGETS = [PAGE, IGEN];
+const TARGETS = [HUB, SOC, POST, IGEN];
 const md5 = (f) => crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex');
 const backup = (f) => `${f}.mutimg.bak`;
 
@@ -73,7 +79,7 @@ function run() {
     checks: m ? +m[1] : NaN,
     fail: m ? +m[2] : NaN,
     named: (r.stdout || '').split('\n').filter((l) => l.startsWith('  ❌'))
-      .map((l) => l.replace(/^ {2}❌ /, '').slice(0, 74)),
+      .map((l) => l.replace(/^ {2}❌ /, '').slice(0, 70)),
   };
 }
 
@@ -82,55 +88,70 @@ function run() {
 function mutate(file, find, replace) {
   const s = fs.readFileSync(file, 'utf8');
   const n = s.split(find).length - 1;
-  if (n !== 1) throw new Error(`ANCHOR ${n === 0 ? 'MISS' : 'AMBIGUOUS (' + n + 'x)'} in ${path.basename(file)}: ${find.slice(0, 64)}`);
+  if (n !== 1) {
+    throw new Error(`ANCHOR ${n === 0 ? 'MISS' : 'AMBIGUOUS (' + n + 'x)'} in `
+      + `${path.basename(file)}: ${find.slice(0, 64)}`);
+  }
   fs.writeFileSync(file, s.replace(find, () => replace));
 }
 
 const MUTATIONS = [
   ['M1  send the derived description instead of the one on screen', () =>
-    mutate(PAGE, "prompt:(document.getElementById('ff-image-prompt')?.value||'').trim(),",
-                 'prompt:derivedImagePrompt(),')],
+    mutate(POST, 'prompt: String(ui.prompt.value || \'\').trim(),', 'prompt: derived(),')],
 
   ['M2  bolt a negative prompt onto the wire, behind the user', () =>
     mutate(IGEN, 'if (r.size) body.size = r.size;',
                  "if (r.size) body.size = r.size; body.negative_prompt = 'text, watermark';")],
 
   ['M3  replace the API\'s own reason with a generic apology', () =>
-    mutate(IGEN, 'if (d.message) return d.message;',
-                 "if (d.message) return 'Something went wrong.';")],
+    mutate(IGEN, 'if (d.message) return d.message;', "if (d.message) return 'Something went wrong.';")],
 
-  ['M4  restore the empty state over an image that is on its way', () =>
-    mutate(PAGE, "if(!img)document.getElementById('out-empty').style.display='flex';",
-                 "document.getElementById('out-empty').style.display='flex';")],
+  ['M4a restore the empty state over a pending image (hub)', () =>
+    mutate(HUB, "if(!img)document.getElementById('out-empty').style.display='flex';",
+                "document.getElementById('out-empty').style.display='flex';")],
+
+  ['M4b restore the empty state over a pending image (module page)', () =>
+    mutate(SOC, "if(!img)document.getElementById('out-empty').style.display='flex';",
+                "document.getElementById('out-empty').style.display='flex';")],
 
   ['M5  drop the stale-response token guard', () =>
-    mutate(PAGE, 'if(token!==imgRun)return;\n    if(res.ok)paintImage',
-                 'if(false)return;\n    if(res.ok)paintImage')],
+    mutate(POST, 'if (token !== run) return;\n      if (res.ok) paint',
+                 'if (false) return;\n      if (res.ok) paint')],
 
   ['M6  offer an aspect lib/image/sizes.js rejects', () =>
-    mutate(PAGE, "'Instagram':'1328*1328',", "'Instagram':'1024*1024',")],
+    mutate(POST, "'Instagram': '1328*1328',", "'Instagram': '1024*1024',")],
 
   ['M7  spend a generation on an empty description', () =>
-    mutate(PAGE, 'if(!req.prompt){paintImageError(', 'if(false){paintImageError(')],
+    mutate(POST, 'if (!req.prompt) {', 'if (false) {')],
 
-  ['M8  offer the image option on every tool on the page', () =>
-    mutate(PAGE, 'if(id===IMAGE_TOOL)buildImageSection(c);', 'buildImageSection(c);')],
+  ['M8a offer the image option on every tool (hub)', () =>
+    mutate(HUB, "if(id!==IMAGE_TOOL){window.PostImage.detach();return;}", '')],
+
+  ['M8b offer the image option on every tool (module page)', () =>
+    mutate(SOC, "    window.PostImage.detach();\n", '')],
 
   ['M9  render a row that holds no bytes as an image', () =>
     mutate(IGEN, "if (img.status !== 'stored' || !img.url) {", 'if (false) {')],
 
   ['M10 ignore the aspect the chosen platform implies', () =>
-    mutate(PAGE, 'if(want&&[...sel.options].some(o=>o.value===want))sel.value=want;', '')],
+    mutate(POST, 'var want = PLATFORM_ASPECT[fieldValue(\'platform\')];',
+                 'var want = null;')],
 
   ['M11 offer the drop-in panel alongside the in-form option', () =>
-    mutate(PAGE, 'if(igHost)igHost.hidden=(id===IMAGE_TOOL);', 'if(igHost)igHost.hidden=false;')],
+    mutate(SOC, 'if(igHost)igHost.hidden=true;', 'if(igHost)igHost.hidden=false;')],
 
   ['M12 stop asking whether the deployment is configured', () =>
     mutate(IGEN, 'if (r.data.configured === false) {', 'if (false) {')],
 
   ['M13 flatten a billing refusal into "unavailable right now"', () =>
-    mutate(IGEN, ': (r.data && r.data.message) ? r.data.message',
-                 ': (false) ? r.data.message')],
+    mutate(IGEN, ': (r.data && r.data.message) ? r.data.message', ': (false) ? r.data.message')],
+
+  /* ── the two that would have caught what shipped ─────────────────────── */
+  ['M14 unwire the option from the hub, leaving it on the module page only', () =>
+    mutate(HUB, '  attachPostImage(id,container);\n', '')],
+
+  ['M15 stop loading the module on the hub', () =>
+    mutate(HUB, '<script src="/js/postimage.js" defer></script>', '')],
 ];
 
 console.log('── baseline ' + '─'.repeat(52));
@@ -151,10 +172,8 @@ for (const [label, apply] of MUTATIONS) {
   }
   const r = run();
   restore();
-  if (r.exit === 0) {
-    survived++;
-    console.log(`  ✗ SURVIVED  ${label}`);
-  } else {
+  if (r.exit === 0) { survived++; console.log(`  ✗ SURVIVED  ${label}`); }
+  else {
     console.log(`  ✓ caught    ${label}`);
     console.log(`                ${r.named.length ? r.named.slice(0, 2).join(' · ') : 'suite aborted (a kill, not a survivor)'}`);
   }
@@ -166,7 +185,8 @@ console.log(`    ${green.checks} checks, ${green.fail} failure(s), exit ${green.
 cleanup();
 
 if (survived || green.exit !== 0) {
-  console.error(`\n✗ ${survived} mutation(s) survived` + (green.exit !== 0 ? ' and the tree did not come back green' : ''));
+  console.error(`\n✗ ${survived} mutation(s) survived`
+    + (green.exit !== 0 ? ' and the tree did not come back green' : ''));
   process.exit(1);
 }
 console.log(`\n✓ all ${MUTATIONS.length} mutations caught, and the restored tree is green`);

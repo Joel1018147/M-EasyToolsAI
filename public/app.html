@@ -994,6 +994,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
             <div class="loader"></div>
             <div class="loader-text">Crafting your content…</div>
           </div>
+          <div id="out-image"></div>
           <div class="out-results" id="out-results"></div>
           <textarea class="edit-textarea" id="edit-textarea"></textarea>
         </div>
@@ -1889,14 +1890,39 @@ function openTool(id) {
   const varSec=document.createElement('div'); varSec.className='form-section';
   varSec.innerHTML=`<div class="f-label">Number of Variants</div><select class="f-select" id="ff-variants"><option>1 variant</option><option selected>2 variants</option><option>3 variants</option></select>`;
   container.appendChild(varSec);
+  attachPostImage(id,container);
   resetOutput();
   goTo('editor');
 }
 
-function setTone(t,el) { activeTone=t; el.closest('.tone-wrap').querySelectorAll('.tone-tag').forEach(c=>c.classList.remove('on')); el.classList.add('on'); }
+function setTone(t,el) { activeTone=t; el.closest('.tone-wrap').querySelectorAll('.tone-tag').forEach(c=>c.classList.remove('on')); el.classList.add('on'); if(window.PostImage)window.PostImage.refresh(); }
+
+/* ── the image option ─────────────────────────────────────────────────────
+   The same option, the same module, as public/social.html. This hub and that
+   module page both define a `social-media` tool, and the first pass of this
+   feature went into social.html only — so it was live on the page reached
+   through /social's landing screen and absent from the tile on this
+   dashboard, which is the one people click. Both now call one implementation
+   in /js/postimage.js; this is only the wiring. */
+const IMAGE_TOOL='social-media';
+function attachPostImage(id,container){
+  if(!window.PostImage)return;
+  if(id!==IMAGE_TOOL){window.PostImage.detach();return;}
+  window.PostImage.attach({
+    form:container,
+    output:document.getElementById('out-image'),
+    tone:()=>activeTone,
+    fields:{topic:'ff-topic',platform:'ff-platform',goal:'ff-goal'},
+    css:{section:'form-section',label:'f-label',select:'f-select',textarea:'f-textarea',
+         block:'result-block',head:'rb-head',blockLabel:'rb-label',acts:'rb-acts',
+         btn:'btn btn-outline btn-sm',body:'rb-text'},
+    hideEmpty:()=>{document.getElementById('out-empty').style.display='none';},
+  });
+}
 function toneToggle(el) { el.closest('.tone-wrap').querySelectorAll('.tone-tag').forEach(c=>c.classList.remove('on')); el.classList.add('on'); }
 
 function resetOutput() {
+  document.getElementById('out-image').innerHTML='';
   document.getElementById('out-empty').style.display='flex';
   document.getElementById('out-loading').style.display='none';
   document.getElementById('out-results').innerHTML='';
@@ -1911,6 +1937,13 @@ async function generateContent() {
   if(!firstVal){toast('Please fill in the first field','error');return;}
   const varCount=parseInt(document.getElementById('ff-variants')?.value||'1');
   const prompt=currentTool.form.prompt(d);
+  /* The image goes out alongside the text, not after it. Its description is
+     built from the form rather than from the generated posts, so it has
+     nothing to wait for. The two land in two containers and neither clears
+     the other: a caption that fails must not delete an image already
+     generated and billed, and an image that fails must not take the posts
+     down with it. */
+  const img=!!(window.PostImage&&window.PostImage.start());
   document.getElementById('out-empty').style.display='none';
   document.getElementById('out-loading').style.display='flex';
   document.getElementById('out-results').style.display='none';
@@ -1922,7 +1955,10 @@ async function generateContent() {
     toast('✓ Content generated successfully','success');
   } catch(e){
     document.getElementById('out-loading').style.display='none';
-    document.getElementById('out-empty').style.display='flex';
+    /* The empty state says "nothing here yet". With an image on screen or on
+       the way that is not true, so it stays hidden and the image keeps its
+       place — it is generated and billed independently of the caption. */
+    if(!img)document.getElementById('out-empty').style.display='flex';
     toast('Error: '+e.message,'error');
   }
 }
@@ -4002,5 +4038,7 @@ function loadSubBanner() {
 loadSubBanner();
 </script>
 <script src="/js/genlang.js" defer></script>
+<script src="/js/imagegen.js" defer></script>
+<script src="/js/postimage.js" defer></script>
 </body>
 </html>
