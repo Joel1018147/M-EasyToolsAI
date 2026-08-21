@@ -187,6 +187,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="genlang-slot" data-genlang-mount></div>
       <button class="btn btn-mod" id="gen-btn" onclick="generate()">✨ Generate Content</button>
     </div>
+    <div data-imagegen-mount></div>
   </div>
   <div class="out-panel">
     <div class="out-empty" id="out-empty"><div class="e-ico">✍️</div><div class="e-title">Ready to Generate</div><div class="e-sub">Fill in the form on the left and click Generate.</div></div>
@@ -316,6 +317,7 @@ async function saveRes(idx){
 init();
 </script>
 <script src="/js/genlang.js" defer></script>
+<script src="/js/imagegen.js" defer></script>
 </body>
 </html>
 
