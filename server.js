@@ -661,10 +661,34 @@ const { generateWithGroq } = createGenerator({ pool, groqKey: GROQ_KEY });
 
 app.post('/api/generate', requireApiKey, apiLimiter, async (req, res) => {
   try {
-    const { prompt, toolId, toolName, tone = 'Professional', variants = 1 } = req.body;
+    const { prompt, toolId, toolName, tone = 'Professional', variants = 1, lang } = req.body;
     if (!prompt?.trim()) return res.status(400).json({ error: 'Prompt required' });
 
-    const result = await generateWithGroq(req.user, prompt, toolId, toolName, tone, variants);
+    /* THE CLEAN LANGUAGE PATH, wired here at Integration.
+       The trilingual lane could not add this line — it may not edit this file —
+       so until now `lang` was fully implemented in helpers/generation.js and
+       dead on the wire. The browser path worked anyway (genlang.js embeds a
+       directive inside `prompt`, which this route already forwards verbatim),
+       but an EXTERNAL /api/generate key-holder had no way to select a language
+       at all, on a platform whose whole pitch is EN/BM/ZH.
+
+       An unsupported code throws inside generateWithGroq before a token is
+       spent, but that surfaces through the catch below as a 500 — the wrong
+       status for a bad request, and not something an API caller can act on.
+       So it is REJECTED HERE, up front, against the same normaliser the
+       generation layer uses.
+
+       Checked with normaliseLang rather than by matching the thrown message:
+       a regex over an error string is a contract nobody declared, and it
+       breaks silently the day that sentence is reworded. This asks the one
+       function that actually decides. */
+    if (lang !== undefined && lang !== null && String(lang).trim() !== '' && !langHelper.normaliseLang(lang)) {
+      return res.status(400).json({
+        error: 'Unsupported output language: "' + String(lang) + '". Supported: ' + langHelper.LANGS.join(', '),
+      });
+    }
+
+    const result = await generateWithGroq(req.user, prompt, toolId, toolName, tone, variants, { lang });
     res.json({ success: true, ...result });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1284,14 +1308,32 @@ app.get('/api/documents/:id', requireAuth, checkSub, async (req, res) => {
 app.post('/api/documents', requireAuth, checkSub, async (req, res) => {
   const { title, content, tool_id, tool_name } = req.body;
   if (!title) return res.status(400).json({ error: 'Title required' });
-  const wc = (content || '').split(/\s+/).filter(Boolean).length;
+  /* ONE FORMULA FOR word_count, EVERYWHERE.
+     There are four write sites for documents.word_count: generateWithGroq's
+     auto-save, /api/score, and this route plus the PUT below. The trilingual
+     lane fixed the first two; these two kept the whitespace splitter, and the
+     result was WORSE than the original uniform bug.
+
+     Measured on one Chinese paragraph: 30 words here, 1 there. Every Save
+     button on the nine revamped module pages posts to this route while
+     generateWithGroq auto-saves the same text — so a single Chinese generation
+     produced TWO documents rows for identical content, word_count 30 and 1,
+     and /api/stats SUMmed across both. M-Ai then reported the disagreement as
+     fact, correctly, because its tools deliberately report the STORED value
+     rather than recomputing (recomputing would make it disagree with every
+     other screen).
+
+     A bug that is uniform is survivable; the same bug at two of four sites is
+     a product that contradicts itself about one document. */
+  const wc = langHelper.countWords(content || '', langHelper.detectLang(content || '')).count;
   const doc = await db.getOne('INSERT INTO documents (user_id,title,content,tool_id,tool_name,word_count) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id', [req.user.id, title, content || '', tool_id, tool_name, wc]);
   res.status(201).json({ id: doc.id, success: true });
 });
 
 app.put('/api/documents/:id', requireAuth, checkSub, async (req, res) => {
   const { title, content } = req.body;
-  const wc = (content || '').split(/\s+/).filter(Boolean).length;
+  // Same one formula as POST above — see the note there.
+  const wc = langHelper.countWords(content || '', langHelper.detectLang(content || '')).count;
   await db.run('UPDATE documents SET title=COALESCE($1,title),content=COALESCE($2,content),word_count=$3,updated_at=CURRENT_TIMESTAMP WHERE id=$4 AND user_id=$5', [title, content, wc, req.params.id, req.user.id]);
   res.json({ success: true });
 });

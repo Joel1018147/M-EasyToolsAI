@@ -47,6 +47,28 @@ const LEGACY = [
   'no-new-fallbacks.js',
   'no-fallbacks-tree.js',
   'generation-extraction.js',
+  'score-cjk-contract.js',
+
+  /* ── WIRED IN AT INTEGRATION, after a check found them orphaned ──────────
+     These two are mutation harnesses: they break a guard on purpose and
+     assert the suite goes red. The first version of this runner SKIPPED them
+     with the comment "mutation harnesses are driven by their negative
+     controls".
+
+     That comment was false, and I wrote it. Neither negative control
+     references either file — grep returns nothing — and neither did the
+     package.json chain they replaced, so both had been orphaned since before
+     this round. CLAUDE.md meanwhile cites `test/mutate-fetch.js M7` as live
+     evidence that the unchecked-fetch scan catches a deleted `.ok` check.
+     That evidence was not running.
+
+     An unrun mutation harness is the worst shape a test can have: it costs
+     nothing, it looks like coverage in the file listing, and it is cited in
+     documentation as proof of a property nobody is checking. UPGRADE-SPEC §3
+     requires every mutation-tested negative control to still fail when its
+     guard is broken — that is only true if they execute. */
+  'mutate-fetch.js',
+  'mutate-gao.js',
 ];
 
 /* The manifest. Each lane's suite is expected once that lane has landed;
@@ -63,12 +85,38 @@ const EXPECTED_LANE_SUITES = {
 let failed = 0;
 const ran = [];
 
+/* The mutation harnesses edit real source files and restore them afterwards,
+   so they refuse to start on a dirty tree (exit 2) rather than risk restoring
+   over somebody's uncommitted work. That refusal is correct and must not be
+   turned into a pass — but it also must not fail a run during development,
+   or the suite becomes unusable exactly when it is most needed.
+
+   So: on a DIRTY tree the refusal is reported, loudly, as NOT RUN. On a CLEAN
+   tree there is no excuse and a refusal is a failure. The merge gate requires
+   a clean, fully-committed branch, so at the moment that matters these always
+   execute. */
+const MUTATION_HARNESSES = new Set(['mutate-fetch.js', 'mutate-gao.js']);
+const TREE_BEFORE = (() => {
+  const r = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' });
+  return r.status === 0 ? r.stdout : null;   // null = git unreadable, treated as dirty
+})();
+const TREE_IS_DIRTY = TREE_BEFORE === null ? null : TREE_BEFORE.trim().length > 0;
+const skippedMutation = [];
+
 function run(file) {
   const full = path.join(TEST_DIR, file);
   if (!fs.existsSync(full)) return { file, status: 'absent' };
   const r = spawnSync(process.execPath, [full], { stdio: 'inherit' });
   ran.push(file);
-  if (r.status !== 0) { failed++; return { file, status: 'fail' }; }
+  if (r.status !== 0) {
+    if (MUTATION_HARNESSES.has(file) && r.status === 2 && TREE_IS_DIRTY !== false) {
+      ran.pop();
+      skippedMutation.push(file);
+      return { file, status: 'not-run' };
+    }
+    failed++;
+    return { file, status: 'fail' };
+  }
   return { file, status: 'pass' };
 }
 
@@ -103,7 +151,6 @@ for (const [f, label] of Object.entries(EXPECTED_LANE_SUITES)) {
 const known = new Set([...LEGACY, ...Object.keys(EXPECTED_LANE_SUITES), 'run-all.js']);
 const extra = fs.readdirSync(TEST_DIR)
   .filter((f) => f.endsWith('.js') && !known.has(f))
-  .filter((f) => !f.startsWith('mutate-'))   // mutation harnesses are driven by their negative controls
   .filter((f) => fs.statSync(path.join(TEST_DIR, f)).isFile());
 
 if (extra.length) {
@@ -130,9 +177,58 @@ if (missing.length) {
   console.log('  NOTHING about those lanes — it is not evidence they are fine.');
 }
 
+/* ── DID A HARNESS LEAVE A MUTATION BEHIND? ───────────────────────────────
+   Four suites here edit real source files on purpose and restore them
+   afterwards. Two of them (mutate-fetch, mutate-gao) have no `finally` and no
+   exit hook, so a crash mid-mutation leaves the mutated file on disk.
+
+   This is not theoretical. During this round's review, two blind critics
+   running mutation attacks concurrently left `lib/mai/roles.js` with 'user'
+   added to the staff role set, and `lib/mai/registry.js` with an outright
+   `if (role === 'user') return true;`. Either one, committed, is every
+   customer holding staff access to the AI tool registry.
+
+   The suite catches that mutation if it runs afterwards — proven, it goes red
+   with 15 failures. What it could not do before this block is tell you the
+   file was left that way by the tests themselves rather than written that way
+   on purpose. So: snapshot the tree before, compare after, and NAME anything
+   that changed underneath the run. Reported, never auto-reverted — silently
+   undoing a developer's real edit would be a worse failure than the one this
+   is guarding. */
+function treeSnapshot() {
+  const r = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' });
+  return r.status === 0 ? r.stdout : null;
+}
+if (TREE_BEFORE !== null) {
+  const after = treeSnapshot();
+  if (after !== null && after !== TREE_BEFORE) {
+    const before = new Set(TREE_BEFORE.split('\n').map((l) => l.slice(3)).filter(Boolean));
+    const appeared = after.split('\n').map((l) => l.slice(3)).filter(Boolean).filter((f) => !before.has(f));
+    if (appeared.length) {
+      failed++;
+      console.error('\n✗ A TEST LEFT THE WORKING TREE MODIFIED');
+      appeared.forEach((f) => console.error('    ' + f));
+      console.error('  A mutation harness did not restore. Check these files before doing');
+      console.error('  ANYTHING else — a leaked mutant in lib/mai/ is a security hole, and');
+      console.error('  a leaked mutant anywhere is a change nobody decided to make.');
+      console.error('  Restore with: git checkout -- <file>   (after confirming it is not yours)\n');
+    }
+  }
+}
+
+if (skippedMutation.length) {
+  console.log('');
+  console.log('  ⚠ MUTATION HARNESSES DID NOT RUN: ' + skippedMutation.join(', '));
+  console.log('    They refuse to start on a dirty working tree, because they edit real');
+  console.log('    source and restore it afterwards. This run therefore proves NOTHING');
+  console.log('    about whether those guards still go red — commit, then re-run.');
+  console.log('    The merge gate requires a clean branch, so they cannot be skipped there.');
+}
+
 console.log('');
 if (failed) {
   console.error('✗ ' + failed + ' suite(s) failed\n');
   process.exit(1);
 }
-console.log('✓ ' + ran.length + ' suite(s) passed\n');
+console.log('✓ ' + ran.length + ' suite(s) passed'
+  + (skippedMutation.length ? ' · ' + skippedMutation.length + ' mutation harness(es) NOT RUN' : '') + '\n');

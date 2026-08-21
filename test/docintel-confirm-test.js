@@ -61,10 +61,16 @@ function makeDb() {
     docintel_proposals: new Map(),
     pr_releases: new Map(),
     users: new Map(),
+    audit_log: [],
   };
   const log = [];
   let snapshot = null;
 
+  /* THE TRANSACTION SNAPSHOT COVERS ONLY WHAT A TRANSACTION COVERS.
+     `audit_log` is deliberately excluded, and so is anything written through
+     `query()` while no BEGIN is open — the fake models a POOL statement as
+     autocommitted, which is the whole property the durable burn relies on. A
+     fake that rolled those back would hide the bug rather than expose it. */
   const clone = () => JSON.parse(JSON.stringify({
     d: [...store.docintel_documents], p: [...store.docintel_proposals],
     r: [...store.pr_releases], u: [...store.users],
@@ -76,11 +82,42 @@ function makeDb() {
     store.users = new Map(snap.u);
   };
 
+  let failOn = null;
+  let legacyBurn = false;
+  let legacyPending = null;
+
   function route(text, params) {
     const s = norm(text);
     const P = params || [];
 
-    if (s === 'BEGIN') { snapshot = clone(); return { rows: [] }; }
+    /* Fault injection. A transient database error on the business write is the
+       second way the critic reached a replayable nonce, and it has to be
+       reproducible without waiting for a real deadlock. */
+    if (failOn && failOn.test(s)) {
+      failOn = null;
+      const e = new Error('deadlock detected');
+      e.code = '40P01';
+      throw e;
+    }
+
+    if (s === 'BEGIN') {
+      snapshot = clone();
+      /* LEGACY MODE ONLY. `legacyBurnInTransaction()` makes the fake behave the
+         way the code did before this branch: the burn is part of the
+         transaction, so the snapshot a ROLLBACK restores still holds the nonce.
+         Modelled by rewinding the snapshot's copy of the burned row to its
+         pre-burn values — the burn is then, in effect, inside the BEGIN. */
+      if (legacyBurn && legacyPending) {
+        for (const entry of snapshot.p) {
+          if (entry[0] === legacyPending.id) {
+            entry[1].accept_nonce_hash = legacyPending.hash;
+            entry[1].accept_nonce_user = legacyPending.user;
+            entry[1].accept_nonce_expires_at = legacyPending.expires;
+          }
+        }
+      }
+      return { rows: [] };
+    }
     if (s === 'COMMIT') { snapshot = null; return { rows: [] }; }
     if (s === 'ROLLBACK') { if (snapshot) restore(snapshot); snapshot = null; return { rows: [] }; }
 
@@ -177,6 +214,33 @@ function makeDb() {
       p.shown_previous_json = P[5]; p.shown_target_id = P[6];
       return { rows: [{ id: p.id }] };
     }
+    /* THE DURABLE BURN. Modelled as an autocommitted pool statement: it is
+       applied to `store` immediately and is NOT captured by any open BEGIN
+       snapshot, because the real statement runs on the pool and commits on its
+       own. It returns the PRE-burn values. */
+    if (/^WITH prev AS \( SELECT id, accept_nonce_hash, accept_nonce_user, accept_nonce_expires_at FROM docintel_proposals WHERE id = \$1 AND user_id = \$2 FOR UPDATE \) UPDATE docintel_proposals d/.test(s)) {
+      const row = store.docintel_proposals.get(P[0]);
+      if (!row || String(row.user_id) !== String(P[1])) return { rows: [] };
+      const prev = { prev_hash: row.accept_nonce_hash, prev_user: row.accept_nonce_user,
+                     prev_expires: row.accept_nonce_expires_at };
+      legacyPending = { id: P[0], hash: prev.prev_hash, user: prev.prev_user, expires: prev.prev_expires };
+      row.accept_nonce_hash = null; row.accept_nonce_user = null; row.accept_nonce_expires_at = null;
+      /* Nothing else to do. This statement runs BEFORE any BEGIN, so the
+         snapshot a later ROLLBACK restores is taken from a store in which the
+         nonce is already gone — which is precisely the durability the real
+         pool statement buys, expressed in the fake. */
+      return { rows: [prev] };
+    }
+
+    if (/^INSERT INTO audit_log /.test(s)) {
+      store.audit_log.push({
+        user_id: P[0], team_id: P[1], actor: 'docintel', action: 'docintel.accept',
+        entity: P[2], entity_id: P[3], approved_shown: P[4], approval_ref: P[5],
+        ok: P[6], detail: P[7],
+      });
+      return { rows: [] };
+    }
+
     if (/^UPDATE docintel_proposals SET accept_nonce_hash=NULL, accept_nonce_user=NULL, accept_nonce_expires_at=NULL WHERE document_id=\$1/.test(s)) {
       for (const p of store.docintel_proposals.values()) {
         if (p.document_id === P[0] && String(p.user_id) === String(P[1])) {
@@ -220,7 +284,7 @@ function makeDb() {
       const owned = row && (m[2] === 'id' ? String(row.id) === String(P[1]) : String(row[m[2]]) === String(P[1]));
       return { rows: owned ? [{ id: row.id }] : [] };
     }
-    m = /^SELECT ([a-z_]+) AS v FROM ([a-z_]+) WHERE id = \$1 AND ([a-z_]+) = \$2$/.exec(s);
+    m = /^SELECT ([a-z_]+) AS v FROM ([a-z_]+) WHERE id = \$1 AND ([a-z_]+) = \$2(?: FOR UPDATE)?$/.exec(s);
     if (m) {
       const row = store[m[2]] && store[m[2]].get(String(P[0]));
       const owned = row && (m[3] === 'id' ? String(row.id) === String(P[1]) : String(row[m[3]]) === String(P[1]));
@@ -258,6 +322,10 @@ function makeDb() {
     /** Statements that wrote to a BUSINESS table — the thing the Bar is about. */
     businessWrites: () => log.filter((e) => /^UPDATE (pr_releases|users) SET/.test(e.text)),
     reset: () => { log.length = 0; },
+    failNext: (re) => { failOn = re; },
+    /* Models the OLD, broken arrangement: the burn inside the transaction, so a
+       ROLLBACK takes it with it. Used by §11's M8 to reproduce the breach. */
+    legacyBurnInTransaction: () => { legacyBurn = true; },
   };
 }
 
@@ -538,14 +606,64 @@ head('§4  THE NONCE — server-issued, per-field, and minted only with the evid
   ok('  …and it landed on the right row', db.store.pr_releases.get(RELEASE_1).spokesperson === 'Aisyah binti Rahman');
   ok('  …and the OTHER record was not touched', db.store.pr_releases.get(RELEASE_2).spokesperson === null);
 
-  const iBurn = db.log.findIndex((e) => /SET accept_nonce_hash=NULL/.test(e.text) && /WHERE id=\$1/.test(e.text));
+  const iBurn  = db.log.findIndex((e) => /^WITH prev AS \( SELECT id, accept_nonce_hash/.test(e.text));
+  const iBegin = db.log.findIndex((e) => e.text === 'BEGIN');
   const iCheck = db.log.findIndex((e) => /FROM docintel_proposals WHERE id=\$1 AND user_id=\$2 FOR UPDATE/.test(e.text));
   const iClaim = db.log.findIndex((e) => /SET status='accepted'/.test(e.text));
   const iWrite = db.log.findIndex((e) => /^UPDATE pr_releases SET/.test(e.text));
-  ok('THE NONCE IS SPENT BY BEING TOUCHED — cleared before any check that could reject it',
-     iCheck !== -1 && iBurn !== -1 && iBurn > iCheck && iBurn < iClaim, `${iCheck},${iBurn},${iClaim}`);
+  ok('THE NONCE IS SPENT BY BEING TOUCHED — burned before any check that could reject it',
+     iBurn !== -1 && iCheck !== -1 && iBurn < iCheck && iBurn < iClaim, `${iBurn},${iCheck},${iClaim}`);
+  ok('  …and the burn happens BEFORE `BEGIN`, so no rollback can reach it',
+     iBegin !== -1 && iBurn < iBegin, `burn at ${iBurn}, BEGIN at ${iBegin}`);
+  ok('  …in ONE statement, so there is no window between reading the hash and clearing it',
+     db.log[iBurn].text.includes('FOR UPDATE') && /SET accept_nonce_hash = NULL/.test(db.log[iBurn].text)
+     && /RETURNING prev\.accept_nonce_hash/.test(db.log[iBurn].text), db.log[iBurn].text.slice(0, 120));
+  ok('  …and the burn is user-scoped, so one account cannot burn another’s approval',
+     /WHERE id = \$1 AND user_id = \$2/.test(db.log[iBurn].text) && db.log[iBurn].params[1] === USER_A);
   ok('THE STATUS FLIP IS THE CLAIM AND IT COMES FIRST — before the business write',
      iClaim !== -1 && iWrite !== -1 && iClaim < iWrite, `${iClaim} < ${iWrite}`);
+  ok('the business row is LOCKED before its value is snapshotted, so a concurrent commit cannot slip in',
+     db.log.some((e) => /^SELECT spokesperson AS v FROM pr_releases WHERE id = \$1 AND user_id = \$2 FOR UPDATE$/
+       .test(e.text)),
+     db.log.filter((e) => /AS v FROM pr_releases/.test(e.text)).map((e) => e.text).join(' | '));
+
+  /* ── THE AUDIT ROW ─────────────────────────────────────────────────────
+     One row per accept, success or refusal, carrying the disclosure the human
+     was shown and a handle that is not the secret. */
+  const auditRows = db.store.audit_log;
+  ok('the accept wrote exactly one audit_log row', auditRows.length === 1, String(auditRows.length));
+  ok('  …with actor=docintel, ok=true, and the table it actually wrote',
+     auditRows[0].actor === 'docintel' && auditRows[0].ok === true && auditRows[0].entity === 'pr_releases',
+     JSON.stringify(auditRows[0]));
+  ok('  …carrying the disclosure the human approved, not a reconstruction of it',
+     JSON.parse(auditRows[0].approved_shown).value === 'Aisyah binti Rahman'
+     && JSON.parse(auditRows[0].approved_shown).replaces === null
+     && JSON.parse(auditRows[0].approved_shown).writesTo === 'pr_releases.spokesperson'
+     && /Aisyah binti Rahman/.test(JSON.parse(auditRows[0].approved_shown).evidence),
+     auditRows[0].approved_shown);
+  ok('  …and an approval_ref that names the issuance', /@/.test(auditRows[0].approval_ref || ''));
+  ok('  …THE NONCE IS NOWHERE IN THE AUDIT ROW — not the plaintext, not the hash, not a prefix of it',
+     !JSON.stringify(auditRows[0]).includes(nonce)
+     && !JSON.stringify(auditRows[0]).includes(sha256(nonce))
+     && !JSON.stringify(auditRows[0]).includes(sha256(nonce).slice(0, 12)),
+     auditRows[0].approval_ref);
+  ok('  …and the audit insert is parameterized like everything else',
+     db.log.some((e) => /^INSERT INTO audit_log /.test(e.text) && !e.text.includes('Aisyah')));
+
+  /* A broken audit table must not turn a completed write into an error. */
+  {
+    const clock2 = { t: Date.now() };
+    const built = await buildBound(ADVERSARIAL_REPLY, clock2);
+    await built.svc.propose({ documentId: built.docId, userId: USER_A });
+    const l2 = await built.svc.listProposals({ documentId: built.docId, userId: USER_A });
+    const c2 = (await built.svc.openCard({
+      proposalId: l2.proposals.filter((x) => x.status === 'pending')[0].id, userId: USER_A })).card;
+    built.db.failNext(/^INSERT INTO audit_log/);
+    const still = await built.svc.acceptProposal({ proposalId: c2.id, userId: USER_A, nonce: c2.acceptNonce });
+    ok('a failing audit insert does NOT fail the response for a write that really happened',
+       still.ok === true && built.db.store.pr_releases.get(RELEASE_1).spokesperson === 'Aisyah binti Rahman',
+       JSON.stringify(still));
+  }
   ok('  …the claim is guarded by WHERE status=pending AND quote_verified=TRUE',
      /WHERE id=\$1 AND user_id=\$2 AND status='pending' AND quote_verified=TRUE/.test(db.log[iClaim].text));
   ok('  …and the model\'s typed value is NOT a parameter to the business write',
@@ -922,7 +1040,7 @@ head('§11  MUTATION — break each guard in a compiled-in-memory copy, and watc
   /* M1 — delete the nonce comparison. */
   {
     const create = mutantService(
-      'if (!hashEquals(p.accept_nonce_hash, sha256(nonce))) return await invalid();',
+      "if (!hashEquals(spent.prev_hash, sha256(nonce))) return await invalid('nonce does not match');",
       'if (false) return await invalid();');
     const r = await drive(create, { nonce: () => crypto.randomBytes(32).toString('hex') });
     ok('M1 · with the nonce comparison deleted, a nonce this server NEVER issued writes the field',
@@ -932,7 +1050,7 @@ head('§11  MUTATION — break each guard in a compiled-in-memory copy, and watc
   /* M2 — delete the TOCTOU value-snapshot check. */
   {
     const create = mutantService(
-      'if (JSON.stringify(nowValue) !== JSON.stringify(shown)) {',
+      'if (JSON.stringify(live.value) !== JSON.stringify(shown)) {',
       'if (false) {');
     const r = await drive(create, {
       before: ({ db }) => { db.store.pr_releases.get(RELEASE_1).spokesperson = 'Someone Else'; },
@@ -945,7 +1063,7 @@ head('§11  MUTATION — break each guard in a compiled-in-memory copy, and watc
   /* M3 — delete the shown_target_id check. */
   {
     const create = mutantService(
-      'if (String(p.shown_target_id) !== String(d.target_id)) return await invalid();',
+      "if (String(p.shown_target_id) !== String(d.target_id)) return await invalid('document was re-bound');",
       'if (false) return await invalid();');
     const r = await drive(create, {
       before: ({ db, docId }) => { db.store.docintel_documents.get(docId).target_id = RELEASE_2; },
@@ -958,8 +1076,8 @@ head('§11  MUTATION — break each guard in a compiled-in-memory copy, and watc
   /* M4 — delete the expiry check. */
   {
     const create = mutantService(
-      'if (!p.accept_nonce_expires_at || new Date(p.accept_nonce_expires_at).getTime() <= now()) return await invalid();',
-      'if (false) return await invalid();');
+      'if (!spent.prev_expires || new Date(spent.prev_expires).getTime() <= now()) {',
+      'if (false) {');
     const db = makeDb();
     seed(db);
     const clock = { t: Date.now() };
@@ -975,6 +1093,78 @@ head('§11  MUTATION — break each guard in a compiled-in-memory copy, and watc
     const out = await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
     ok('M4 · with the expiry check deleted, a day-old approval still writes',
        out.ok === true && db.businessWrites().length === 1, JSON.stringify(out));
+  }
+
+  /* ── THE CLAIM'S WHERE CLAUSE, PROVED BEHAVIOURALLY ─────────────────────
+     Integration's note: this guard was only ever asserted by matching the SQL
+     text, which proves the characters are present and nothing about whether
+     they do anything. So: delete the EARLIER in-memory check that shadows it,
+     move the row underneath, and watch the claim itself refuse. If the WHERE
+     clause were decorative these two would write. */
+
+  /* M6 · status. The early `p.status !== 'pending'` check is removed, and the
+     row is flipped to 'accepted' after the transaction has read it. */
+  {
+    const create = mutantService(
+      "if (p.status !== 'pending') return await invalid(`status is ${p.status}`);",
+      'if (false) return await invalid();');
+    const r = await drive(create, {
+      before: ({ db, card }) => { db.store.docintel_proposals.get(card.id).status = 'accepted'; },
+    });
+    ok('M6 · with the early status check gone, THE CLAIM ITSELF still refuses an already-accepted row',
+       r.out.ok === false && r.out.reason === 'confirm_invalid', JSON.stringify(r.out));
+    ok('  …and no business write ran — the claim is what stopped it, not the check above it',
+       r.db.businessWrites().length === 0);
+  }
+
+  /* M7 · quote_verified. The early check is removed and the row is marked
+     unevidenced — an auto_rejected proposal wearing a 'pending' status. */
+  {
+    const create = mutantService(
+      "if (p.quote_verified !== true) return await invalid('never evidenced');",
+      'if (false) return await invalid();');
+    const r = await drive(create, {
+      before: ({ db, card }) => { db.store.docintel_proposals.get(card.id).quote_verified = false; },
+    });
+    ok('M7 · with the early evidence check gone, THE CLAIM ITSELF still refuses an unevidenced row',
+       r.out.ok === false && r.out.reason === 'confirm_invalid', JSON.stringify(r.out));
+    ok('  …and nothing was written', r.db.businessWrites().length === 0);
+  }
+
+  /* M8 · THE REGRESSION MUTANT. Two changes put the code back exactly where
+     Integration's critic found it: the record-exists sentinel is removed (so
+     null-for-gone reads the same as null-for-empty again), and the fake is
+     told to treat the burn as part of the transaction. The breach reappears,
+     which is what makes §12 a regression test rather than a description. */
+  {
+    const create = mutantService(
+      'const live = await readTargetValue(cat, p.field_key, userId, d.target_id, client, true);',
+      'const live = { found: true, value: (await readTargetValue(cat, p.field_key, userId, d.target_id, client, true)).value };');
+    const db = makeDb();
+    seed(db);
+    const clock = { t: Date.now() };
+    const svc = create({ db, generate: async () => ADVERSARIAL_REPLY, model: 'mutant', now: () => clock.t });
+    const up = await svc.ingest({ userId: USER_A, teamId: null, filename: 'b.txt', mimeType: 'text/plain',
+                                  bytes: Buffer.from(DOC_TEXT, 'utf8') });
+    await svc.bindTarget({ documentId: up.document.id, userId: USER_A, category: 'pr_release', targetId: RELEASE_1 });
+    await svc.propose({ documentId: up.document.id, userId: USER_A });
+    const l = await svc.listProposals({ documentId: up.document.id, userId: USER_A });
+    const card = (await svc.openCard({ proposalId: l.proposals.filter((x) => x.status === 'pending')[0].id,
+                                       userId: USER_A })).card;
+
+    db.legacyBurnInTransaction();                 // the burn is rollback-able again
+    db.store.pr_releases.delete(RELEASE_1);
+    const first = await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+    ok('M8 · with the sentinel removed and the burn back inside the transaction, the write fails…',
+       first.ok === false, JSON.stringify(first));
+    ok('  …the ROLLBACK resurrects the nonce on the row',
+       db.store.docintel_proposals.get(card.id).accept_nonce_hash !== null);
+    db.store.pr_releases.set(RELEASE_1, { id: RELEASE_1, user_id: USER_A, company_name: null, headline: null,
+                                          spokesperson: null, audience: null, region: null });
+    const replay = await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+    ok('  …AND THE SAME NONCE THEN SUCCEEDS — the exact breach the critic reported, reproduced',
+       replay.ok === true && db.store.pr_releases.get(RELEASE_1).spokesperson === 'Aisyah binti Rahman',
+       JSON.stringify(replay));
   }
 
   /* M5 — delete GUARD 1 from verify(). sliceValue is called by reference INSIDE
@@ -1036,14 +1226,135 @@ head('§11  MUTATION — break each guard in a compiled-in-memory copy, and watc
   }
 }
 
-/* ── §12 · WHAT THIS SUITE DOES NOT PROVE ────────────────────────────────── */
-head('§12  GAPS — stated, not implied');
+/* ── §12 · THE BURN MUST SURVIVE A FAILED WRITE ──────────────────────────────
+   REGRESSION. Found by Integration's blind critic, not by this suite, and that
+   is the honest record: §4 asserted the burn happened BEFORE the checks and
+   §5 asserted every refusal wrote nothing, and BOTH were true while the nonce
+   was still replayable — because three paths after the checks ROLLBACK, and a
+   ROLLBACK takes the burn with it.
+
+       :claim-failed   ROLLBACK  → hash restored
+       :write-returned-false  ROLLBACK  → hash restored
+       :catch          ROLLBACK  → hash restored
+
+   The critic reached it with NO injected fault at all: currentValue() returned
+   null both for "the row is gone" and for "the field is empty", so a card
+   minted over an empty field still matched its snapshot after the target row
+   was deleted, the claim succeeded, writeField returned false, and the
+   rollback handed the nonce back live.
+
+   "Single use" has to mean spent on presentation, not spent on success.
+   ──────────────────────────────────────────────────────────────────────────── */
+head('§12  REGRESSION — a nonce presented once is dead, even when the write fails');
+
+/** Mint a card and hand back everything needed to attack it. */
+async function freshCard() {
+  const clock = { t: Date.now() };
+  const { db, svc, docId } = await buildBound(ADVERSARIAL_REPLY, clock);
+  await svc.propose({ documentId: docId, userId: USER_A });
+  const listed = await svc.listProposals({ documentId: docId, userId: USER_A });
+  const row = listed.proposals.filter((p) => p.status === 'pending')[0];
+  const card = (await svc.openCard({ proposalId: row.id, userId: USER_A })).card;
+  return { db, svc, docId, card, clock };
+}
+
+/* (a) THE CRITIC'S REPRODUCTION — the bound record is deleted between the card
+       being drawn and the approval being presented. */
+{
+  const { db, svc, card } = await freshCard();
+
+  db.store.pr_releases.delete(RELEASE_1);
+  db.reset();
+  const first = await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+  ok('a deleted target is refused, and named as such',
+     first.ok === false && first.reason === 'target_not_found', JSON.stringify(first));
+  ok('  …and nothing was written', db.businessWrites().length === 0);
+  ok('  …AND THE NONCE IS GONE FROM THE ROW — the burn was not rolled back with the write',
+     db.store.docintel_proposals.get(card.id).accept_nonce_hash === null,
+     'accept_nonce_hash is still set: the approval is replayable');
+
+  /* The record comes back — restored from a backup, or re-created by the user. */
+  db.store.pr_releases.set(RELEASE_1, { id: RELEASE_1, user_id: USER_A, company_name: null, headline: null,
+                                        spokesperson: null, audience: null, region: null });
+  db.reset();
+  const replay = await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+  ok('THE SAME NONCE, PRESENTED A SECOND TIME, IS REFUSED',
+     replay.ok === false && replay.reason === 'confirm_invalid', JSON.stringify(replay));
+  ok('  …and still nothing was written',
+     db.businessWrites().length === 0 && db.store.pr_releases.get(RELEASE_1).spokesperson === null);
+}
+
+/* (b) A TRANSIENT DATABASE ERROR on the business write — the same state by the
+       catch/ROLLBACK path rather than the !wrote path. */
+{
+  const { db, svc, card } = await freshCard();
+
+  db.reset();
+  db.failNext(/^UPDATE pr_releases SET/);
+  let threw = null;
+  try {
+    await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+  } catch (e) {
+    threw = e;
+  }
+  ok('an injected 40P01 on the business write propagates rather than being swallowed',
+     threw !== null && threw.code === '40P01', String(threw && threw.message));
+  ok('  …the field was not written', db.store.pr_releases.get(RELEASE_1).spokesperson === null);
+  ok('  …the proposal is not left marked accepted beside a column that was never written',
+     db.store.docintel_proposals.get(card.id).status === 'pending');
+  ok('  …AND THE NONCE IS GONE FROM THE ROW despite the rollback',
+     db.store.docintel_proposals.get(card.id).accept_nonce_hash === null,
+     'accept_nonce_hash survived the rollback: the approval is replayable after a transient error');
+
+  db.reset();
+  const replay = await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+  ok('THE SAME NONCE, AFTER THE ERROR, IS REFUSED',
+     replay.ok === false && replay.reason === 'confirm_invalid', JSON.stringify(replay));
+  ok('  …and wrote nothing', db.businessWrites().length === 0);
+}
+
+/* (c) The remedy is the same as every other burn: re-open the card. */
+{
+  const { db, svc, card } = await freshCard();
+  db.store.pr_releases.delete(RELEASE_1);
+  await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+  db.store.pr_releases.set(RELEASE_1, { id: RELEASE_1, user_id: USER_A, company_name: null, headline: null,
+                                        spokesperson: null, audience: null, region: null });
+  const reopened = await svc.openCard({ proposalId: card.id, userId: USER_A });
+  ok('re-opening after a failed write issues a fresh approval',
+     reopened.ok === true && reopened.card.acceptNonce !== card.acceptNonce);
+  const done = await svc.acceptProposal({ proposalId: card.id, userId: USER_A,
+                                          nonce: reopened.card.acceptNonce });
+  ok('  …and that one writes', done.ok === true && db.store.pr_releases.get(RELEASE_1).spokesperson
+     === 'Aisyah binti Rahman', JSON.stringify(done));
+}
+
+/* (d) A DELETED RECORD IS NOT AN EMPTY FIELD. currentValue() conflating them is
+       what let the TOCTOU snapshot pass over a row that no longer existed. */
+{
+  const { db, svc, card } = await freshCard();
+  db.store.pr_releases.delete(RELEASE_1);
+  db.reset();
+  const out = await svc.acceptProposal({ proposalId: card.id, userId: USER_A, nonce: card.acceptNonce });
+  ok('a missing record is refused as target_not_found, NOT silently treated as an empty field',
+     out.reason === 'target_not_found', JSON.stringify(out));
+  ok('  …and the claim never ran, so the proposal is still pending for a later, honest approval',
+     !db.log.some((e) => /SET status='accepted'/.test(e.text))
+     && db.store.docintel_proposals.get(card.id).status === 'pending',
+     db.store.docintel_proposals.get(card.id).status);
+}
+
+/* ── §13 · WHAT THIS SUITE DOES NOT PROVE ────────────────────────────────── */
+head('§13  GAPS — stated, not implied');
 console.log([
   '  · There is no local PostgreSQL (postgres.railway.internal resolves only inside Railway) and pg-mem',
   '    cannot be installed from this lane, so every assertion above ran against a hand-rolled fake pg client.',
   '    The SQL TEXT, the PARAMETERS and the ORDER of statements are real; PostgreSQL\'s own behaviour is not.',
-  '    Specifically NOT proved here: that FOR UPDATE actually serialises two concurrent accepts, and that a',
-  '    column type rejects an over-long value the normaliser let through. Both need a real database.',
+  '    Specifically NOT proved here: that the CTE burn is genuinely atomic under real concurrency, that FOR',
+  '    UPDATE really serialises two simultaneous accepts, and that a column type rejects an over-long value',
+  '    the normaliser let through. All three need a real database. What IS proved: the burn is a separate',
+  '    pool statement issued before BEGIN, and no rollback path reaches it (§12 is the regression, and',
+  '    §11 M8 reproduces the original breach the moment that property is removed).',
   '  · The HTTP layer is exercised only through the router\'s own stack (§7). requireAuth / checkSub are',
   '    mounted in server.js, which this lane does not own, and are covered by test/auth-guard-test.js.',
   '  · No model was called. `generate` is scripted, deliberately — the guards must hold for ANY reply, and a',

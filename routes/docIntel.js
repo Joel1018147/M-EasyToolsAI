@@ -284,16 +284,19 @@ router.post('/documents/:id/propose', spendLimit, guard(async (req, res) => {
    No sibling takes several. No sibling takes an array.
    ═════════════════════════════════════════════════════════════════════════ */
 router.post('/proposals/:id/accept', guard(async (req, res) => {
-  const { userId } = who(req);
+  const { userId, teamId } = who(req);
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   /* `body.nonce` is passed through as-is when it is a string and as null
       otherwise. There is deliberately no coercion: `true`, `1` and
       `{confirmed:true}` must not become anything the service can read as a
-      confirmation. */
+      confirmation.
+
+      `teamId` comes from the session, like every other identity here, and
+      reaches the audit row. It is NOT read from the body. */
   const out = await svcFor(req).acceptProposal({
     proposalId: req.params.id,
     nonce: typeof body.nonce === 'string' ? body.nonce : null,
-    userId,
+    userId, teamId,
   });
   if (out.ok) return res.json(out);
 
