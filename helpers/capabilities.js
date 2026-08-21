@@ -77,6 +77,21 @@ const CHECKS = [
     consequence: '/seller answers 500 to everyone. Ops cannot see subscriptions.',
   },
   {
+    key: 'image_generation',
+    label: 'Image generation (Alibaba Model Studio / Qwen-Image)',
+    vars: ['DASHSCOPE_API_KEY'],
+    // required:false — 'optional', not 'broken'.
+    //
+    // This is the distinction this whole file exists for. Image generation is
+    // a capability a deployment may simply not offer; a deployment without it
+    // breaks no promise, because the controls report themselves unavailable
+    // rather than failing on click. Marking it required would make every
+    // deployment that never wanted images report DEGRADED, which trains people
+    // to ignore the word — and the next real outage with it.
+    required: false,
+    consequence: 'The image tools report themselves unavailable. Text generation is unaffected.',
+  },
+  {
     key: 'app_url',
     label: 'Public URL',
     vars: ['APP_URL'],

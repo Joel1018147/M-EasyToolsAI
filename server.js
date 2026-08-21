@@ -22,6 +22,8 @@ const crypto    = require('crypto');
 const fs        = require('fs');
 const { pool }  = require('./db');
 const capabilities = require('./helpers/capabilities');
+const { GROQ_MODEL, normaliseModel, chat } = require('./helpers/groq');
+const { createGenerator } = require('./helpers/generation');
 const { checkSub, updateExpiredSubscriptions, sendTrialReminders } = require('./middleware/checkSub');
 const subscriptionRoutes = require('./routes/subscription');
 const { Resend } = require('resend');
@@ -584,48 +586,14 @@ app.post('/api/auth/regenerate-key', requireAuth, async (req, res) => {
 //  AI CHAT — Groq
 // ════════════════════════════════════════════════════
 
-// Ecosystem canonical model. Groq decommissions llama-3.3-70b-versatile and
-// llama-3.1-8b-instant on 2026-08-16; every platform is standardised on this.
+// THE MODEL AND THE WIRE CALL NOW LIVE IN helpers/groq.js.
 //
-// Groq serves qwen/qwen3.6-27b on its PREVIEW tier, so it can be rate-limited,
-// degraded or withdrawn with little notice. GROQ_MODEL overrides it without a
-// code change — set it on Railway and redeploy. Documented fallback:
-// openai/gpt-oss-120b. See .env.example and CLAUDE.md.
-const DEFAULT_GROQ_MODEL = 'qwen/qwen3.6-27b';
-const GROQ_MODEL = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
-
-// POST /api/chat lets an API-key holder name a model, and that name is
-// published in public/api-docs.html — so there are external integrations out
-// there with a now-dead model string hardcoded, and no way for them to know
-// until every request starts returning model_decommissioned. Map the known-dead
-// names onto the current model instead of forwarding a guaranteed 400.
-// An unrecognised model is still passed through untouched: this is a
-// compatibility shim, not a whitelist, and silently rewriting a model somebody
-// deliberately chose would be worse than letting Groq answer for itself.
-const DEPRECATED_MODELS = new Set([
-  'llama-3.3-70b-versatile',
-  'llama-3.1-8b-instant',
-  'llama3-70b-8192',
-]);
-function normaliseModel(requested) {
-  if (!requested || DEPRECATED_MODELS.has(requested)) return GROQ_MODEL;
-  return requested;
-}
-
-// `reasoning_effort` / `reasoning_format` are supported by qwen/qwen3.6-* ONLY.
-// Sending them to any other model risks a 400 — and /api/chat accepts a
-// caller-supplied model, so the gate is checked against the model actually
-// being sent. Ported verbatim from Dragon-Ginseng-CS-AI.
-function supportsReasoningEffortNone(model) {
-  return /^qwen\/qwen3\.6/.test(model);
-}
-function withReasoning(body) {
-  if (supportsReasoningEffortNone(body.model)) {
-    body.reasoning_effort = 'none';   // marketing copy, nothing to reason about
-    body.reasoning_format = 'hidden'; // and never emit a reasoning block
-  }
-  return body;
-}
+// CLAUDE.md's rule is unchanged - ONE reader of process.env.GROQ_MODEL, and
+// everything else imports the constant. What moved is which file that reader
+// is. It was this one, which meant nothing could be extracted from server.js
+// without a require cycle back to it; eight of the nine platforms in the
+// ecosystem already resolve the model in helpers/groq.js, and this repo was
+// the outlier that blocked the extraction. Nothing below reads the env var.
 
 app.post('/api/chat', requireApiKey, apiLimiter, async (req, res) => {
   try {
@@ -635,62 +603,34 @@ app.post('/api/chat', requireApiKey, apiLimiter, async (req, res) => {
     const groqKey = req.user.groq_key || GROQ_KEY;
     if (!groqKey) return res.status(400).json({ error: 'Groq API key not configured' });
     const systemPrompt = `You are M-EasyTools AI, an expert marketing strategist and copywriter. Help with content creation, SEO, email marketing, social media, ad campaigns, and brand strategy. Be specific and actionable. User brand: ${req.user.brand_name || 'Not set'}. Tone: ${req.user.brand_tone || 'Professional'}.`;
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(withReasoning({ model, max_tokens: 1024, temperature: 0.7, messages: [{ role: 'system', content: systemPrompt }, ...messages.slice(-20)] }))
+    // `model` is the caller's, normalised — NOT GROQ_MODEL. /api/chat is the
+    // one surface that lets an API-key holder name a model, so the reasoning
+    // gate inside chat() has to be checked against what is actually being
+    // sent. Passing the default here would re-introduce that bug.
+    const out = await chat({
+      apiKey: groqKey,
+      model,
+      system: systemPrompt,
+      messages: messages.slice(-20),
+      maxTokens: 1024,
+      temperature: 0.7,
     });
-    if (!response.ok) { const e = await response.json(); throw new Error(e.error?.message || 'Groq error'); }
-    const data = await response.json();
-    res.json({ success: true, message: data.choices[0].message.content, model: data.model });
+    res.json({ success: true, message: out.text, model: out.model });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ════════════════════════════════════════════════════
 //  CONTENT GENERATION — Groq
 // ════════════════════════════════════════════════════
-async function generateWithGroq(user, prompt, toolId, toolName, tone, variants = 1) {
-  const groqKey = user.groq_key || GROQ_KEY;
-  if (!groqKey) throw new Error('Groq API key not configured');
-
-  const fullPrompt = variants > 1
-    ? prompt + `\n\nGenerate ${variants} distinct variants labeled: ═══ VARIANT 1 ═══, ═══ VARIANT 2 ═══, etc.`
-    : prompt;
-
-  const systemPrompt = `You are M-EasyTools AI, an elite marketing copywriter with 15+ years experience. Tone: ${tone || 'Professional'}. Brand: ${user.brand_desc || 'General marketing'}. Be persuasive, specific, and conversion-focused.`;
-
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(withReasoning({ model: GROQ_MODEL, max_tokens: 2500, temperature: 0.75, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullPrompt }] }))
-  });
-
-  if (!response.ok) { const e = await response.json(); throw new Error(e.error?.message || 'Groq error'); }
-  const data = await response.json();
-  const text = data.choices[0].message.content;
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
-
-  // Deterministic content score based on measurable signals
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim()).length || 1;
-  const avgWordsPerSentence = wordCount / sentences;
-  const hasStructure = /#{1,3}\s|^[*-]\s/m.test(text);
-  const seoScore = Math.min(100, Math.max(40,
-    (wordCount >= 300 ? 25 : Math.floor(wordCount / 12)) +
-    (wordCount >= 800 ? 15 : 0) +
-    (hasStructure ? 15 : 5) +
-    (avgWordsPerSentence < 20 ? 15 : avgWordsPerSentence < 30 ? 10 : 5) + 20
-  ));
-  const syllables = text.split(/\s+/).reduce((acc, w) => acc + Math.max(1, w.replace(/[^aeiouy]/gi, '').length), 0);
-  const readability = Math.min(100, Math.max(30, Math.round(
-    206.835 - 1.015 * avgWordsPerSentence - 84.6 * (syllables / (wordCount || 1))
-  )));
-
-  // Auto-save document
-  const doc = await pool.query(
-    'INSERT INTO documents (user_id,title,content,tool_id,tool_name,word_count,seo_score,readability) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',
-    [user.id, `${toolName || 'Content'} — ${new Date().toLocaleDateString()}`, text, toolId, toolName, wordCount, seoScore, readability]
-  );
-
-  return { text, wordCount, docId: doc.rows[0].id, seoScore, readability };
-}
+// generateWithGroq() now lives in helpers/generation.js. It moved so the
+// trilingual lane could own it without owning this file — after Foundation,
+// no lane edits server.js, which is what makes the lanes genuinely parallel.
+// The extraction was a pure refactor: the behaviour there is byte-for-byte
+// what was here, defects included, so that the move is reviewable on its own.
+//
+// The pool and the platform key are injected rather than imported, so the
+// generation layer has no require cycle back to this file.
+const { generateWithGroq } = createGenerator({ pool, groqKey: GROQ_KEY });
 
 app.post('/api/generate', requireApiKey, apiLimiter, async (req, res) => {
   try {
@@ -822,26 +762,26 @@ Optimise this press release to rank in search engines AND be cited in AI-generat
     try {
       const groqKey = req.user.groq_key || GROQ_KEY;
       if (groqKey) {
-        const geoRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(withReasoning({
-            model: GROQ_MODEL,
-            max_tokens: 80,
-            temperature: 0.1,
-            messages: [{
-              role: 'user',
-              content: `Rate this press release 0-100 for likelihood of being cited in AI-generated answers. Consider: named entities, specific facts/numbers, quotable statements, newsworthiness, clear subject-predicate-object sentences. Return ONLY valid JSON, no other text: {"score":number,"reason":"one sentence"}\n\nPRESS RELEASE (first 1000 chars):\n${result.text.substring(0, 1000)}`
-            }]
-          }))
+        // This is the second of the two call sites that do NOT pass through
+        // generateWithGroq() — see helpers/generation.js. It goes through
+        // chat() so the reasoning gate lives in exactly one place; before the
+        // extraction it called withReasoning() locally, and that helper moving
+        // out of this file would have left a ReferenceError firing on every
+        // press release, inside a try/catch that would have reported it as
+        // "GEO score unavailable" rather than as a crash.
+        const geo = await chat({
+          apiKey: groqKey,
+          model: GROQ_MODEL,
+          messages: [{
+            role: 'user',
+            content: `Rate this press release 0-100 for likelihood of being cited in AI-generated answers. Consider: named entities, specific facts/numbers, quotable statements, newsworthiness, clear subject-predicate-object sentences. Return ONLY valid JSON, no other text: {"score":number,"reason":"one sentence"}\n\nPRESS RELEASE (first 1000 chars):\n${result.text.substring(0, 1000)}`
+          }],
+          maxTokens: 80,
+          temperature: 0.1,
         });
-        if (geoRes.ok) {
-          const geoData = await geoRes.json();
-          const raw = geoData.choices[0].message.content.trim();
-          const parsed = JSON.parse(raw);
-          geoScore = Math.min(100, Math.max(0, parseInt(parsed.score) || 0));
-          geoReason = parsed.reason || '';
-        }
+        const parsed = JSON.parse(geo.text.trim());
+        geoScore = Math.min(100, Math.max(0, parseInt(parsed.score) || 0));
+        geoReason = parsed.reason || '';
       }
     } catch (e) { /* silent fallback */ }
 
@@ -1517,6 +1457,23 @@ function checkModule(moduleId) {
 // ── Subscription router (payment callbacks — no auth required) ────────────────
 app.use('/', subscriptionRoutes);
 
+// ── Round 1 lane mounts, wired by Foundation ─────────────────────────────────
+// These three routers are mounted here, once, so that no lane has to edit this
+// file. Lane A fills in routes/mai.js, Lane B routes/docIntel.js, Lane D
+// routes/images.js; until each lands, its router answers 501 rather than
+// pretending. The GUARDS are decided here and not by the lanes, because the
+// guard is the security boundary and a lane must not be able to widen its own.
+//
+// requireAuth + checkSub on all three. M-Ai in particular derives identity
+// from the SESSION ONLY — never from a query parameter, a header or a body
+// field. That is deliberate and it diverges from requireSeller, which takes
+// its key from req.query.key (server.js, above): query strings land in access
+// logs and Referer headers, which is an acceptable risk for a read-only ops
+// panel and not an acceptable one for a tool registry that can write.
+app.use('/api/mai', requireAuth, checkSub, require('./routes/mai'));
+app.use('/api/docintel', requireAuth, checkSub, require('./routes/docIntel'));
+app.use('/api/images', requireAuth, checkSub, require('./routes/images'));
+
 // ── Billing & subscription routes ─────────────────────────────────────────────
 app.get('/billing', requireAuth, checkSub, (req, res) => res.sendFile(path.join(__dirname, 'public', 'billing.html')));
 app.post('/billing/checkout', requireAuth, checkSub, subscriptionRoutes.checkoutHandler);
@@ -1606,7 +1563,7 @@ app.post('/api/seller/subscription/reset', requireSeller, async (req, res) => {
 
 // ── Run migrations on startup ──────────────────────────────────────────────────
 (async () => {
-  const migrationFiles = ['migrations/003_subscriptions.sql'];
+  const migrationFiles = ['migrations/003_subscriptions.sql', 'migrations/004_round1_docintel_images.sql'];
   for (const file of migrationFiles) {
     try {
       const sql = fs.readFileSync(path.join(__dirname, file), 'utf8');

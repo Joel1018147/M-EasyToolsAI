@@ -1,0 +1,2288 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROUND 2 — THE LOCKED TOKEN LAYER
+   ───────────────────────────────────────────────────────────────────────────
+   Loaded AFTER css/modus-design-system.css, never instead of it.
+
+   ── THE ORANGE IS NOT CHOSEN HERE, AND MUST NOT BE ────────────────────────
+   PORTED FROM M-EasyDo-AI, WHERE THIS FILE IS REAL SHIPPED CODE — 129KB of
+   tokens merged at dbc37c7 and extended through Rounds 3 and 4. It arrived
+   here with ZERO colour edits, and that is the whole point of how it was
+   written: it contains not one platform-accent hex literal, so the identical
+   bytes resolve blue under [data-platform="do"] and orange under
+   [data-platform="tools"]. Nothing below was re-derived for orange because
+   nothing below names a hue.
+
+   The brief for this round said "same design language as M-EasyDo, but an
+   orange theme instead of blue — swap the locked colour token". In this repo
+   that swap has already happened, upstream, and re-doing it here would be the
+   defect. `[data-platform="tools"]` in the design system declares
+   `--accent: #E8622A` exactly as `[data-platform="do"]` declares its blue;
+   the file is md5-pinned to the ecosystem master shared by twelve platforms,
+   and test/ui-contract.js §2 already fails the build if that hex drifts.
+
+   So the requirement the Visual Bar is actually reaching for — ONE token,
+   locked once, consumed identically by every lane, never re-derived per
+   screen — is met by consuming --accent rather than by picking a value.
+   Every colour below is expressed in terms of a design-system token, and
+   test/r2-visual-contract.js §R2.2 asserts there is never a literal: one here
+   would be a second source of truth for the orange, which is the exact
+   failure the "locked once" rule exists to prevent.
+
+   Changing the orange is a Modus-Agent-OS master change synced to all twelve
+   repos. It is out of scope for this round, and because everything downstream
+   reads var(--accent), it would cost this round zero rework.
+
+   ── WHAT IS ACTUALLY NEW HERE ─────────────────────────────────────────────
+   Only what the design system does not already ship. Checked first, per the
+   Reuse Bar — the design system already provides, and these are NOT restated:
+
+     accent, neutrals, text, borders     --accent* --bg* --surface* --text* --border*
+     motion durations and easings        --motion-fast/base/slow --ease-out --ease-spring
+     radii, shadows, typefaces           --r* --shadow* --font --font-display --font-mono
+     scroll reveal, reduced-motion safe  .reveal + [data-reveal="on"] (§50.7)
+     focus ring                          :focus-visible (§41)
+     app shell, cards, tables, tiles     .app-layout .stat-card .table-card .panel .kpi-tile
+
+   ── REFERENCE SET ─────────────────────────────────────────────────────────
+   Linear (hierarchy, near-zero decoration), Raycast (glass used sparingly,
+   monospace accents), Perplexity (a processing state that visibly says
+   "working", not a generic spinner), Vercel (one accent, spent deliberately),
+   ElevenLabs (motion that signals a state change). The common thread is
+   restraint. Nothing below adds a glow that was not already in the system.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Elevation on dark marketing surfaces ───────────────────────────────
+     The landing page is a dark surface regardless of theme (a marketing
+     decision that predates this round). These give it a depth ladder without
+     inventing colours: each step is the design system's own surface token
+     lifted by a fixed amount of its own border colour. */
+  --r2-elev-1: var(--surface);
+  --r2-elev-2: var(--surface-2);
+  --r2-hairline: var(--border);
+
+  /* Raycast's glass, used sparingly and only on floating chrome (the sticky
+     nav, the assistant launcher) — never on a content card, where a blur
+     behind text costs legibility for decoration.
+
+     THE FIRST VERSION OF THIS WAS INERT. --r2-glass-bg was var(--surface),
+     which is fully opaque, so every backdrop-filter behind it had nothing to
+     filter — the blur cost a compositing layer and bought no glass. Lane F
+     found it by looking at the sticky nav rather than at the token. The
+     fallback line is still the opaque token, so a browser without color-mix
+     gets a solid bar instead of an unreadable one. */
+  --r2-glass-blur: 14px;
+  --r2-glass-bg: var(--surface);
+  --r2-glass-bg: color-mix(in srgb, var(--surface) 72%, transparent);
+  --r2-glass-border: var(--border);
+
+  /* ── The monospace face, and why it is not var(--font-mono) ─────────────
+     The design system declares --font-mono: 'JetBrains Mono','Fira Mono',
+     monospace and imports NEITHER — its only two @imports are Inter and
+     Outfit. So --font-mono resolves to the generic `monospace`, which on
+     Windows is Courier New: a 1955 typewriter face sitting next to Inter.
+     Every figure Lane G set in .r2-mono would have rendered in it.
+
+     Not fixable from here — the stack lives in the md5-pinned master, and
+     adding a third webfont import is exactly what §2 of that file forbids.
+     What IS fixable is the fallback chain: name the intended faces first, so
+     the day the master imports one it simply wins, then fall through the
+     monos that are actually installed before ever reaching the generic.
+     RECOMMENDED MASTER CHANGE: give --font-mono this same chain upstream. */
+  --r2-mono: 'JetBrains Mono', 'Fira Mono', ui-monospace, 'Cascadia Mono',
+             'Segoe UI Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* ── The accent, spent deliberately (Vercel) ────────────────────────────
+     Derived from --accent, never alongside it. --accent-bg (8%) and
+     --accent-glow (20%) already exist and are reused as-is; the two below are
+     the percentages the system does not carry. color-mix has a token fallback
+     declared first, so a browser without it still lands on a system value
+     rather than on nothing. */
+  --r2-accent-wash: var(--accent-bg);
+  --r2-accent-wash: color-mix(in srgb, var(--accent) 4%, transparent);
+  --r2-accent-edge: var(--accent-glow);
+  --r2-accent-edge: color-mix(in srgb, var(--accent) 32%, transparent);
+
+  /* ── Type ───────────────────────────────────────────────────────────────
+     A tighter display scale than the product pages use. Linear's hierarchy
+     comes from size and weight contrast, not from colour or ornament, so the
+     jump from eyebrow to headline is deliberately large and everything
+     between them is removed. clamp() carries the responsive step so there is
+     no per-breakpoint font-size rule to drift. */
+  --r2-eyebrow: 0.6875rem;
+  --r2-display: clamp(2.25rem, 1.35rem + 3.9vw, 4.25rem);
+  --r2-headline: clamp(1.6rem, 1.15rem + 1.9vw, 2.5rem);
+  --r2-lede: clamp(1rem, 0.94rem + 0.25vw, 1.1875rem);
+  --r2-display-tracking: -0.032em;
+  --r2-headline-tracking: -0.022em;
+
+  /* ── Rhythm ─────────────────────────────────────────────────────────────
+     One section-spacing scale for both lanes, so Landing and Dashboard share
+     a vertical rhythm even though their densities differ. */
+  --r2-section-y: clamp(3.5rem, 2rem + 6vw, 7rem);
+  --r2-gutter: clamp(1.25rem, 0.6rem + 2.6vw, 3rem);
+  /* rem, NOT ch. `ch` resolves against the first available font, and with
+     `display=swap` Chromium can compute it against the fallback and never
+     re-invalidate once the webfont swaps in — the same declared value then
+     renders 765px on one load and 663px on the next. Measured on the hero
+     headline: a 71px jump between two loads of the identical viewport. A
+     measure in rem cannot drift with font loading. */
+  --r2-measure: 34rem;
+  --r2-max: 1200px;
+
+  /* ── Motion ─────────────────────────────────────────────────────────────
+     Durations reference the system's, so a change there still propagates.
+     --r2-stagger is the ONLY new timing value: the gap between successive
+     revealed children. */
+  --r2-stagger: 60ms;
+  --r2-reveal-dur: var(--motion-slow);
+  --r2-reveal-ease: var(--ease-out);
+}
+
+/* Removed at integration: a [data-r2-surface="dark"] block sat here and no
+   element in the repo ever carried the attribute. Lane F opted the landing page
+   into dark through the design system's own [data-theme] instead, which is
+   better — it means the marketing page follows the same ramp as the product
+   rather than a parallel one. A token block nothing selects is a token block
+   that will be wrong the first time someone trusts it. */
+
+/* ═══ COMPOSITION ═══════════════════════════════════════════════════════════
+   Ported patterns. Both are MIT and both are credited to the component whose
+   real source was read before writing this, per the Visual Bar's
+   "search before hand-building" rule. Neither is copied verbatim — this repo
+   is vanilla HTML/CSS with no React, Tailwind or shadcn, so what is reused is
+   the technique, expressed against design-system tokens.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* --- R2.1 the bento grid --------------------------------------------------
+   Technique from "Bento Grid", Aceternity UI (MIT) —
+   https://ui.aceternity.com/registry/bento-grid.json
+   Its shape is: one column on small screens, a fixed auto-row height and three
+   columns from the medium breakpoint, items that are a bordered rounded
+   surface, and a hover that lifts the shadow and nudges the text block rather
+   than scaling the card. The nudge is what keeps it from reading as a generic
+   card grid, and it is cheap enough to survive on a dashboard-adjacent page.
+
+   Collapses at ≤768px — the SAME breakpoint the app shell uses. One breakpoint
+   per system; a second one is a second layout to reason about. */
+.r2-bento {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  max-width: var(--r2-max);
+  margin-inline: auto;
+}
+@media (min-width: 769px) {
+  .r2-bento {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: minmax(15rem, auto);
+  }
+  .r2-bento-item--wide { grid-column: span 2; }
+  .r2-bento-item--tall { grid-row: span 2; }
+}
+
+.r2-bento-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--r2-hairline);
+  border-radius: var(--r-lg);
+  background: var(--r2-elev-1);
+  transition: border-color var(--motion-base) var(--ease-out),
+              box-shadow var(--motion-base) var(--ease-out);
+}
+.r2-bento-item:hover,
+.r2-bento-item:focus-within {
+  border-color: var(--r2-accent-edge);
+  box-shadow: var(--shadow-lg);
+}
+/* The nudge, on the text block only. */
+.r2-bento-body {
+  transition: transform var(--motion-base) var(--ease-out);
+}
+.r2-bento-item:hover .r2-bento-body,
+.r2-bento-item:focus-within .r2-bento-body {
+  transform: translateX(6px);
+}
+
+/* --- R2.2 the processing state -------------------------------------------
+   Technique from "Agent Loading States — Thinking Shimmer", beUI (MIT) —
+   https://beui.dev/r/thinking-shimmer.json
+   A band of lighter text swept across the label by animating
+   background-position on a clipped gradient. Perplexity's point, and the
+   reason this is not a spinner: the words stay READABLE the whole time, so the
+   state says what it is working on rather than only that it is busy.
+
+   THIS ONE LOOPS, AND THAT IS THE EXCEPTION, NOT THE RULE. §50's "nothing
+   loops" governs the gamification layer. A pending indicator is the case the
+   system already makes an exception for — .spinner and .progress-indeterminate
+   both repeat — because the loop IS the signal that work is still running. It
+   must therefore be applied only while something is actually pending, and
+   removed when it resolves. A shimmer left on a finished state is a lie. */
+@keyframes r2-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.r2-thinking {
+  display: inline-block;
+  font-weight: 500;
+  background-image: linear-gradient(110deg,
+    var(--muted) 30%, var(--text) 50%, var(--muted) 70%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: r2-shimmer 1.8s linear infinite;
+}
+/* The fallback is not decoration — with background-clip:text unsupported the
+   rule above would paint transparent text on transparent, i.e. nothing. */
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .r2-thinking { color: var(--text); background-image: none; animation: none; }
+}
+
+/* --- R2.3 monospace metadata (Raycast) -----------------------------------
+   Numbers, keys, counts and eyebrow labels in the system's mono face. Used to
+   separate metadata from prose, not for flavour. */
+.r2-mono {
+  font-family: var(--r2-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.r2-eyebrow {
+  font-family: var(--r2-mono);
+  font-size: var(--r2-eyebrow);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* --- R2.4 staggered reveal — REMOVED, and the reason is a defect in §R2.5 ---
+   This shipped as `[data-reveal="on"] .r2-stagger > .reveal { transition-delay:
+   calc(var(--r2-i) * var(--r2-stagger)) }`, which needs each child to set
+   --r2-i. But §R2.5 of the contract fails the build on ANY --r2-* declaration
+   in a lane surface, and an inline `style="--r2-i:3"` is a declaration. So the
+   rule was unusable by the only files that would ever want it, and Lane F
+   reimplemented the delay with :nth-child selectors instead — correctly.
+   Deleted rather than left as a trap. The lesson is about the guard, not the
+   rule: §R2.5 was written to stop a lane REDEFINING the token set, and it could
+   not tell that apart from a lane supplying one ordinal to it. */
+
+/* --- R2.5 the grid backdrop ----------------------------------------------
+   A hairline grid, drawn from --r2-hairline, masked to fade out before it
+   reaches the content. Static: no beams, no parallax, nothing that moves
+   behind text. The reference set's "high-tech" reads as restraint, and an
+   animated backdrop under a headline is the single most common way that
+   reading is lost. */
+.r2-gridwash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--r2-hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--r2-hairline) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.35;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 78%);
+}
+
+/* ═══ REDUCED MOTION ════════════════════════════════════════════════════════
+   The design system's §41 block already flattens durations globally and
+   already collapses .reveal to its final state. What it cannot know about is
+   anything introduced in THIS file, so each addition is handled here rather
+   than assumed to be covered.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  /* The shimmer is a looping animation on text. §41's global rule collapses
+     its DURATION to 0.01ms, which would freeze the gradient at an arbitrary
+     position and leave the label part-transparent — less readable than plain
+     text, not more. So it is switched off and the text is painted normally. */
+  .r2-thinking {
+    animation: none;
+    background-image: none;
+    color: var(--text);
+  }
+  /* A stagger delay on a transition that no longer runs only postpones the
+     jump to the final state. */
+  [data-reveal="on"] .r2-stagger > .reveal { transition-delay: 0ms; }
+  .r2-bento-item:hover .r2-bento-body,
+  .r2-bento-item:focus-within .r2-bento-body { transform: none; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROUND 3 — THE APPLICATION LAYER
+   ───────────────────────────────────────────────────────────────────────────
+   Round 2 gave this repo a token layer and re-set two surfaces (the landing
+   page and the dashboard). Round 3 turns that into a SYSTEM: one navigation
+   shell, one set of business-area colours, one insight component, one table,
+   one form field — reused by every screen in the product instead of each
+   screen inventing its own.
+
+   ── WHAT DID NOT CHANGE, AND WHY ──────────────────────────────────────────
+   The accent is not restated here in any form. [data-platform="tools"] in the
+   md5-pinned master declares --accent: #E8622A, twelve platforms share that
+   file, and BOTH test/ui-contract.js §2 and test/r2-visual-contract.js §R2.9
+   fail the build if it drifts. So the primary accent is UNCHANGED and every
+   rule below reads var(--accent).
+
+   The rest of the proposed palette is not a conflict, it is a gap: the design
+   system ships blue / green / amber / red / purple as STATUS colours and has
+   never had a colour meaning "this screen belongs to Marketing". That is what
+   §R3.1 adds, and it adds it by DERIVING from tokens that already exist —
+   there is not one hex literal below, so §R2.2's rule (one source of truth
+   for a hue) survives the addition.
+
+   ── THE COLOUR RULE THIS LAYER ENFORCES ───────────────────────────────────
+   Colour is a coordinate here, not decoration. A screen's area colour appears
+   in exactly four places — the active top-nav item, the page-header eyebrow,
+   the section rail, and the icon chip. Everything else on the page is
+   neutral. That is why six areas can each have a colour without the product
+   looking like a paint chart.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── §R3.1 BUSINESS AREAS ───────────────────────────────────────────────
+     Six areas, six hues, all derived. Two of them (CRM's indigo, Marketing's
+     magenta) do not exist as tokens, so they are mixed from two that do —
+     which keeps them tied to the master: restyle --purple upstream and the
+     mix follows, where a pasted hex would not.
+
+     Each area declares three values and they are not interchangeable:
+       --area-*        the FILL. --accent-contrast text sits on it.
+       --area-*-text   the same hue as TEXT on --bg/--surface/--surface-2.
+       --area-*-bg     a tint to sit BEHIND that text.
+     The -text values are mixed from the design system's own WCAG-derived
+     *-text tokens rather than from the fills, so they inherit the light/dark
+     correction the master already did instead of re-deriving it here. */
+
+  --area-overview:        var(--text);
+  --area-overview-text:   var(--text);
+
+  --area-crm:             var(--blue);
+  --area-crm:             color-mix(in srgb, var(--blue) 60%, var(--purple) 40%);
+  --area-crm-text:        var(--blue-text);
+  --area-crm-text:        color-mix(in srgb, var(--blue-text) 60%, var(--purple-text) 40%);
+
+  /* var(--blue), NOT var(--accent) — THE ONE DELIBERATE DIVERGENCE FROM THE
+     SOURCE FILE, and it is a divergence that preserves the appearance rather
+     than changing it.
+
+     M-EasyDo wrote `--area-sales: var(--accent)`, and there --accent IS blue,
+     so the Sales area rendered blue and sat one step from the CRM mix. Ported
+     unchanged onto an orange platform that same line makes the Sales area
+     #E8622A — identical to the brand accent, which is already spent on the
+     brand mark, the avatar, every checked switch, the user chat bubble and
+     every focus ring. An area colour that equals the chrome accent is not a
+     coordinate any more; it marks nothing, because it is everywhere.
+
+     Naming var(--blue) explicitly reproduces exactly what M-EasyDo renders
+     while removing the accidental coupling to a hue that is no longer blue.
+     The area system stays six distinguishable coordinates; the accent goes
+     back to being spent on one thing. §R3.5 still holds — this is a token,
+     not a literal. */
+  --area-sales:           var(--blue);
+  --area-sales-text:      var(--blue-text);
+
+  --area-marketing:       var(--purple);
+  --area-marketing:       color-mix(in srgb, var(--purple) 42%, var(--red) 58%);
+  --area-marketing-text:  var(--purple-text);
+  --area-marketing-text:  color-mix(in srgb, var(--purple-text) 42%, var(--red-text) 58%);
+
+  --area-operations:      var(--amber);
+  --area-operations-text: var(--amber-text);
+
+  --area-analytics:       var(--green);
+  --area-analytics-text:  var(--green-text);
+
+  --area-ai:              var(--purple);
+  --area-ai-text:         var(--purple-text);
+
+  /* The per-area tint. The fallback line is the master's own flat token, so a
+     browser without color-mix gets a real tint rather than nothing. */
+  --area-overview-bg:     var(--surface-2);
+  --area-crm-bg:          var(--blue-bg);
+  --area-crm-bg:          color-mix(in srgb, var(--area-crm) 10%, transparent);
+  --area-sales-bg:        var(--blue-bg);
+  --area-sales-bg:        color-mix(in srgb, var(--area-sales) 10%, transparent);
+  --area-marketing-bg:    var(--purple-bg);
+  --area-marketing-bg:    color-mix(in srgb, var(--area-marketing) 10%, transparent);
+  --area-operations-bg:   var(--amber-bg);
+  --area-analytics-bg:    var(--green-bg);
+  --area-ai-bg:           var(--purple-bg);
+
+  /* The CURRENT area. Every component below reads these three and nothing
+     else, so a screen declares its colour once — data-area on the page root —
+     and the header, the rail, the chip and the active nav item all follow.
+     The default is the neutral overview treatment: a screen that forgets to
+     declare an area gets NO colour, never a wrong one. */
+  --r3-area:      var(--area-overview);
+  --r3-area-text: var(--area-overview-text);
+  --r3-area-bg:   var(--area-overview-bg);
+
+  /* ── §R3.2 TYPE SCALE ───────────────────────────────────────────────────
+     The brief's hierarchy, expressed once. Weights are deliberately heavy at
+     the small end: 12px/500 is legible metadata, 12px/400 is a smudge. There
+     is no 300 anywhere in this product. */
+  --t-page:      1.875rem;   /* 30px   page title           */
+  --t-section:   1.3125rem;  /* 21px   section title        */
+  --t-card:      0.96875rem; /* 15.5px card title           */
+  --t-body:      0.90625rem; /* 14.5px body                 */
+  --t-second:    0.84375rem; /* 13.5px secondary            */
+  --t-meta:      0.75rem;    /* 12px   metadata             */
+  --t-kpi:       2.125rem;   /* 34px   KPI figure           */
+  --t-kpi-sm:    1.75rem;    /* 28px   KPI in a dense grid  */
+  --w-page:      700;
+  --w-section:   680;
+  --w-card:      600;
+  --w-meta:      500;
+
+  /* ── §R3.3 GEOMETRY ─────────────────────────────────────────────────────
+     The brief's radius ladder. --r-sm/--r/--r-lg already sit at 6/10/14;
+     these name the INTENT so a rule says what it is doing. A pill is
+     deliberately absent — a pill is for a status, a tag or a filter, and
+     those three have their own classes. */
+  --r3-control:  var(--r-sm);   /* buttons, inputs   */
+  --r3-panel:    var(--r);      /* cards, tables     */
+  --r3-feature:  var(--r-lg);   /* AI panels, modals */
+  --r3-rail:     3px;           /* the area rail     */
+  --r3-nav-h:    56px;
+  --r3-subnav-h: 46px;
+
+  /* ── §R3.4 THE AI SURFACE ───────────────────────────────────────────────
+     Restraint is the whole design here. The AI layer gets ONE tint, ONE edge
+     and ONE two-stop gradient reserved for the command surface — no glow on a
+     card, no neon, no animated border. If it looks like the rest of the
+     product with a violet edge, that is the intent: it is a layer OF the
+     product, not a toy bolted to it. */
+  --r3-ai-tint:   var(--purple-bg);
+  --r3-ai-tint:   color-mix(in srgb, var(--purple) 7%, transparent);
+  --r3-ai-edge:   var(--purple);
+  --r3-ai-edge:   color-mix(in srgb, var(--purple) 34%, transparent);
+  --r3-ai-grad:   linear-gradient(135deg,
+                    color-mix(in srgb, var(--purple) 92%, var(--accent) 8%),
+                    color-mix(in srgb, var(--accent) 62%, var(--purple) 38%));
+
+  /* ── §R3.5 ELEVATION ────────────────────────────────────────────────────
+     "Borders more than shadows". Only things that FLOAT above the page get a
+     shadow, and this is the whole list — named so a review can check the list
+     rather than the taste. */
+  --r3-float:  var(--shadow-lg);   /* dropdown, popover, command palette */
+  --r3-sheet:  var(--shadow-lg);   /* modal, mobile sheet                */
+}
+
+/* Dark-mode correction for the two derived hues. The master corrects its own
+   *-text tokens for dark, and because the mixes above are built FROM those
+   tokens they are already corrected — this block exists only for the tints,
+   which the master leaves at one alpha for both themes. On a #0f172a ground a
+   10% tint of a mid hue is close to invisible, so it is opened up. */
+[data-theme="dark"] {
+  --area-crm-bg:        color-mix(in srgb, var(--area-crm) 18%, transparent);
+  --area-marketing-bg:  color-mix(in srgb, var(--area-marketing) 18%, transparent);
+  --area-sales-bg:      color-mix(in srgb, var(--area-sales) 18%, transparent);
+  --r3-ai-tint:         color-mix(in srgb, var(--purple) 15%, transparent);
+  --r3-ai-edge:         color-mix(in srgb, var(--purple) 46%, transparent);
+
+  /* ADDED IN THE PORT — the source file corrects the area tints for dark and
+     leaves these two behind, which is a gap it gets away with and this repo
+     does not.
+
+     --r2-accent-wash is a 4% mix of the accent into transparent. On the light
+     ground 4% of a saturated hue is a perceptible warm tint. On #0f172a it is
+     nothing at all: the wash marks the section it is on, and in dark mode the
+     section simply stops being marked. Same for the 32% edge, which is the
+     visible boundary of the accent-washed panels.
+
+     Opened to the same ratio the master uses for its own dark correction —
+     --accent-light goes 0.08 -> 0.22 alpha between themes, so these follow at
+     roughly the same multiple rather than at a number picked by eye. */
+  --r2-accent-wash:     color-mix(in srgb, var(--accent) 11%, transparent);
+  --r2-accent-edge:     color-mix(in srgb, var(--accent) 44%, transparent);
+}
+
+/* The area switch. One attribute on the page root, three tokens rebound.
+   An explicit list rather than a computed name, because CSS has no such trick
+   and an explicit list is greppable. */
+[data-area="overview"]   { --r3-area:var(--area-overview);   --r3-area-text:var(--area-overview-text);   --r3-area-bg:var(--area-overview-bg); }
+[data-area="crm"]        { --r3-area:var(--area-crm);        --r3-area-text:var(--area-crm-text);        --r3-area-bg:var(--area-crm-bg); }
+[data-area="sales"]      { --r3-area:var(--area-sales);      --r3-area-text:var(--area-sales-text);      --r3-area-bg:var(--area-sales-bg); }
+[data-area="marketing"]  { --r3-area:var(--area-marketing);  --r3-area-text:var(--area-marketing-text);  --r3-area-bg:var(--area-marketing-bg); }
+[data-area="operations"] { --r3-area:var(--area-operations); --r3-area-text:var(--area-operations-text); --r3-area-bg:var(--area-operations-bg); }
+[data-area="analytics"]  { --r3-area:var(--area-analytics);  --r3-area-text:var(--area-analytics-text);  --r3-area-bg:var(--area-analytics-bg); }
+[data-area="ai"]         { --r3-area:var(--area-ai);         --r3-area-text:var(--area-ai-text);         --r3-area-bg:var(--area-ai-bg); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.6 — THE APPLICATION SHELL
+   ───────────────────────────────────────────────────────────────────────────
+   A TOP horizontal bar, and no sidebar at any width. That is a requirement of
+   this round, and it also happens to be right for this product: M-EasyDo has
+   seven areas and roughly thirty screens, which is a shape a sidebar renders
+   as a 900px scroll and a menubar renders as seven words.
+
+   THE MOBILE PATTERN IS NOT THIS BAR MADE SMALLER. Below 900px the group bar
+   is removed entirely and the app falls back to the bottom tab bar it already
+   had (.app-bottom-nav, from the design system) plus one sheet for the long
+   tail. Both are in the DOM at all times and CSS decides which is live, so
+   there is no resize handler and nothing to get out of sync.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.r3-topbar {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+/* Glass ONLY here. r2-tokens' rule stands: floating chrome may blur, a content
+   card may not. The opaque fallback is the first declaration, so a browser
+   without color-mix gets a solid bar rather than an unreadable one. */
+@supports (backdrop-filter: blur(1px)) {
+  .r3-topbar { background: var(--r2-glass-bg); backdrop-filter: blur(var(--r2-glass-blur)) saturate(1.6); }
+}
+
+.r3-topbar-row {
+  max-width: 1560px; margin-inline: auto;
+  height: var(--r3-nav-h); padding: 0 20px;
+  display: flex; align-items: center; gap: 14px;
+}
+/* The seven groups never shrink. Squeezing them was what hid Operations,
+   Analytics and AI entirely — a nav item at 4px wide is not a degraded nav
+   item, it is a missing one. Everything else on the row gives way first. */
+.r3-nav, .r3-nav-btn, .r3-brand, .r3-topbar-right { flex-shrink: 0; }
+
+/* ── Brand ─────────────────────────────────────────────────────────────── */
+.r3-brand {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: var(--t-card); font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text); text-decoration: none; flex-shrink: 0; white-space: nowrap;
+}
+.r3-brand-mark {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: var(--accent); color: var(--accent-contrast);
+  display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0;
+}
+.r3-brand-plus { color: var(--muted); font-weight: 600; }
+
+/* ── The group bar ─────────────────────────────────────────────────────── */
+.r3-nav { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.r3-nav-group { position: relative; }
+.r3-nav-btn {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 11px;
+  border: 1px solid transparent; border-radius: var(--r3-control);
+  background: none; color: var(--text-2);
+  font-family: var(--font); font-size: var(--t-second); font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out);
+}
+.r3-nav-btn:hover { background: var(--surface-2); color: var(--text); }
+.r3-nav-caret { color: var(--muted); transition: transform var(--motion-fast) var(--ease-out); }
+.r3-nav-group.is-open .r3-nav-btn { background: var(--surface-2); color: var(--text); }
+.r3-nav-group.is-open .r3-nav-caret { transform: rotate(180deg); }
+
+/* THE ACTIVE ITEM IS NOT COLOUR ALONE. §33: colour must never be the only
+   carrier. The active group gets its area colour AND a 2px underline AND
+   aria-current, so it survives a monochrome display and a screen reader. */
+.r3-nav-btn[aria-current="true"] {
+  color: var(--r3-area-text);
+  background: var(--r3-area-bg);
+}
+.r3-nav-btn[aria-current="true"]::after {
+  content: ''; position: absolute; left: 11px; right: 11px; bottom: -11px;
+  height: 2px; border-radius: 2px 2px 0 0; background: var(--r3-area);
+}
+.r3-nav-group { --r3-area: var(--area-overview); --r3-area-text: var(--area-overview-text); --r3-area-bg: var(--area-overview-bg); }
+.r3-nav-group[data-area="overview"]   { --r3-area:var(--area-overview);   --r3-area-text:var(--area-overview-text);   --r3-area-bg:var(--area-overview-bg); }
+.r3-nav-group[data-area="crm"]        { --r3-area:var(--area-crm);        --r3-area-text:var(--area-crm-text);        --r3-area-bg:var(--area-crm-bg); }
+.r3-nav-group[data-area="sales"]      { --r3-area:var(--area-sales);      --r3-area-text:var(--area-sales-text);      --r3-area-bg:var(--area-sales-bg); }
+.r3-nav-group[data-area="marketing"]  { --r3-area:var(--area-marketing);  --r3-area-text:var(--area-marketing-text);  --r3-area-bg:var(--area-marketing-bg); }
+.r3-nav-group[data-area="operations"] { --r3-area:var(--area-operations); --r3-area-text:var(--area-operations-text); --r3-area-bg:var(--area-operations-bg); }
+.r3-nav-group[data-area="analytics"]  { --r3-area:var(--area-analytics);  --r3-area-text:var(--area-analytics-text);  --r3-area-bg:var(--area-analytics-bg); }
+.r3-nav-group[data-area="ai"]         { --r3-area:var(--area-ai);         --r3-area-text:var(--area-ai-text);         --r3-area-bg:var(--area-ai-bg); }
+
+/* ── The dropdown ──────────────────────────────────────────────────────── */
+.r3-menu {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 260;
+  min-width: 268px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r3-panel); box-shadow: var(--r3-float);
+  display: none;
+}
+.r3-nav-group.is-open .r3-menu { display: block; animation: r3-drop var(--motion-fast) var(--ease-out); }
+@keyframes r3-drop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+.r3-menu-head {
+  padding: 8px 10px 6px;
+  font-family: var(--font-display); font-size: var(--r2-eyebrow); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.11em; color: var(--muted);
+}
+.r3-menu-item {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  padding: 9px 10px; border: none; border-radius: var(--r3-control);
+  background: none; text-align: left; cursor: pointer;
+  font-family: var(--font); color: var(--text);
+  transition: background var(--motion-fast) var(--ease-out);
+}
+.r3-menu-item:hover { background: var(--surface-2); }
+.r3-menu-item[aria-current="true"] { background: var(--r3-area-bg); }
+.r3-menu-item[aria-current="true"] .r3-menu-item-name { color: var(--r3-area-text); }
+.r3-menu-icon { color: var(--r3-area-text); margin-top: 1px; flex-shrink: 0; }
+.r3-menu-item-name { font-size: var(--t-second); font-weight: 600; line-height: 1.3; }
+.r3-menu-item-desc { font-size: var(--t-meta); color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.r3-menu-sep { height: 1px; background: var(--border); margin: 6px 4px; }
+
+/* ── Right-hand chrome ─────────────────────────────────────────────────── */
+.r3-topbar-spacer { flex: 1; min-width: 0; }
+.r3-topbar-right { position: relative; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.r3-iconbtn {
+  position: relative;
+  width: 34px; height: 34px; border-radius: var(--r3-control);
+  display: grid; place-items: center;
+  border: 1px solid transparent; background: none; color: var(--muted);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out);
+}
+.r3-iconbtn:hover { background: var(--surface-2); color: var(--text); }
+.r3-iconbtn.is-on { background: var(--surface-2); color: var(--text); }
+
+/* The unread dot carries a number, not just a colour — an operator needs to
+   know whether it is one thing or nine before deciding to look. */
+.r3-badge-count {
+  position: absolute; top: 1px; right: 0;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 999px; background: var(--red); color: var(--accent-contrast);
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+  border: 2px solid var(--surface);
+}
+
+/* The search affordance is a real control at desktop width and collapses to an
+   icon below it — the same dialog either way. */
+.r3-searchbtn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 10px 0 11px; min-width: 226px;
+  border: 1px solid var(--border); border-radius: var(--r3-control);
+  background: var(--bg); color: var(--muted);
+  font-family: var(--font); font-size: var(--t-second); cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-out);
+}
+.r3-searchbtn:hover { border-color: var(--border-2); }
+.r3-searchbtn-label { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r3-kbd {
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: 10.5px; font-weight: 600; color: var(--muted);
+  border: 1px solid var(--border-2); border-radius: 4px;
+  padding: 1px 5px; background: var(--surface);
+}
+
+.r3-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-contrast);
+  border: none; cursor: pointer;
+  font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em;
+  display: grid; place-items: center;
+}
+
+/* ── The AI entry point ────────────────────────────────────────────────── */
+.r3-ai-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 13px;
+  border: 1px solid var(--r3-ai-edge); border-radius: var(--r3-control);
+  background: var(--r3-ai-tint); color: var(--purple-text);
+  font-family: var(--font); font-size: var(--t-second); font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+.r3-ai-btn:hover { background: var(--purple-bg); }
+
+/* ── Popovers hung off the right-hand chrome ───────────────────────────── */
+.r3-pop {
+  position: absolute; top: calc(var(--r3-nav-h) - 6px); right: 16px; z-index: 260;
+  width: min(360px, calc(100vw - 24px));
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r3-panel); box-shadow: var(--r3-float);
+  overflow: hidden; display: none;
+}
+.r3-pop.is-open { display: block; animation: r3-drop var(--motion-fast) var(--ease-out); }
+.r3-pop-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+}
+.r3-pop-title { font-size: var(--t-second); font-weight: 700; color: var(--text); }
+.r3-pop-body { max-height: min(60vh, 420px); overflow-y: auto; }
+.r3-pop-foot { padding: 10px 14px; border-top: 1px solid var(--border); }
+
+/* ── The sub-navigation strip ──────────────────────────────────────────── */
+/* The second level, shown as a strip under the bar rather than a second row of
+   dropdowns: once you are inside an area, its screens should be one click
+   away and visible, not behind a menu you already opened once. */
+.r3-subnav {
+  position: sticky; top: var(--r3-nav-h); z-index: 190;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.r3-subnav-row {
+  max-width: var(--r2-max); margin-inline: auto;
+  min-height: var(--r3-subnav-h); padding: 0 20px;
+  display: flex; align-items: center; gap: 4px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.r3-subnav-row::-webkit-scrollbar { display: none; }
+.r3-subnav-item {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: var(--r3-subnav-h); padding: 0 3px; margin-right: 14px;
+  border: none; background: none; cursor: pointer;
+  font-family: var(--font); font-size: var(--t-second); font-weight: 600;
+  color: var(--muted); white-space: nowrap;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+.r3-subnav-item:hover { color: var(--text); }
+.r3-subnav-item[aria-current="page"] { color: var(--r3-area-text); }
+.r3-subnav-item[aria-current="page"]::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px; background: var(--r3-area); border-radius: 2px 2px 0 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.7 — THE COMMAND PALETTE
+   ───────────────────────────────────────────────────────────────────────────
+   One dialog, three sections: what you typed matched (records), what you can
+   GO to (screens), and what you can ASK (the AI layer). The third section is
+   the point — the palette is where search stops being a filter and becomes a
+   verb.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-palette-scrim {
+  position: fixed; inset: 0; z-index: 400;
+  background: var(--surface-deep);
+  background: color-mix(in srgb, var(--surface-deep) 52%, transparent);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: clamp(12px, 9vh, 96px) 16px 16px;
+}
+.r3-palette-scrim.is-open { display: flex; }
+.r3-palette {
+  width: min(640px, 100%); max-height: min(70vh, 560px);
+  background: var(--surface); border: 1px solid var(--border-2);
+  border-radius: var(--r3-feature); box-shadow: var(--r3-sheet);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+/* Declared on the OPEN state. See the note above. */
+.r3-palette-scrim.is-open .r3-palette { animation: r3-rise var(--motion-base) var(--ease-out); }
+@keyframes r3-rise { from { opacity: 0; transform: translateY(10px) scale(0.99); } to { opacity: 1; transform: none; } }
+.r3-palette-input-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+}
+/* -2px of offset pulls the ring inside the row, so it reads as the field
+   lighting up rather than as a second box drawn around the first. */
+.r3-palette-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.r3-palette-input {
+  /* Same as the AI input above: the UA ring is suppressed here and replaced
+     below by a :focus-visible rule on this same element. */
+  flex: 1; border: none; background: none; outline: none;
+  font-family: var(--font); font-size: 1rem; font-weight: 500; color: var(--text);
+}
+.r3-palette-input::placeholder { color: var(--muted); font-weight: 400; }
+.r3-palette-body { flex: 1; overflow-y: auto; padding: 6px; }
+.r3-palette-group {
+  padding: 10px 10px 4px;
+  font-family: var(--font-display); font-size: var(--r2-eyebrow); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.11em; color: var(--muted);
+}
+.r3-hit {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  padding: 9px 10px; border: none; border-radius: var(--r3-control);
+  background: none; text-align: left; cursor: pointer; font-family: var(--font);
+}
+.r3-hit:hover, .r3-hit.is-active { background: var(--surface-2); }
+.r3-hit-icon {
+  width: 28px; height: 28px; border-radius: var(--r3-control); flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--r3-area-bg); color: var(--r3-area-text);
+}
+.r3-hit-main { flex: 1; min-width: 0; }
+.r3-hit-name {
+  font-size: var(--t-second); font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.r3-hit-sub {
+  font-size: var(--t-meta); color: var(--muted); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.r3-hit-kind {
+  font-family: var(--font-display); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); flex-shrink: 0;
+}
+.r3-palette-foot {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 9px 16px; border-top: 1px solid var(--border); background: var(--surface-2);
+  font-size: var(--t-meta); color: var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.8 — PAGE HEADER
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-pagehead {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 18px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.r3-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-display); font-size: var(--r2-eyebrow); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.11em;
+  color: var(--r3-area-text); margin-bottom: 7px;
+}
+.r3-eyebrow::before {
+  content: ''; width: var(--r3-rail); height: 12px;
+  border-radius: 999px; background: var(--r3-area);
+}
+.r3-title {
+  font-family: var(--font-display); font-size: var(--t-page); font-weight: var(--w-page);
+  letter-spacing: -0.025em; color: var(--text); line-height: 1.15; margin: 0;
+}
+.r3-subtitle {
+  font-size: var(--t-body); color: var(--text-2); margin-top: 6px;
+  max-width: 62ch; line-height: 1.5;
+}
+.r3-pagehead-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* The date-range control. A segmented control, not four buttons — the segments
+   are mutually exclusive and the shape should say so. */
+.r3-segmented {
+  display: inline-flex; padding: 2px; gap: 2px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r3-control);
+}
+.r3-segment {
+  height: 28px; padding: 0 11px; border: none; border-radius: 5px;
+  background: none; color: var(--text-2); cursor: pointer;
+  font-family: var(--font); font-size: var(--t-meta); font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+.r3-segment:hover { color: var(--text); }
+.r3-segment[aria-pressed="true"] {
+  background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.9 — SECTIONS
+   ───────────────────────────────────────────────────────────────────────────
+   Flat sections with a hairline, NOT another floating card. The brief is
+   explicit that not everything should be a rounded card, and a dashboard made
+   of eleven identical cards has no hierarchy left to spend.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-section { margin-bottom: 26px; }
+.r3-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.r3-section-title {
+  display: flex; align-items: center; gap: 9px;
+  font-family: var(--font-display); font-size: var(--t-section); font-weight: var(--w-section);
+  letter-spacing: -0.018em; color: var(--text); margin: 0;
+}
+.r3-section-title::before {
+  content: ''; width: var(--r3-rail); height: 1em; align-self: center;
+  border-radius: 999px; background: var(--r3-area);
+}
+.r3-section-note { font-size: var(--t-second); color: var(--muted); }
+.r3-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; background: none; padding: 2px 3px; border-radius: 4px;
+  font-family: var(--font); font-size: var(--t-second); font-weight: 600;
+  color: var(--accent-text); cursor: pointer;
+}
+.r3-link:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.10 — KPI BLOCKS
+   ───────────────────────────────────────────────────────────────────────────
+   The figure is the loudest thing in the block and the label is the quietest:
+   34px/700 against 11px/600 uppercase is roughly a 3× ratio, which is what
+   makes a KPI grid scannable at a glance instead of readable line by line.
+
+   THE DELTA IS NOT DECORATION AND IS NOT ALWAYS THERE. A percentage against a
+   previous period requires a previous period to exist in the data. Where it
+   does not, .r3-kpi-nobase says so in words rather than printing a number
+   nothing computed it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 720px)  { .r3-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.r3-kpi-grid.is-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 720px)  { .r3-kpi-grid.is-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.r3-kpi {
+  position: relative; overflow: hidden;
+  padding: 15px 17px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r3-panel);
+}
+.r3-kpi::before {
+  content: ''; position: absolute; inset: 0 auto 0 0; width: var(--r3-rail);
+  background: var(--r3-area);
+}
+.r3-kpi-label {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-display); font-size: var(--r2-eyebrow); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+  margin-bottom: 10px;
+}
+.r3-kpi-value {
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: var(--t-kpi); font-weight: var(--w-page);
+  letter-spacing: -0.035em; line-height: 1; color: var(--text);
+}
+.r3-kpi-foot { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 9px; }
+.r3-kpi-sub { font-size: var(--t-meta); color: var(--muted); }
+
+/* The delta chip. Direction is carried by an arrow glyph drawn as an SVG AND
+   by the word in its aria-label — never by the green/red alone (§33). */
+.r3-delta {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px 2px 5px; border-radius: 999px;
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: var(--t-meta); font-weight: 600;
+}
+.r3-delta.is-up   { background: var(--green-bg); color: var(--green-text); }
+.r3-delta.is-down { background: var(--red-bg);   color: var(--red-text); }
+.r3-delta.is-flat { background: var(--surface-2); color: var(--text-2); }
+.r3-kpi-nobase { font-size: var(--t-meta); color: var(--muted); font-style: normal; }
+
+@media (max-width: 420px) {
+  .r3-kpi { padding: 13px 14px 14px; }
+  .r3-kpi-value { font-size: var(--t-kpi-sm); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.11 — THE AI INSIGHT AND THE NEXT BEST ACTION
+   ───────────────────────────────────────────────────────────────────────────
+   These two components are the reason this round exists, so their contract is
+   worth stating precisely.
+
+   AN INSIGHT ANSWERS THREE QUESTIONS IN ORDER, and the markup enforces it:
+     .r3-insight-what   what happened   — a fact, with the figure in it
+     .r3-insight-why    why it matters  — the consequence, in a sentence
+     .r3-insight-do     what to do      — one or two real actions
+
+   EVERY FIGURE IN AN INSIGHT IS COMPUTED, NOT GENERATED. The rule this
+   ecosystem already runs on ("the model never writes the number") applies
+   here in full: the insight engine is deterministic arithmetic over the
+   operator's own rows, and the model is only ever reached through the
+   explicit "Ask AI" affordance, which opens the assistant with the question
+   pre-filled and lets the real endpoint answer. That is why .r3-insight
+   carries a provenance line rather than a sparkle: the user is entitled to
+   know which of the two produced what they are reading.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-insight {
+  position: relative;
+  padding: 16px 18px;
+  background: var(--surface); border: 1px solid var(--r3-ai-edge);
+  border-radius: var(--r3-feature);
+  background-image: linear-gradient(var(--r3-ai-tint), var(--r3-ai-tint));
+}
+.r3-insight + .r3-insight { margin-top: 10px; }
+.r3-insight-head { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+.r3-insight-mark {
+  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--r3-ai-grad); color: var(--accent-contrast);
+}
+.r3-insight-kicker {
+  font-family: var(--font-display); font-size: var(--r2-eyebrow); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.11em; color: var(--purple-text);
+}
+.r3-insight-what {
+  font-size: 1.0625rem; font-weight: 650; line-height: 1.35;
+  letter-spacing: -0.012em; color: var(--text);
+}
+.r3-insight-what .r3-fig {
+  font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 700;
+}
+.r3-insight-why {
+  font-size: var(--t-body); color: var(--text-2); line-height: 1.55; margin-top: 6px;
+}
+.r3-insight-do { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 13px; }
+.r3-insight-src {
+  display: flex; align-items: center; gap: 6px; margin-top: 11px;
+  padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: var(--t-meta); color: var(--muted);
+}
+
+/* A row of insights scrolls horizontally on a phone and stacks on a desk —
+   never a 3-across grid at 380px, which is three unreadable columns. */
+.r3-insight-row { display: grid; gap: 10px; }
+@media (min-width: 960px) { .r3-insight-row.is-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── Next Best Action ──────────────────────────────────────────────────── */
+/* Deliberately quieter than an insight: an NBA sits INSIDE another record's
+   detail view, so it must not out-shout the record it is advising on. One
+   left edge in the AI hue and nothing else. */
+.r3-nba {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border); border-left: var(--r3-rail) solid var(--purple);
+  border-radius: var(--r3-control);
+}
+.r3-nba-icon { color: var(--purple-text); margin-top: 1px; flex-shrink: 0; }
+.r3-nba-main { flex: 1; min-width: 0; }
+.r3-nba-kicker {
+  font-family: var(--font-display); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple-text);
+  margin-bottom: 3px;
+}
+.r3-nba-text { font-size: var(--t-second); font-weight: 600; color: var(--text); line-height: 1.45; }
+.r3-nba-why { font-size: var(--t-meta); color: var(--muted); margin-top: 3px; line-height: 1.45; }
+.r3-nba-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 9px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.12 — TABLES
+   ───────────────────────────────────────────────────────────────────────────
+   Dense but not small. 13.5px with a 500 weight on the values and a 600 on
+   anything that is the row's identity, because a business table is read by
+   scanning one column, not by reading rows.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-tablewrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r3-panel); overflow: hidden;
+}
+.r3-tablescroll { overflow-x: auto; }
+.r3-table { width: 100%; border-collapse: collapse; font-size: var(--t-second); }
+.r3-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--surface-2); color: var(--muted);
+  font-family: var(--font-display); font-size: var(--r2-eyebrow); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.09em; text-align: left;
+  padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.r3-table thead th.is-num { text-align: right; }
+.r3-table tbody td {
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text-2); vertical-align: middle;
+}
+.r3-table tbody tr:last-child td { border-bottom: none; }
+.r3-table tbody tr { transition: background var(--motion-fast) var(--ease-out); }
+.r3-table tbody tr:hover { background: var(--surface-2); }
+.r3-table tbody tr[data-kbd] { cursor: pointer; }
+.r3-td-primary { color: var(--text) !important; font-weight: 600; }
+.r3-td-num {
+  text-align: right; color: var(--text) !important;
+  font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 600;
+}
+.r3-td-muted { color: var(--muted) !important; }
+.r3-th-sort {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit;
+}
+.r3-th-sort:hover { color: var(--text-2); }
+.r3-sort-mark { opacity: 0; }
+.r3-th-sort[aria-sort="ascending"] .r3-sort-mark,
+.r3-th-sort[aria-sort="descending"] .r3-sort-mark { opacity: 1; color: var(--r3-area-text); }
+.r3-th-sort[aria-sort="descending"] .r3-sort-mark { transform: rotate(180deg); }
+
+.r3-rowactions { display: flex; gap: 4px; justify-content: flex-end; }
+.r3-tablefoot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid var(--border);
+  background: var(--surface-2); font-size: var(--t-meta); color: var(--muted);
+}
+
+/* The toolbar above a table: search, filters, then the primary action, in that
+   reading order — you narrow before you act. */
+.r3-toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.r3-toolbar-grow { flex: 1 1 220px; min-width: 0; }
+.r3-searchfield { position: relative; }
+.r3-searchfield .r3-searchfield-icon {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); pointer-events: none;
+}
+.r3-searchfield input {
+  width: 100%; height: 36px; padding: 0 12px 0 34px;
+  border: 1px solid var(--border); border-radius: var(--r3-control);
+  background: var(--surface); color: var(--text);
+  font-family: var(--font); font-size: var(--t-second);
+}
+.r3-searchfield input::placeholder { color: var(--muted); }
+.r3-searchfield input:focus { border-color: var(--accent); }
+.r3-searchfield input:focus:not(:focus-visible) { outline: none; }
+.r3-searchfield input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.13 — FORMS
+   ───────────────────────────────────────────────────────────────────────────
+   Label ABOVE the input, always, and never a placeholder standing in for one:
+   a placeholder disappears the moment the field has content, which is exactly
+   when a user re-reads the form to check what they filled in.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-field { margin-bottom: 15px; }
+.r3-label {
+  display: block; margin-bottom: 6px;
+  font-size: var(--t-second); font-weight: 600; color: var(--text);
+}
+.r3-req { color: var(--red-text); margin-left: 2px; }
+.r3-optional { color: var(--muted); font-weight: 500; margin-left: 5px; font-size: var(--t-meta); }
+.r3-input, .r3-select, .r3-textarea {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border-2); border-radius: var(--r3-control);
+  background: var(--surface); color: var(--text);
+  font-family: var(--font); font-size: var(--t-body);
+  transition: border-color var(--motion-fast) var(--ease-out);
+}
+.r3-input:hover, .r3-select:hover, .r3-textarea:hover { border-color: var(--muted); }
+.r3-input:focus, .r3-select:focus, .r3-textarea:focus { border-color: var(--accent); }
+.r3-input:focus:not(:focus-visible), .r3-select:focus:not(:focus-visible),
+.r3-textarea:focus:not(:focus-visible) { outline: none; }
+.r3-input:focus-visible, .r3-select:focus-visible, .r3-textarea:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.r3-textarea { min-height: 92px; resize: vertical; line-height: 1.55; }
+.r3-help { margin-top: 5px; font-size: var(--t-meta); color: var(--muted); line-height: 1.45; }
+.r3-error {
+  display: flex; align-items: flex-start; gap: 6px; margin-top: 5px;
+  font-size: var(--t-meta); font-weight: 500; color: var(--red-text); line-height: 1.45;
+}
+.r3-ok { display: flex; align-items: flex-start; gap: 6px; margin-top: 5px; font-size: var(--t-meta); font-weight: 500; color: var(--green-text); }
+.r3-field.is-invalid .r3-input,
+.r3-field.is-invalid .r3-select,
+.r3-field.is-invalid .r3-textarea { border-color: var(--red); }
+.r3-fieldrow { display: grid; gap: 0 14px; }
+@media (min-width: 620px) { .r3-fieldrow.is-2 { grid-template-columns: 1fr 1fr; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.14 — EMPTY, LOADING, ERROR
+   ───────────────────────────────────────────────────────────────────────────
+   Three states that used to be one word each ("No data", "Loading...", and a
+   red string). All three now answer the same three questions an insight does:
+   what is the situation, why does it matter, what do I do next.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-empty { padding: 44px 22px; text-align: center; }
+.r3-empty-mark {
+  width: 46px; height: 46px; margin: 0 auto 14px; border-radius: var(--r3-panel);
+  display: grid; place-items: center;
+  background: var(--r3-area-bg); color: var(--r3-area-text);
+}
+.r3-empty-title { font-size: var(--t-card); font-weight: var(--w-card); color: var(--text); }
+.r3-empty-text {
+  font-size: var(--t-second); color: var(--muted);
+  max-width: 46ch; margin: 7px auto 0; line-height: 1.6;
+}
+.r3-empty-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+
+/* Skeletons. The shimmer is a single background sweep on a neutral block —
+   never on live text, which is the version that reads as a rendering bug. */
+.r3-skel {
+  border-radius: var(--r3-control);
+  background: var(--surface-2);
+  background-image: linear-gradient(90deg,
+    var(--surface-2) 0%,
+    color-mix(in srgb, var(--surface-2) 55%, var(--border)) 50%,
+    var(--surface-2) 100%);
+  background-size: 220% 100%;
+  animation: r3-shimmer 1.35s var(--ease-out) infinite;
+}
+@keyframes r3-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.r3-skel-line { height: 11px; margin-bottom: 9px; }
+.r3-skel-line:last-child { margin-bottom: 0; }
+.r3-skel-w40 { width: 40%; } .r3-skel-w60 { width: 60%; } .r3-skel-w80 { width: 80%; }
+.r3-skel-kpi { height: 96px; }
+.r3-skel-row { height: 44px; margin-bottom: 1px; border-radius: 0; }
+
+/* The AI processing state. It says which of the seven things it is doing —
+   "analysing your pipeline" is a status; a spinner is a shrug. */
+.r3-working { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+.r3-working-dots { display: inline-flex; gap: 4px; }
+.r3-working-dots i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--purple-text);
+  animation: r3-pulse 1.15s var(--ease-out) infinite;
+}
+.r3-working-dots i:nth-child(2) { animation-delay: 0.16s; }
+.r3-working-dots i:nth-child(3) { animation-delay: 0.32s; }
+@keyframes r3-pulse { 0%, 70%, 100% { opacity: 0.28; } 35% { opacity: 1; } }
+.r3-working-text { font-size: var(--t-second); font-weight: 500; color: var(--text-2); }
+
+/* The error state. It names what failed and offers the retry — an error a user
+   can only read is an error they can only abandon. */
+.r3-errorstate {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 14px 16px; border-radius: var(--r3-panel);
+  background: var(--red-bg); border: 1px solid var(--red);
+}
+.r3-errorstate-icon { color: var(--red-text); flex-shrink: 0; margin-top: 1px; }
+.r3-errorstate-title { font-size: var(--t-second); font-weight: 700; color: var(--red-text); }
+.r3-errorstate-text { font-size: var(--t-meta); color: var(--text-2); margin-top: 3px; line-height: 1.5; word-break: break-word; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.15 — BUTTONS, BADGES, TAGS
+   ───────────────────────────────────────────────────────────────────────────
+   The design system already ships .btn/.btn-primary/.btn-outline/.btn-danger,
+   so this section adds exactly two things it does not have: the AI button, and
+   a tertiary text button. Nothing here restyles a .btn.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.btn-ai {
+  background: var(--r3-ai-grad); color: var(--accent-contrast);
+  border: 1px solid transparent;
+}
+.btn-ai:hover { filter: brightness(1.06); }
+.btn-tertiary {
+  background: none; border: 1px solid transparent; color: var(--accent-text);
+}
+.btn-tertiary:hover { background: var(--accent-bg); }
+
+/* A status pill. Colour AND text, so the state survives a greyscale print. */
+.r3-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.r3-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.r3-pill.is-good    { background: var(--green-bg);   color: var(--green-text); }
+.r3-pill.is-warn    { background: var(--amber-bg);   color: var(--amber-text); }
+.r3-pill.is-bad     { background: var(--red-bg);     color: var(--red-text); }
+.r3-pill.is-info    { background: var(--accent-bg);  color: var(--accent-text); }
+.r3-pill.is-ai      { background: var(--purple-bg);  color: var(--purple-text); }
+.r3-pill.is-neutral { background: var(--surface-2);  color: var(--text-2); border: 1px solid var(--border); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.16 — CHARTS
+   ───────────────────────────────────────────────────────────────────────────
+   Every chart in this product is CSS or inline SVG over real rows. No chart
+   library was added: the four shapes this product actually needs are a
+   horizontal bar, a stacked funnel, a sparkline and a donut, and all four are
+   a few dozen bytes each. §34 — do not spend a dependency on decoration.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-chart { padding: 4px 2px; }
+.r3-bars { display: flex; flex-direction: column; gap: 11px; }
+.r3-bar-row { display: grid; grid-template-columns: minmax(84px, 26%) 1fr auto; align-items: center; gap: 11px; }
+.r3-bar-label {
+  font-size: var(--t-meta); color: var(--text-2); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* display:block is load-bearing. Both of these are <span>s, and an inline box
+   ignores height — so the track had no height, the fill had no box, and every
+   bar chart in the product rendered as an empty grey line with a number
+   beside it. The value was always correct; there was simply nothing drawn. */
+.r3-bar-track {
+  display: block;
+  height: 9px; border-radius: 999px; background: var(--bg-soft); overflow: hidden;
+}
+.r3-bar-fill {
+  display: block;
+  height: 100%; border-radius: 999px; background: var(--r3-area);
+  transition: width var(--motion-slow) var(--ease-out);
+}
+.r3-bar-value {
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: var(--t-meta); font-weight: 600; color: var(--text);
+  min-width: 3.4em; text-align: right;
+}
+
+.r3-funnel { display: flex; flex-direction: column; gap: 7px; }
+.r3-funnel-step {
+  position: relative; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 13px; border-radius: var(--r3-control);
+  background: var(--surface-2); border: 1px solid var(--border); overflow: hidden;
+}
+.r3-funnel-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--r3-area-bg); border-right: 1px solid var(--r3-area);
+}
+.r3-funnel-name, .r3-funnel-figs { position: relative; }
+.r3-funnel-name { font-size: var(--t-second); font-weight: 600; color: var(--text); }
+.r3-funnel-figs {
+  display: flex; align-items: baseline; gap: 9px;
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+}
+.r3-funnel-count { font-size: var(--t-second); font-weight: 700; color: var(--text); }
+.r3-funnel-sub { font-size: var(--t-meta); color: var(--muted); }
+
+.r3-spark { display: block; width: 100%; height: 46px; overflow: visible; }
+.r3-spark-line { fill: none; stroke: var(--r3-area); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.r3-spark-area { fill: var(--r3-area-bg); stroke: none; }
+.r3-spark-dot  { fill: var(--r3-area); }
+
+.r3-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; }
+.r3-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-meta); color: var(--text-2); }
+.r3-legend-swatch { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.17 — TOASTS
+   ───────────────────────────────────────────────────────────────────────────
+   Four kinds, each with an icon, so "saved" and "failed to save" are not the
+   same rectangle in a different colour.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-toaster {
+  position: fixed; z-index: 500; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + 84px);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  width: min(420px, calc(100vw - 28px)); pointer-events: none;
+}
+@media (min-width: 1024px) {
+  /* Above the switch there is no bottom tab bar to clear, so toasts return to
+     the corner they belong in. */
+  .r3-toaster { left: auto; right: 20px; transform: none; bottom: 20px; align-items: flex-end; }
+}
+.r3-toast {
+  pointer-events: auto;
+  display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  padding: 11px 13px; border-radius: var(--r3-panel);
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: var(--r3-float);
+  animation: r3-toast-in var(--motion-base) var(--ease-spring);
+}
+.r3-toast.is-leaving { animation: r3-toast-out var(--motion-fast) var(--ease-out) forwards; }
+@keyframes r3-toast-in  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes r3-toast-out { to { opacity: 0; transform: translateY(6px); } }
+.r3-toast-icon { flex-shrink: 0; margin-top: 1px; }
+.r3-toast.is-success .r3-toast-icon { color: var(--green-text); }
+.r3-toast.is-error   .r3-toast-icon { color: var(--red-text); }
+.r3-toast.is-warn    .r3-toast-icon { color: var(--amber-text); }
+.r3-toast.is-info    .r3-toast-icon { color: var(--accent-text); }
+.r3-toast-body { flex: 1; min-width: 0; }
+.r3-toast-title { font-size: var(--t-second); font-weight: 600; color: var(--text); line-height: 1.4; }
+.r3-toast-desc { font-size: var(--t-meta); color: var(--muted); margin-top: 2px; line-height: 1.45; }
+.r3-toast-close { border: none; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; line-height: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.18 — NOTIFICATION ROWS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-notif {
+  display: flex; align-items: flex-start; gap: 11px; width: 100%;
+  padding: 12px 14px; border: none; border-bottom: 1px solid var(--border);
+  background: none; text-align: left; cursor: pointer; font-family: var(--font);
+}
+.r3-notif:last-child { border-bottom: none; }
+.r3-notif:hover { background: var(--surface-2); }
+.r3-notif-mark {
+  width: 28px; height: 28px; border-radius: var(--r3-control); flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.r3-notif.is-important .r3-notif-mark { background: var(--red-bg);    color: var(--red-text); }
+.r3-notif.is-warning   .r3-notif-mark { background: var(--amber-bg);  color: var(--amber-text); }
+.r3-notif.is-ai        .r3-notif-mark { background: var(--purple-bg); color: var(--purple-text); }
+.r3-notif.is-task      .r3-notif-mark { background: var(--accent-bg); color: var(--accent-text); }
+.r3-notif.is-success   .r3-notif-mark { background: var(--green-bg);  color: var(--green-text); }
+.r3-notif.is-system    .r3-notif-mark { background: var(--surface-2); color: var(--text-2); }
+.r3-notif-main { flex: 1; min-width: 0; }
+.r3-notif-kind {
+  font-family: var(--font-display); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 2px;
+}
+.r3-notif-text { font-size: var(--t-second); font-weight: 500; color: var(--text); line-height: 1.45; }
+.r3-notif-time {
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: var(--t-meta); color: var(--muted); margin-top: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.19 — ACTIVITY FEED
+   ───────────────────────────────────────────────────────────────────────────
+   Time first, in a tabular figure, so the column aligns and the eye can run
+   down it. That is the whole design.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-feed { display: flex; flex-direction: column; }
+.r3-feed-item {
+  display: grid; grid-template-columns: 74px 1fr; align-items: start; gap: 14px;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+}
+.r3-feed-item:last-child { border-bottom: none; }
+.r3-feed-time {
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: var(--t-meta); font-weight: 600; color: var(--muted);
+  padding-top: 2px; white-space: nowrap;
+}
+.r3-feed-body { min-width: 0; }
+.r3-feed-title { display: flex; align-items: center; gap: 7px; font-size: var(--t-second); font-weight: 600; color: var(--text); }
+.r3-feed-desc { font-size: var(--t-meta); color: var(--muted); margin-top: 2px; line-height: 1.5; }
+@media (max-width: 480px) {
+  .r3-feed-item { grid-template-columns: 1fr; gap: 3px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.20 — RESPONSIVE SWITCH
+   ───────────────────────────────────────────────────────────────────────────
+   ONE breakpoint decides which navigation is live, and both are always in the
+   DOM. 1024px, and the number is measured rather than chosen.
+
+   The first draft said 900. It was wrong, and the way it was wrong is worth
+   keeping: the seven group words come to 653px, the brand another 144, and the
+   right-hand chrome at its most collapsed still needs about 220. That is
+   roughly 1060 before a single gap, so at 900 the bar could only fit by
+   turning seven words into seven glyphs — and a navigation nobody can read is
+   not a desktop navigation, it is a puzzle. 1024 is where an iPad in landscape
+   sits, and it is the smallest screen this bar is genuinely good on. Below it
+   the bottom tab bar takes over, which is a different pattern rather than this
+   one shrunk.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* Hiding, never forcing. A class that switched a row ON by declaring a display
+   value would have to guess which one, and the obvious guess (`display:initial`
+   resolves to `inline`) silently breaks every flex row it touches — the first
+   draft of this block did exactly that. So each element keeps whatever display
+   it was authored with, and only visibility is toggled. */
+@media (max-width: 1023px) { .r3-desk-only { display: none !important; } }
+@media (min-width: 1024px) { .r3-mob-only  { display: none !important; } }
+
+/* The mobile sheet — the long tail of the menu on a phone, as a bottom sheet
+   rather than a dropdown pinned to a bar that is not there. */
+.r3-sheet-scrim {
+  position: fixed; inset: 0; z-index: 320;
+  background: var(--surface-deep);
+  background: color-mix(in srgb, var(--surface-deep) 55%, transparent);
+  display: none; align-items: flex-end;
+}
+.r3-sheet-scrim.is-open { display: flex; }
+.r3-sheet {
+  width: 100%; max-height: 82vh; overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--r3-feature) var(--r3-feature) 0 0;
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.r3-sheet-scrim.is-open .r3-sheet { animation: r3-sheet-up var(--motion-base) var(--ease-out); }
+@keyframes r3-sheet-up { from { transform: translateY(14%); } to { transform: none; } }
+.r3-sheet-grip {
+  width: 38px; height: 4px; border-radius: 999px; background: var(--border-2);
+  margin: 10px auto 4px;
+}
+.r3-sheet-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 18px 12px; border-bottom: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.21 — REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────────────
+   Same rule as the Round 2 block above it: anything introduced HERE is handled
+   HERE rather than assumed covered by §41's global flatten. The two looping
+   animations are switched OFF rather than sped up, because a loop collapsed to
+   0.01ms freezes at an arbitrary frame — which for the skeleton means a
+   half-painted gradient and for the working dots means one dot at 28% opacity
+   forever, both of which read as a rendering fault rather than as calm.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .r3-skel {
+    animation: none;
+    background-image: none;
+    background: var(--surface-2);
+  }
+  .r3-working-dots i { animation: none; opacity: 1; }
+  .r3-menu, .r3-pop.is-open, .r3-palette-scrim.is-open .r3-palette,
+  .r3-sheet-scrim.is-open .r3-sheet, .r3-toast { animation: none; }
+  .r3-nav-caret, .r3-bar-fill, .r3-nav-btn, .r3-iconbtn, .r3-menu-item,
+  .r3-table tbody tr, .r3-segment, .r3-input, .r3-select, .r3-textarea,
+  .r3-searchfield input, .r3-subnav-item { transition: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.22 — TOUCH TARGETS
+   ───────────────────────────────────────────────────────────────────────────
+   §6 of the design system puts .btn at 44px below 768px. Everything this layer
+   introduced that a finger can hit needs the same floor, and a couple of them
+   (the segmented control, the sub-nav) are compact BY DESIGN at desk width, so
+   the rule is scoped to the touch breakpoint rather than applied globally.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .r3-iconbtn, .r3-avatar, .r3-segment, .r3-menu-item, .r3-hit,
+  .r3-notif, .r3-ai-btn, .r3-searchbtn { min-height: 44px; }
+  .r3-iconbtn, .r3-avatar { min-width: 44px; }
+  .r3-subnav-item { min-height: 44px; }
+  .r3-title { font-size: 1.625rem; }
+  .r3-section-title { font-size: 1.1875rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.23 — THE AI COMMAND SURFACE
+   ───────────────────────────────────────────────────────────────────────────
+   The one place in the product allowed a gradient, and it gets a 24px edge of
+   it, not a filled panel. §29: a gradient that appears twice is a texture, and
+   a texture is decoration. Here it marks a single thing — the input the whole
+   screen exists for.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-aibox {
+  /* 2px, not 4. At four the gradient stops being an edge and starts being a
+     glow, which is the one thing §29 says this surface must not do. */
+  padding: 2px;
+  border-radius: calc(var(--r3-feature) + 2px);
+  background: var(--r3-ai-grad);
+  margin-bottom: 20px;
+}
+.r3-aibox-inner, .r3-aibox > * { border-radius: var(--r3-feature); }
+.r3-aibox-inputrow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 13px 14px;
+  background: var(--surface);
+  border-radius: var(--r3-feature) var(--r3-feature) 0 0;
+}
+.r3-aibox-mark { color: var(--purple-text); flex-shrink: 0; display: inline-flex; }
+.r3-aibox-input {
+  /* outline:none on a bare input with no replacement is how a control ends up
+     with no keyboard affordance at all — the suite caught exactly that here,
+     on the AI screen. The ring is restored below, ON THIS ELEMENT: a rule on
+     the container is a ring the control itself does not have, which is what a
+     screen reader and a focus audit both read. */
+  flex: 1; min-width: 0;
+  border: none; background: none; outline: none;
+  font-family: var(--font); font-size: 1.0625rem; font-weight: 500; color: var(--text);
+}
+.r3-aibox-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.r3-aibox-input::placeholder { color: var(--muted); font-weight: 400; }
+.r3-aibox-chips {
+  display: flex; flex-wrap: wrap; gap: 7px;
+  padding: 11px 14px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--r3-feature) var(--r3-feature);
+}
+@media (max-width: 560px) {
+  .r3-aibox-inputrow { flex-wrap: wrap; }
+  .r3-aibox-input { flex: 1 1 100%; order: 2; padding: 4px 0; }
+  .r3-aibox-inputrow .btn { order: 3; margin-left: auto; }
+}
+
+/* The thread. Deliberately not a chat app: the assistant's turn is a full-
+   width panel with a provenance tag, because the thing it says is the content
+   of the screen, not a message in a conversation. The user's turn is a bubble
+   so the two are never confused for one another. */
+.r3-thread { display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
+.r3-turn { display: flex; }
+.r3-turn.is-user { justify-content: flex-end; }
+.r3-bubble {
+  max-width: 100%;
+  border-radius: var(--r3-panel);
+  font-size: var(--t-body); line-height: 1.6;
+}
+.r3-bubble.is-user {
+  max-width: min(78%, 46rem);
+  padding: 10px 14px;
+  background: var(--accent); color: var(--accent-contrast);
+  border-bottom-right-radius: 4px;
+  font-weight: 500;
+}
+.r3-bubble.is-bot {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border); border-left: var(--r3-rail) solid var(--purple);
+}
+.r3-bubble-tag {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 15px; border-bottom: 1px solid var(--border);
+  font-family: var(--font-display); font-size: var(--r2-eyebrow); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple-text);
+}
+.r3-bubble-text { padding: 13px 15px; color: var(--text-2); white-space: pre-wrap; }
+
+.r3-capgrid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+@media (min-width: 620px)  { .r3-capgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .r3-capgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* The account menu's two links, which the master's .um-opt does not cover. */
+.r3-usermenu-link {
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 15px; text-decoration: none;
+  font-size: var(--t-second); font-weight: 600; color: var(--text);
+  border-top: 1px solid var(--border);
+}
+.r3-usermenu-link:hover { background: var(--surface-2); }
+.r3-usermenu-link.is-danger { color: var(--red-text); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.24 — TWO-COLUMN AND PANEL BOX
+   ───────────────────────────────────────────────────────────────────────────
+   The dashboard pairs sections that are read together (funnel + sources,
+   tasks + activity). Below 1000px they stack, because two 400px columns of a
+   bar chart is two charts nobody can read.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-2col { display: grid; grid-template-columns: 1fr; gap: 0 22px; }
+@media (min-width: 1000px) { .r3-2col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* A bordered panel that is NOT a floating card: one hairline, no shadow.
+   This is the default container in the product, and .card — which does carry
+   a shadow — is reserved for things that genuinely sit above the page. */
+.r3-panelbox {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r3-panel);
+  padding: 16px 18px;
+}
+.r3-panelbox > .r3-empty { padding: 30px 12px; }
+.r3-panelbox > .task-row:first-child { padding-top: 0; }
+.r3-panelbox > .task-row:last-child { border-bottom: none; padding-bottom: 0; }
+.r3-panelbox > .r3-feed { margin: -16px -18px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.25 — THE TOP BAR'S COLLAPSE LADDER
+   ───────────────────────────────────────────────────────────────────────────
+   LAST IN THE FILE, AND THAT IS THE POINT. The first version of this block sat
+   inside §R3.6, directly under .r3-topbar-row and ABOVE the .r3-searchbtn rule
+   it was written to override. Same specificity, later rule wins — so the search
+   field kept its 226px minimum at every width and the bar overflowed exactly
+   as it had before the fix. Nothing about it looked wrong in the source, and
+   only a measurement caught it.
+
+   The steps are measured too. At 1440 the row needs brand 144 + history 86 +
+   seven group words 653 + right-hand chrome 431 + four 14px gaps + 40 of
+   padding = 1410, against 1440 available. Each rule below is the width at
+   which that sum crosses what is left, and each drops the least useful thing
+   on the row at that moment — the history pair first (the browser still has
+   its own back button), then the search field's label and shortcut hint (the
+   icon opens the same dialog), then the AI button's label, then the wordmark.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1400px) { .r3-histgroup { display: none; } }
+@media (max-width: 1340px) {
+  .r3-searchbtn { min-width: 0; padding: 0 10px; }
+  .r3-searchbtn-label, .r3-searchbtn .r3-kbd { display: none; }
+}
+@media (max-width: 1180px) {
+  .r3-ai-btn span { display: none; }
+  .r3-ai-btn { padding: 0 10px; }
+  .r3-nav-btn { padding: 0 8px; }
+  .r3-topbar-row { gap: 10px; }
+}
+/* The wordmark goes, the mark stays. A product's chrome should still say which
+   product it is at every width, and 26px of it does that. */
+@media (max-width: 1100px) { .r3-brand > span:not(.r3-brand-mark) { display: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.26 — OPTIONAL TABLE COLUMNS
+   ───────────────────────────────────────────────────────────────────────────
+   A business table has a spine — who, and how much — and then columns that
+   qualify it. On a phone the spine has to survive and the rest can go.
+
+   The alternative was to render each list twice, once as a table and once as
+   cards, and let a media query pick. That doubles the DOM on every list screen
+   in the product to save four columns on one breakpoint. The table still
+   scrolls horizontally inside .r3-tablescroll if the spine itself is too wide,
+   so nothing is unreachable — it is one column fewer, not one screen fewer.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 760px) {
+  .r3-table .r3-col-optional { display: none; }
+  .r3-table thead th, .r3-table tbody td { padding-inline: 11px; }
+}
+
+/* The filter pills are <button>s now rather than <div onclick>, so they are
+   reachable by keyboard without the tabindex-injection the app does for its
+   other click handlers. aria-pressed carries the state, and this makes the
+   pressed state visible rather than leaving it to the .active class alone. */
+.ft[aria-pressed="true"] { background: var(--accent-bg); border-color: var(--accent-text); color: var(--accent-text); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.27 — SPANS THAT NEED A BOX
+   ───────────────────────────────────────────────────────────────────────────
+   Every element below is authored as a <span> by a render function and needs
+   to be a block: it either owns a line, or carries a height, or has a
+   margin-top that an inline box would silently drop.
+
+   TWO OF THESE SHIPPED BROKEN AND BOTH WERE INVISIBLE IN THE SOURCE. The bar
+   chart's track had "height: 9px" on an inline box, so every bar chart in the
+   product rendered as an empty grey line with a correct number beside it. The
+   command palette's result name and subtitle ran together into one string —
+   "Tan Wei MingPintar Logistics Sdn Bhd · New" — because neither had a line
+   of its own. Nothing about either rule looked wrong; only a screenshot did.
+
+   Anything NOT listed here is deliberately absent: a span that is already a
+   flex or grid item is blockified by its parent, and re-declaring that would
+   be a second rule to keep in step with the first.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-hit-main,
+.r3-hit-name,
+.r3-hit-sub,
+.r3-menu-item-name,
+.r3-menu-item-desc,
+.r3-notif-main,
+.r3-notif-kind,
+.r3-notif-text,
+.r3-notif-time,
+.r3-toast-body,
+.r3-toast-title,
+.r3-toast-desc,
+.r3-feed-body,
+.r3-feed-desc,
+.r3-insight-src span,
+.r3-empty-text { display: block; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.28 — THE MODULE SWITCH
+   ───────────────────────────────────────────────────────────────────────────
+   The row this replaces built its toggle from six nested inline styles that
+   recomputed the knob's `left` from the checked state in JavaScript, which is
+   a CSS problem solved in the render function. The checkbox is the state now;
+   the track and knob follow it in CSS, and the input keeps its own focus ring
+   rather than being visually hidden with no replacement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-modrow {
+  display: flex; align-items: flex-start; gap: 13px;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+}
+.r3-modrow:last-of-type { border-bottom: none; }
+.r3-modrow-icon {
+  width: 34px; height: 34px; border-radius: var(--r3-control); flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--surface-2); color: var(--text-2);
+}
+.r3-modrow-main { flex: 1; min-width: 0; display: block; }
+.r3-modrow-name { display: block; font-size: var(--t-card); font-weight: var(--w-card); color: var(--text); }
+.r3-modrow-desc { display: block; font-size: var(--t-meta); color: var(--muted); margin-top: 3px; line-height: 1.5; }
+.r3-modrow-control { flex-shrink: 0; margin-top: 3px; }
+
+.r3-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.r3-switch input {
+  /* Not display:none, and not opacity:0 alone — the input has to stay in the
+     focus order and has to be able to show a ring, or the switch is
+     unreachable by keyboard. */
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  margin: 0; opacity: 0; cursor: pointer; z-index: 1;
+}
+.r3-switch-track {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: var(--border-2);
+  transition: background var(--motion-base) var(--ease-out);
+}
+.r3-switch-knob {
+  position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-sm);
+  transition: transform var(--motion-base) var(--ease-out);
+}
+.r3-switch input:checked ~ .r3-switch-track { background: var(--accent); }
+.r3-switch input:checked ~ .r3-switch-track .r3-switch-knob { transform: translateX(20px); }
+.r3-switch input:focus-visible ~ .r3-switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.r3-switch input:disabled { cursor: progress; }
+.r3-switch input:disabled ~ .r3-switch-track { opacity: 0.6; }
+@media (prefers-reduced-motion: reduce) {
+  .r3-switch-track, .r3-switch-knob { transition: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.29 — A SCORE OUT OF FIVE
+   ───────────────────────────────────────────────────────────────────────────
+   The CSAT panel drew ★★★★☆ at 24px and printed "4/5 stars" underneath in
+   11px grey — the number, which is the datum, was the smallest thing in the
+   block, and the glyph carrying it was a text character.
+
+   Inverted: the figure leads at KPI weight, the stars follow as icons, and
+   the row carries an aria-label so a screen reader gets "4 out of 5" rather
+   than four star glyphs and an empty one.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-score { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.r3-score-value {
+  font-family: var(--font-display); font-variant-numeric: tabular-nums;
+  font-size: var(--t-kpi-sm); font-weight: var(--w-page);
+  line-height: 1; letter-spacing: -0.03em; color: var(--text);
+}
+.r3-score-of { font-size: var(--t-meta); color: var(--muted); font-weight: 500; }
+.r3-score-stars { display: inline-flex; gap: 2px; align-self: center; margin-left: 2px; }
+.r3-score-stars > span { color: var(--border-2); line-height: 0; }
+.r3-score-stars > span.is-on { color: var(--amber); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R3.30 — THE ONE-LINE EMPTY STATE
+   ───────────────────────────────────────────────────────────────────────────
+   .r3-empty is the full treatment: a mark, a title, a sentence and an action.
+   It is right when a whole screen has nothing on it and the user needs telling
+   what to do. It is wrong four times down one page.
+
+   The task list has four groups — overdue, today, upcoming, undated — and a
+   healthy week empties three of them. Rendered with the full component that
+   read as four failures stacked up, in 180px panels. This is the same
+   information at the weight it deserves.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.r3-emptyline {
+  display: flex; align-items: center; gap: 9px;
+  padding: 13px 16px;
+  border: 1px dashed var(--border-2); border-radius: var(--r3-panel);
+  font-size: var(--t-second); color: var(--muted);
+}
+.r3-emptyline svg { color: var(--muted); flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §R4 · THE AGENT DOCK — two specialists, always within reach
+   ───────────────────────────────────────────────────────────────────────────
+   Round 3 deleted a floating AI bubble on purpose, and its note in app.html
+   says why: a 360px panel pinned over the corner of whatever you were reading
+   is the right shape for a support widget on a marketing site and the wrong
+   one for a surface an operator works FROM. That reasoning was about ONE
+   general-purpose chatbot, and it stands — the AI Command Center is still the
+   place you go to work with AI, and Round 4 does not touch it.
+
+   What Round 4 adds is different in kind. Asha and M-Ai are not a chatbot;
+   they are two specialists with one job each, and both jobs are things you
+   need WHILE you are somewhere else: qualify the lead you are looking at,
+   process the document in your hand. Making you navigate away to reach them
+   IS the friction. So the dock is a LAUNCHER, not a destination — it opens an
+   agent over your work and closes again, and it adds no entry to R3_NAV,
+   which stays the one description of this product's shape (§R3.4).
+
+   ── NOT ONE COLOUR LITERAL ────────────────────────────────────────────────
+   §R3.5 fails the build on any raw hex or rgb() in this file, and the brief
+   asks for blue/cyan/indigo and purple/violet/blue. This design system has
+   --blue, --purple, --green, --red, --amber and --accent, and no cyan, violet
+   or indigo at all. So they are MIXED from what exists:
+
+       cyan   = blue + green      violet = purple + blue
+       indigo = blue + purple
+
+   Every hue below therefore still resolves through a master token, and the
+   day the master moves its blue, both agents move with it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Geometry, named once. The dock, the panel and every media query read
+     these, so the two can never disagree about how much room the orbs need. */
+  --r4-orb:            56px;
+  --r4-orb-gap:        14px;
+  --r4-dock-inset-x:   22px;
+  --r4-dock-inset-y:   22px;
+
+  /* Layering. The map this app already uses: bottom nav 100, subnav 190,
+     topbar 200, popovers 260, modal overlay 300, sheet scrim 320, palette
+     400, toaster 500. The dock sits ABOVE page content and BELOW every
+     overlay, because an orb floating on top of a modal is precisely the
+     "blocks a primary action" the brief's §6 forbids. */
+  --r4-z-dock:  250;
+  --r4-z-panel: 252;
+
+  /* ── ASHA · blue -> cyan -> indigo ───────────────────────────────────── */
+  --r4-asha-1:    var(--blue);
+  --r4-asha-2:    var(--blue);
+  --r4-asha-2:    color-mix(in srgb, var(--blue) 62%, var(--green) 38%);
+  --r4-asha-3:    var(--blue);
+  --r4-asha-3:    color-mix(in srgb, var(--blue) 55%, var(--purple) 45%);
+  --r4-asha-text: var(--blue-text);
+  --r4-asha-bg:   var(--blue-bg);
+  --r4-asha-bg:   color-mix(in srgb, var(--blue) 10%, transparent);
+
+  /* ── M-AI · purple -> violet -> blue ─────────────────────────────────── */
+  --r4-mai-1:    var(--purple);
+  --r4-mai-2:    var(--purple);
+  --r4-mai-2:    color-mix(in srgb, var(--purple) 70%, var(--blue) 30%);
+  --r4-mai-3:    var(--blue);
+  --r4-mai-3:    color-mix(in srgb, var(--blue) 70%, var(--purple) 30%);
+  --r4-mai-text: var(--purple-text);
+  --r4-mai-bg:   var(--purple-bg);
+  --r4-mai-bg:   color-mix(in srgb, var(--purple) 10%, transparent);
+}
+
+/* ── the dock ────────────────────────────────────────────────────────────── */
+.r4-dock {
+  position: fixed;
+  right: var(--r4-dock-inset-x);
+  bottom: var(--r4-dock-inset-y);
+  z-index: var(--r4-z-dock);
+  display: flex;
+  flex-direction: column;
+  gap: var(--r4-orb-gap);
+  align-items: flex-end;
+  /* The dock must never intercept a click meant for the page behind it; only
+     the orbs inside it are targets. */
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.r4-dock > * { pointer-events: auto; }
+
+/* An orb over a scrim reads as a bug, and over a form it is exactly the
+   "blocks a primary action" §6 forbids. The dock stands down whenever this
+   app opens one of its overlays. */
+body:has(.modal-overlay.open) .r4-dock,
+body:has(.r3-palette-scrim.is-open) .r4-dock,
+body:has(.r3-sheet-scrim.is-open) .r4-dock {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+
+/* ── an orb ──────────────────────────────────────────────────────────────── */
+.r4-orb {
+  position: relative;
+  width: var(--r4-orb); height: var(--r4-orb);
+  border-radius: 50%;
+  border: 0;
+  display: grid; place-items: center;
+  cursor: pointer;
+  padding: 0;
+  color: var(--accent-contrast);
+  transition: transform .18s ease, box-shadow .18s ease;
+  /* Depth, not neon: one soft ambient ring in the agent's own hue plus an
+     elevation shadow. §4 says do not overdo the glow, and a 12% mix at 6px is
+     a presence rather than a lamp. */
+  box-shadow:
+    0 2px 10px color-mix(in srgb, var(--surface-deep) 22%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--r4-hue-2) 12%, transparent);
+}
+
+/* The gradient body: a linear sweep across the three hues, plus a small
+   off-centre radial highlight that reads as an inner light source. */
+.r4-orb::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%,
+      color-mix(in srgb, var(--accent-contrast) 38%, transparent) 0%,
+      transparent 46%),
+    linear-gradient(145deg, var(--r4-hue-1) 0%, var(--r4-hue-2) 52%, var(--r4-hue-3) 100%);
+}
+.r4-orb > * { position: relative; z-index: 1; }
+.r4-orb svg { width: 24px; height: 24px; display: block; }
+
+.r4-orb[data-agent="asha"] { --r4-hue-1: var(--r4-asha-1); --r4-hue-2: var(--r4-asha-2); --r4-hue-3: var(--r4-asha-3); }
+.r4-orb[data-agent="mai"]  { --r4-hue-1: var(--r4-mai-1);  --r4-hue-2: var(--r4-mai-2);  --r4-hue-3: var(--r4-mai-3); }
+
+.r4-orb:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow:
+    0 6px 18px color-mix(in srgb, var(--surface-deep) 28%, transparent),
+    0 0 0 9px color-mix(in srgb, var(--r4-hue-2) 16%, transparent);
+}
+.r4-orb:active { transform: translateY(0) scale(.97); }
+
+/* §29 · a real focus ring. Round 2 found 35 focus rings suppressed by inline
+   outline:none across this app; nothing here re-introduces that. */
+.r4-orb:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Open. The orb stays lit, so it is obvious which agent the panel belongs to. */
+.r4-orb[aria-expanded="true"] {
+  box-shadow:
+    0 6px 18px color-mix(in srgb, var(--surface-deep) 30%, transparent),
+    0 0 0 10px color-mix(in srgb, var(--r4-hue-2) 22%, transparent);
+}
+
+/* ── states ──────────────────────────────────────────────────────────────── */
+
+/* Idle: a slow breath.
+
+   THE BREATH IS IN THE RING, NOT IN THE BUTTON, AND THAT IS LOAD-BEARING.
+   The first version animated a scale transform on .r4-orb itself. It
+   looked right and it made the control permanently unstable: an element whose
+   geometry never settles is one a pointer cannot be guaranteed to land on.
+   Playwright refused to click it at all — "element is not stable", twenty-nine
+   tests timing out — and that check is a proxy for a real user, because switch
+   access, eye tracking and any assistive tech that tracks a target position
+   are fighting the same moving box.
+
+   Animating the ambient shadow instead leaves the button's box completely
+   static while the orb still reads as alive. Nothing in the layout moves. */
+@keyframes r4Breathe {
+  0%, 100% { box-shadow:
+    0 2px 10px color-mix(in srgb, var(--surface-deep) 22%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--r4-hue-2) 12%, transparent); }
+  50%      { box-shadow:
+    0 2px 10px color-mix(in srgb, var(--surface-deep) 22%, transparent),
+    0 0 0 10px color-mix(in srgb, var(--r4-hue-2) 6%, transparent); }
+}
+.r4-orb[data-state="idle"] { animation: r4Breathe 4.5s ease-in-out infinite; }
+.r4-orb[data-state="idle"]:hover { animation: none; }
+
+/* Working: a ring that travels around the orb. Built from a rotating border
+   rather than a conic gradient with a mask, because the mask version needs a
+   literal colour as its stencil and §R3.5 fails the build on one. */
+@keyframes r4Spin { to { transform: rotate(1turn); } }
+.r4-orb[data-state="busy"]::after {
+  content: '';
+  position: absolute; inset: -5px;
+  border-radius: 50%;
+  border: 2.5px solid var(--r4-hue-2);
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  animation: r4Spin 1s linear infinite;
+}
+
+/* Something finished while the panel was shut. A dot in the design system's
+   own attention colour, ringed against the page so it reads on any surface. */
+.r4-orb[data-notify="true"]:not([data-state="busy"])::after {
+  content: '';
+  position: absolute;
+  top: 1px; right: 1px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid var(--bg);
+  animation: none;
+}
+/* Busy outranks notify — the `:not()` above is what enforces it. A spinner
+   and a badge at once says two things about one agent, and the one the
+   operator can act on is the spinner. */
+
+/* ── the hover label ─────────────────────────────────────────────────────
+   §5: a compact label on hover, never a permanent large one. It is the
+   VISIBLE twin of the accessible name — each orb carries its own aria-label,
+   so a screen reader never depends on this appearing. */
+.r4-orb-label {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  white-space: nowrap;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: var(--t-meta);
+  font-weight: 600;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--surface-deep) 18%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+.r4-orb:hover .r4-orb-label,
+.r4-orb:focus-visible .r4-orb-label { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+/* ── the agent panel ─────────────────────────────────────────────────────── */
+.r4-panel {
+  position: fixed;
+  right: var(--r4-dock-inset-x);
+  /* Clear of the dock: two orbs, the gap between them, and a margin. */
+  bottom: calc(var(--r4-dock-inset-y) + (var(--r4-orb) * 2) + var(--r4-orb-gap) + 14px);
+  z-index: var(--r4-z-panel);
+  width: 400px;
+  max-width: calc(100vw - (var(--r4-dock-inset-x) * 2));
+  max-height: min(660px, calc(100vh - var(--r4-dock-inset-y) - (var(--r4-orb) * 2) - 90px));
+  display: none;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--surface-deep) 30%, transparent);
+  overflow: hidden;
+}
+.r4-panel.is-open { display: flex; }
+
+.r4-panel-hd {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--r4-panel-tint, var(--surface-2));
+}
+.r4-panel[data-agent="asha"] { --r4-panel-tint: var(--r4-asha-bg); --r4-panel-hue: var(--r4-asha-text); }
+.r4-panel[data-agent="mai"]  { --r4-panel-tint: var(--r4-mai-bg);  --r4-panel-hue: var(--r4-mai-text); }
+
+.r4-panel-mark {
+  width: 34px; height: 34px; border-radius: 50%;
+  flex-shrink: 0; display: grid; place-items: center;
+  color: var(--accent-contrast);
+  background: linear-gradient(145deg, var(--r4-hue-1) 0%, var(--r4-hue-2) 52%, var(--r4-hue-3) 100%);
+}
+.r4-panel[data-agent="asha"] .r4-panel-mark { --r4-hue-1: var(--r4-asha-1); --r4-hue-2: var(--r4-asha-2); --r4-hue-3: var(--r4-asha-3); }
+.r4-panel[data-agent="mai"]  .r4-panel-mark { --r4-hue-1: var(--r4-mai-1);  --r4-hue-2: var(--r4-mai-2);  --r4-hue-3: var(--r4-mai-3); }
+.r4-panel-mark svg { width: 18px; height: 18px; }
+
+.r4-panel-titles { flex: 1; min-width: 0; }
+.r4-panel-name {
+  font-size: var(--t-card); font-weight: 700; color: var(--text);
+  letter-spacing: -0.01em; line-height: 1.2;
+}
+.r4-panel-role {
+  font-size: var(--t-meta); color: var(--r4-panel-hue, var(--muted));
+  font-weight: 600; margin-top: 2px;
+}
+.r4-panel-x {
+  background: none; border: 0; cursor: pointer; color: var(--muted);
+  width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.r4-panel-x:hover { background: var(--surface-2); color: var(--text); }
+.r4-panel-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.r4-panel-body { padding: 13px 14px; overflow-y: auto; flex: 1; }
+.r4-panel-foot { padding: 11px 14px; border-top: 1px solid var(--border); background: var(--surface-2); }
+
+/* Contextual action rows inside a panel. */
+.r4-suggest {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 10px 11px; margin-bottom: 7px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 9px; cursor: pointer; text-align: left;
+  font-size: var(--t-second); color: var(--text); font-weight: 600;
+  transition: border-color .14s ease, background .14s ease;
+}
+.r4-suggest:hover { border-color: var(--r4-panel-hue); background: var(--r4-panel-tint); }
+.r4-suggest:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.r4-suggest svg { color: var(--r4-panel-hue); flex-shrink: 0; }
+.r4-suggest-sub { display: block; font-weight: 500; color: var(--muted); font-size: var(--t-meta); margin-top: 2px; }
+.r4-suggest[disabled] { opacity: .55; cursor: not-allowed; }
+.r4-suggest[disabled]:hover { border-color: var(--border); background: var(--surface); }
+
+/* ── the dropzone ────────────────────────────────────────────────────────── */
+.r4-drop {
+  border: 2px dashed var(--border-2);
+  border-radius: 12px;
+  padding: 26px 16px;
+  text-align: center;
+  cursor: pointer;
+  width: 100%;
+  background: var(--surface-2);
+  transition: border-color .15s ease, background .15s ease;
+}
+.r4-drop:hover, .r4-drop.is-over { border-color: var(--r4-mai-text); background: var(--r4-mai-bg); }
+.r4-drop:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.r4-drop-title { font-size: var(--t-second); font-weight: 700; color: var(--text); margin-top: 9px; }
+.r4-drop-sub { font-size: var(--t-meta); color: var(--muted); margin-top: 3px; }
+.r4-drop-types {
+  font-size: var(--t-meta); color: var(--muted); margin-top: 11px;
+  padding-top: 10px; border-top: 1px solid var(--border);
+}
+.r4-drop svg { color: var(--r4-mai-text); }
+
+/* ── the processing state strip ──────────────────────────────────────────
+   §32 asks for visually distinct states. They share one row so the panel does
+   not jump as it moves between them; what changes is the dot and the words. */
+.r4-state {
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 12px; border-radius: 9px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  font-size: var(--t-second); color: var(--text); font-weight: 600;
+}
+.r4-state-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
+@keyframes r4Pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.r4-state[data-phase="uploading"]  .r4-state-dot,
+.r4-state[data-phase="analysing"]  .r4-state-dot,
+.r4-state[data-phase="extracting"] .r4-state-dot,
+.r4-state[data-phase="mapping"]    .r4-state-dot,
+.r4-state[data-phase="validating"] .r4-state-dot,
+.r4-state[data-phase="importing"]  .r4-state-dot {
+  background: var(--r4-mai-2); animation: r4Pulse 1.1s ease-in-out infinite;
+}
+.r4-state[data-phase="review"]    .r4-state-dot { background: var(--amber); }
+.r4-state[data-phase="complete"]  .r4-state-dot { background: var(--green); }
+.r4-state[data-phase="exception"] .r4-state-dot { background: var(--red); }
+.r4-state[data-phase="review"]    { background: var(--amber-bg); border-color: var(--amber); }
+.r4-state[data-phase="complete"]  { background: var(--green-bg); border-color: var(--green); }
+.r4-state[data-phase="exception"] { background: var(--red-bg);   border-color: var(--red); }
+
+/* ── the score card ──────────────────────────────────────────────────────── */
+.r4-scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 11px 0; }
+.r4-score {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 9px; padding: 9px 8px; text-align: center;
+}
+.r4-score-v { font-size: var(--t-kpi-sm); font-weight: 700; color: var(--text); line-height: 1.1; }
+.r4-score-k { font-size: var(--t-meta); color: var(--muted); margin-top: 3px; font-weight: 600; }
+/* An unmeasurable component prints a WORD, not a number, and the word is
+   muted so it can never be misread as a score of zero. */
+.r4-score-v[data-unmeasured="true"] { font-size: var(--t-meta); color: var(--muted); font-weight: 600; }
+
+.r4-overall {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 12px; border-radius: 10px;
+  background: var(--r4-panel-tint); border: 1px solid var(--r4-panel-hue);
+}
+.r4-overall-v { font-size: var(--t-kpi); font-weight: 700; color: var(--text); line-height: 1; }
+.r4-overall-band { font-size: var(--t-meta); font-weight: 700; color: var(--r4-panel-hue); }
+
+/* The line every card carries. Small, permanent, not dismissible. */
+.r4-provenance {
+  font-size: var(--t-meta); color: var(--muted);
+  margin-top: 11px; padding-top: 9px; border-top: 1px solid var(--border);
+  line-height: 1.45;
+}
+
+.r4-basis { font-size: var(--t-meta); color: var(--muted); margin-top: 6px; line-height: 1.45; }
+.r4-parts { list-style: none; padding: 0; margin: 7px 0 0; }
+.r4-parts li {
+  font-size: var(--t-meta); color: var(--text-2, var(--muted));
+  padding: 4px 0; border-top: 1px solid var(--border); line-height: 1.4;
+}
+.r4-parts li:first-child { border-top: 0; }
+.r4-parts b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ── the review table ────────────────────────────────────────────────────── */
+.r4-rows { display: flex; flex-direction: column; gap: 6px; }
+.r4-row {
+  border: 1px solid var(--border); border-radius: 9px;
+  padding: 9px 10px; background: var(--surface);
+  font-size: var(--t-meta);
+}
+.r4-row[data-decision="skip"]    { opacity: .62; }
+.r4-row[data-decision="pending"] { border-color: var(--amber); background: var(--amber-bg); }
+.r4-row[data-status="written"]   { border-color: var(--green); background: var(--green-bg); }
+.r4-row[data-status="failed"]    { border-color: var(--red);   background: var(--red-bg); }
+.r4-row-name { font-weight: 700; color: var(--text); font-size: var(--t-second); }
+.r4-row-sub  { color: var(--muted); margin-top: 2px; }
+.r4-row-issue { color: var(--red-text); margin-top: 4px; }
+.r4-row-dup   { color: var(--amber-text); margin-top: 4px; }
+.r4-row-acts { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+.r4-chip {
+  border: 1px solid var(--border); background: var(--surface-2);
+  border-radius: 999px; padding: 3px 9px; cursor: pointer;
+  font-size: var(--t-meta); font-weight: 600; color: var(--text);
+}
+.r4-chip:hover { border-color: var(--accent); }
+.r4-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.r4-chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+
+.r4-mapline {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: var(--t-meta); color: var(--muted); padding: 3px 0;
+}
+.r4-mapline b { color: var(--text); }
+.r4-maparrow { color: var(--r4-panel-hue); }
+.r4-mapline[data-uncertain="true"] { color: var(--amber-text); }
+
+/* ── responsive ──────────────────────────────────────────────────────────── */
+
+/* Tablet: smaller orbs, same arrangement. */
+@media (max-width: 1023px) {
+  :root { --r4-orb: 50px; --r4-orb-gap: 12px; --r4-dock-inset-x: 18px; }
+}
+
+/* Mobile: the bottom nav owns the bottom 60px and it is the PRIMARY
+   navigation. The dock lifts clear of it plus the safe area, so an orb can
+   never sit on top of a nav item. */
+@media (max-width: 767px) {
+  :root {
+    --r4-orb: 46px;
+    --r4-orb-gap: 10px;
+    --r4-dock-inset-x: 14px;
+    --r4-dock-inset-y: calc(60px + 14px + env(safe-area-inset-bottom, 0px));
+  }
+  .r4-orb svg { width: 21px; height: 21px; }
+  /* The panel goes near-full-width and is anchored from the TOP rather than
+     measured up from the dock: on a short viewport with the keyboard open,
+     measuring from the bottom collapses it to nothing.
+
+     THE BOTTOM EDGE MUST CLEAR THE WHOLE DOCK, NOT ONE ORB. This first read
+     `var(--r4-orb) + 12px`, which is the height of a single orb — so on a
+     390px viewport the panel's lower edge landed at 132px while the dock ran
+     from 74px to 176px, and the panel sat on top of the Asha orb. It was not
+     a visual nuisance: the orb became unclickable, because the panel was over
+     it intercepting the pointer. Two orbs plus the gap between them, the same
+     arithmetic the desktop rule uses. */
+  .r4-panel {
+    left: 10px; right: 10px; width: auto; max-width: none;
+    top: calc(56px + env(safe-area-inset-top, 0px));
+    bottom: calc(var(--r4-dock-inset-y) + (var(--r4-orb) * 2) + var(--r4-orb-gap) + 12px);
+    max-height: none;
+  }
+  /* A hover label on a touch device only ever appears mid-tap. */
+  .r4-orb-label { display: none; }
+}
+
+/* A short landscape phone has no room for both. The nav wins: it is the
+   primary navigation, and §6 says the agents must never block it. */
+@media (max-height: 420px) and (max-width: 900px) {
+  .r4-dock { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .r4-orb,
+  .r4-orb[data-state="idle"],
+  .r4-state-dot { animation: none !important; }
+  .r4-orb, .r4-orb-label, .r4-suggest, .r4-drop, .r4-dock { transition: none; }
+  /* Busy must still be VISIBLE without motion, or the only cue that an agent
+     is working is one this user has switched off. The ring stays, static, as
+     a complete circle in the agent's hue. */
+  .r4-orb[data-state="busy"]::after {
+    animation: none !important;
+    border-right-color: var(--r4-hue-2);
+    border-bottom-color: var(--r4-hue-2);
+    opacity: .55;
+  }
+}

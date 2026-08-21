@@ -12,10 +12,12 @@
     "test:auth-contract": "node test/auth-contract.js",
     "test:ui-contract": "node test/ui-contract.js",
     "test:negative-ui": "node test/negative-control-ui.js",
-    "test": "npm run test:gate3 && npm run test:gate3-negative && npm run test:auth-guard && npm run test:auth-contract && npm run test:ui-contract && npm run test:negative-ui && npm run test:fetch-contract && npm run test:gao-contract && npm run test:no-fallbacks",
+    "test": "node test/run-all.js",
     "test:no-fallbacks": "node test/no-new-fallbacks.js && node test/no-fallbacks-tree.js",
     "test:fetch-contract": "node test/fetch-contract.js",
-    "test:gao-contract": "node test/gao-contract.js"
+    "test:gao-contract": "node test/gao-contract.js",
+    "test:legacy": "npm run test:gate3 && npm run test:gate3-negative && npm run test:auth-guard && npm run test:auth-contract && npm run test:ui-contract && npm run test:negative-ui && npm run test:fetch-contract && npm run test:gao-contract && npm run test:no-fallbacks",
+    "test:generation-extraction": "node test/generation-extraction.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

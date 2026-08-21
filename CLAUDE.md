@@ -83,9 +83,27 @@ strength). If Groq rate-limits or pulls this model:
    qwen gate — gpt-oss-120b will run without those params automatically,
    no manual toggle needed.
 
-The single source of truth for the model in this repo is `server.js (GROQ_MODEL)`.
-Nothing else may read `process.env.GROQ_MODEL` directly — import the exported
-constant instead, so one env var still switches every call site.
+The single source of truth for the model in this repo is
+**`helpers/groq.js (GROQ_MODEL)`**. Nothing else may read
+`process.env.GROQ_MODEL` directly — import the exported constant instead, so
+one env var still switches every call site.
+
+**Moved from `server.js` in Round 1.** The rule is unchanged; what changed is
+which file holds the one reader. While it lived in `server.js`, nothing could
+be extracted out of `server.js` without a require cycle back to it — which is
+what blocked splitting the generation layer into a file a lane could own.
+Eight of the nine platforms in the ecosystem already resolve the model in
+`helpers/groq.js` or `lib/groq.js`; this repo was the outlier, and the outlier
+was the obstacle. Note that `Modus-Agent-OS/context/ecosystem-context.md` still
+lists this platform as resolving at `server.js:488` — that table is in another
+repo and was not edited from here; it is stale by one file path.
+
+`helpers/groq.js` also owns `normaliseModel()`, the `reasoning_effort` gate,
+and `chat()`, the single wire call. Before Round 1 there were three separate
+`fetch` calls to Groq in `server.js` and one of them (the PR GEO score) called
+a local `withReasoning()` — extracting that helper without moving the call
+site would have left a `ReferenceError` firing inside a `try/catch` that
+reported it to users as "GEO score unavailable".
 
 **Tools-specific caveat:** `POST /api/chat` lets an API-key holder name a model,
 and `normaliseModel()` only rewrites *known-dead* names — anything else is
