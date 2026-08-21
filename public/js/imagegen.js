@@ -8,7 +8,7 @@
    door. This is the front door.
 
    ╔═════════════════════════════════════════════════════════════════════════╗
-   ║  CONTRACT — the same one genlang.js uses, deliberately                  ║
+   ║  CONTRACT A — the drop-in panel, the same one genlang.js uses           ║
    ╠═════════════════════════════════════════════════════════════════════════╣
    ║  1. Load it, anywhere, deferred:                                        ║
    ║       <script src="/js/imagegen.js" defer></script>                     ║
@@ -20,6 +20,33 @@
    ║  re-render is picked up by the MutationObserver.                        ║
    ╚═════════════════════════════════════════════════════════════════════════╝
 
+   ╔═════════════════════════════════════════════════════════════════════════╗
+   ║  CONTRACT B — window.ImageGen, for a page that owns its own controls    ║
+   ╠═════════════════════════════════════════════════════════════════════════╣
+   ║  ImageGen.ready()   → Promise, resolves to the options object or null   ║
+   ║  ImageGen.options() → that object once ready() has resolved             ║
+   ║  ImageGen.error()   → why it is not usable, in a sentence, or null      ║
+   ║  ImageGen.sizes()   → [{value,label,isDefault}], normalised             ║
+   ║  ImageGen.generate({prompt,size,lang})                                  ║
+   ║        → Promise<{ok:true, image} | {ok:false, message, status}>        ║
+   ║          It REJECTS only when the request never reached the server.     ║
+   ╚═════════════════════════════════════════════════════════════════════════╝
+
+   ── WHY CONTRACT B EXISTS ─────────────────────────────────────────────────
+   A blank prompt box under a form is the wrong control for a feature whose
+   image is part of one specific deliverable. public/social.html's Social
+   Media Posts tool derives the image prompt from the topic, platform and tone
+   the user has already filled in, picks the aspect from the platform, and
+   puts the result beside the posts. That is page-specific business policy and
+   it belongs on the page.
+
+   What must NOT be page-specific is the transport, the option catalogue and
+   the sentences a failure is reported with — an image path that reports a
+   quota refusal one way here and another way there is two things that drift.
+   So those live once, here, and the page reaches them through window.ImageGen.
+   Contract A's own panel goes through the same three functions; there is no
+   second implementation to keep in step.
+
    ── SCOPE: GENERATE ONLY, AND THAT IS A DECISION ──────────────────────────
    Prompt, size, generate, show the result. No gallery, no history browser.
    Past images remain reachable through GET /api/images, and the honest
@@ -30,9 +57,16 @@
    It never sends brand assets. The API supports an explicit brand-asset
    opt-in, and the rule from the spec is that a user's uploaded material only
    travels when they initiated that specific action. A checkbox tucked under a
-   prompt box is not that, so this panel does not offer one at all, and
-   `used_brand_asset` stays false on everything it creates. Wiring that flow
-   needs a real consent surface, and it is DEFERRED rather than faked.
+   prompt box is not that, so neither contract offers one, and
+   `used_brand_asset` stays false on everything either creates. Wiring that
+   flow needs a real consent surface, and it is DEFERRED rather than faked.
+
+   It also never sends a negative prompt the user cannot see. The API accepts
+   one, and "no text, no watermark" is genuinely the right guidance for a
+   social image — so social.html writes that guidance into the VISIBLE,
+   editable prompt instead. The prompt stored against the image is then the
+   prompt the user read, which is the same invariant lib/image keeps on the
+   server side when it stores the composed prompt rather than the raw one.
 
    ── STYLING ───────────────────────────────────────────────────────────────
    Every colour resolves through a design-system token — var(--accent),
@@ -47,9 +81,10 @@
   'use strict';
 
   var STYLE_ID = 'imagegen-style';
-  var mounted = [];          // every panel on the page
+  var mounted = [];          // every Contract-A panel on the page
   var options = null;        // GET /api/images/options, fetched once
-  var optionsError = null;
+  var optionsError = null;   // why it is not usable, in a sentence
+  var optionsPromise = null; // the ONE in-flight fetch, shared by every caller
 
   /* ── styles ──────────────────────────────────────────────────────────────
      Injected once. Scoped under .igen- so nothing here can reach a page's own
@@ -97,13 +132,13 @@
     return n;
   }
 
-  /* ── the API ─────────────────────────────────────────────────────────────*/
+  /* ══ THE SHARED SURFACE ═══════════════════════════════════════════════════
+     Everything from here to CONTRACT A is what both contracts go through. */
 
   /* Read the response as text and parse it here.
-     `.json().catch(() => ({}))` would turn an HTML proxy error page into an
-     empty object, and on this endpoint an empty object reads as "generated
-     nothing successfully" — a false statement about the product built out of
-     a transport failure. */
+     Handing an unparseable body back as an empty object would turn an HTML
+     proxy error page into "generated nothing successfully" — a false
+     statement about the product, built out of a transport failure. */
   function call(method, url, body) {
     return fetch(url, {
       method: method,
@@ -119,21 +154,139 @@
     });
   }
 
-  function loadOptions() {
-    return call('GET', '/api/images/options').then(function (r) {
-      if (r.ok && r.data) { options = r.data; return options; }
-      // 401 is not a fault — it means signed out. Say which.
+  /**
+   * GET /api/images/options, once per page load, shared by every caller.
+   * Resolves to the options object, or to null with `optionsError` set to a
+   * sentence saying why. It never rejects — a page asking "may I offer this
+   * control at all" needs an answer, not an exception.
+   */
+  function ensureOptions() {
+    if (optionsPromise) return optionsPromise;
+    optionsPromise = call('GET', '/api/images/options').then(function (r) {
+      if (r.ok && r.data) {
+        options = r.data;
+        optionsError = null;
+        /* `configured` is the server's own word for "this deployment holds a
+           key". A control offered where nothing can generate is a control
+           that fails on click, so the refusal is said up front instead — and
+           in the API's own words, which name text generation as unaffected. */
+        if (r.data.configured === false) {
+          optionsError = 'Image generation is not configured on this deployment. '
+            + 'Text generation is unaffected.';
+        }
+        return options;
+      }
+      /* 401 is not a fault — it means signed out. Say which, in words that
+         name the fix, rather than in the API's word 'unauthorised'.
+
+         Everything else defers to the server's own sentence when it sent one.
+         checkSub answers this route 402 with 'Your subscription has expired.
+         Please renew at /billing.' — an instruction the user can act on — and
+         flattening that into 'unavailable right now' would leave someone
+         staring at a dead control with no idea it is a billing problem. */
       optionsError = r.status === 401
         ? 'Sign in to generate images.'
+        : (r.data && r.data.message) ? r.data.message
         : 'Image generation is unavailable right now.';
       return null;
     }).catch(function () {
       optionsError = 'Cannot reach the image service.';
       return null;
     });
+    return optionsPromise;
   }
 
-  /* ── one panel ───────────────────────────────────────────────────────────*/
+  /**
+   * The legal size catalogue, normalised to {value,label,isDefault}.
+   *
+   * lib/image/sizes.js is the single source of truth for the five values and
+   * derives its own labels from the strings, so nothing here enumerates them
+   * a second time. This only reshapes what the API sent into the one form a
+   * <select> wants — plain strings and {size,label,orientation} objects are
+   * both handled, here, once, rather than at each call site.
+   */
+  function normalisedSizes() {
+    var raw = (options && (options.sizes || options.legalSizes)) || [];
+    return raw.map(function (s) {
+      var value = typeof s === 'string' ? s : (s.size || s.value);
+      var label = typeof s === 'string' ? s : (s.label || s.orientation || s.size);
+      return {
+        value: value,
+        label: label === value ? value : label + ' · ' + value,
+        isDefault: Boolean(options && value === options.defaultSize)
+      };
+    });
+  }
+
+  /**
+   * ONE mapping from a failed response to a sentence a person can act on.
+   *
+   * The API answers with a named reason — image_cap_exceeded,
+   * moderation_refused, unsupported_size, image_generation_unavailable — and
+   * a `message` written for a human, which says things like how much of the
+   * quota is left and whether anything was charged. Those are shown verbatim
+   * because they are the only useful part of the response; a generic
+   * "something went wrong" throws them away. The status lines below are the
+   * last resort, for a response that carried no body at all.
+   */
+  function failureMessage(r) {
+    var d = r.data || {};
+    if (d.message) return d.message;
+    if (d.error) return d.error;
+    if (r.status === 401) return 'Your session expired. Sign in again.';
+    if (r.status === 429) return 'You have reached your image limit for now.';
+    return 'Image generation failed (HTTP ' + r.status + ').';
+  }
+
+  /**
+   * POST /api/images/generate.
+   *
+   * Resolves {ok:true, image} or {ok:false, message, status}. It rejects ONLY
+   * when the request never reached the server, so a caller can tell "the
+   * service said no" from "there is no service" and word the two differently.
+   */
+  function generate(req) {
+    var r = req || {};
+    var body = { prompt: typeof r.prompt === 'string' ? r.prompt : '' };
+    if (r.size) body.size = r.size;
+    if (r.lang) body.lang = r.lang;
+
+    return call('POST', '/api/images/generate', body).then(function (res) {
+      if (!res.ok || !res.data || !res.data.image) {
+        return { ok: false, status: res.status, message: failureMessage(res) };
+      }
+      var img = res.data.image;
+      if (img.status !== 'stored' || !img.url) {
+        /* A row that exists but holds no bytes is not a success. The server
+           normally reports that as a 502 whose message says the provider
+           billed for it and the download did not land; a 201 carrying a
+           non-stored row would be the same fact arriving by a different door,
+           and rendering a broken <img> for it would be worse than saying so. */
+        return {
+          ok: false,
+          status: res.status,
+          image: img,
+          message: 'The image was generated but could not be stored, so there is '
+            + 'nothing to show. It still counted against your quota.'
+        };
+      }
+      return { ok: true, image: img };
+    });
+  }
+
+  /* The public surface. Small on purpose: everything a page needs to offer
+     its own image control, and nothing that would let it build a second
+     transport or a second set of error sentences. */
+  window.ImageGen = {
+    ready: ensureOptions,
+    options: function () { return options; },
+    error: function () { return optionsError; },
+    sizes: normalisedSizes,
+    generate: generate
+  };
+
+  /* ══ CONTRACT A — the drop-in panel ═════════════════════════════════════ */
+
   function build(host) {
     if (host.getAttribute('data-imagegen-ready') === '1') return;
     host.setAttribute('data-imagegen-ready', '1');
@@ -184,21 +337,18 @@
 
     function fillSizes() {
       sel.innerHTML = '';
-      var sizes = (options && (options.sizes || options.legalSizes)) || [];
-      if (!sizes.length) {
+      var list = normalisedSizes();
+      if (!list.length) {
         var o = el('option', null, 'Default size');
         o.value = '';
         sel.appendChild(o);
         return;
       }
-      sizes.forEach(function (s) {
-        // The API returns either plain strings or {size,label} objects.
-        var value = typeof s === 'string' ? s : (s.size || s.value);
-        var label = typeof s === 'string' ? s : (s.label || s.orientation || s.size);
-        var o = el('option', null, label === value ? value : label + ' · ' + value);
-        o.value = value;
-        if (options && value === options.defaultSize) o.selected = true;
-        sel.appendChild(o);
+      list.forEach(function (s) {
+        var opt = el('option', null, s.label);
+        opt.value = s.value;
+        if (s.isDefault) opt.selected = true;
+        sel.appendChild(opt);
       });
     }
 
@@ -216,54 +366,32 @@
       if (!prompt) { say('error', 'Describe the image first.'); ta.focus(); return; }
 
       setBusy(true);
-      call('POST', '/api/images/generate', { prompt: prompt, size: sel.value || undefined })
-        .then(function (r) {
-          setBusy(false);
+      generate({ prompt: prompt, size: sel.value || undefined }).then(function (result) {
+        setBusy(false);
+        if (!result.ok) { say('error', result.message); return; }
 
-          if (!r.ok || !r.data || !r.data.image) {
-            /* Surface what the server actually said. The API answers with a
-               named reason — prompt_refused, cap_exceeded, unsupported_size —
-               and those sentences are written for a person to act on. A
-               generic "something went wrong" would throw away the only useful
-               part of the response. */
-            var d = r.data || {};
-            var text = d.message || d.error ||
-              (r.status === 401 ? 'Your session expired. Sign in again.' :
-               r.status === 429 ? 'You have reached your image limit for now.' :
-               'Image generation failed (HTTP ' + r.status + ').');
-            say('error', text);
-            return;
-          }
+        var img = result.image;
+        var image = new Image();
+        image.alt = prompt.slice(0, 120);
+        image.src = img.url;
+        out.appendChild(image);
 
-          var img = r.data.image;
-          if (img.status !== 'stored' || !img.url) {
-            /* A row that exists but holds no bytes is not a success. The API
-               marks that 'rehost_failed': the provider billed for it and the
-               download did not land. Say so rather than rendering a broken
-               image element. */
-            say('error', 'The image was generated but could not be stored, so there is '
-              + 'nothing to show. It still counted against your quota.');
-            return;
-          }
-
-          var image = new Image();
-          image.alt = prompt.slice(0, 120);
-          image.src = img.url;
-          out.appendChild(image);
-
-          var actions = el('div', 'igen-actions');
-          var open = el('a', null, 'Open full size');
-          open.href = img.url;
-          open.target = '_blank';
-          open.rel = 'noopener';
-          actions.appendChild(open);
-          if (img.size) actions.appendChild(el('span', 'igen-sub', img.size));
-          out.appendChild(actions);
-        })
-        .catch(function () {
-          setBusy(false);
-          say('error', 'Cannot reach the server. Check your connection and try again.');
-        });
+        var actions = el('div', 'igen-actions');
+        var open = el('a', null, 'Open full size');
+        open.href = img.url;
+        open.target = '_blank';
+        open.rel = 'noopener';
+        actions.appendChild(open);
+        if (img.size) actions.appendChild(el('span', 'igen-sub', img.size));
+        out.appendChild(actions);
+      }, function () {
+        /* The second argument to .then, not a trailing .catch: this handler is
+           for a request that never left the machine, and a .catch here would
+           also swallow a bug thrown by the success handler above it and
+           report it to the user as a network problem. */
+        setBusy(false);
+        say('error', 'Cannot reach the server. Check your connection and try again.');
+      });
     });
 
     // Reflect whatever the options call already told us.
@@ -281,7 +409,7 @@
   function start() {
     injectStyle();
     scan();
-    loadOptions().then(function () {
+    ensureOptions().then(function () {
       mounted.forEach(function (m) {
         m.fillSizes();
         if (optionsError) { m.say('error', optionsError); m.btn.disabled = true; }

@@ -69,6 +69,7 @@ const LEGACY = [
      guard is broken — that is only true if they execute. */
   'mutate-fetch.js',
   'mutate-gao.js',
+  'mutate-social-image.js',
 ];
 
 /* The manifest. Each lane's suite is expected once that lane has landed;
@@ -80,6 +81,7 @@ const EXPECTED_LANE_SUITES = {
   'trilingual-test.js': 'Lane C · Trilingual generation (Localization Bar)',
   'image-contract.js': 'Lane D · Image generation',
   'r2-visual-contract.js': 'Lane E · Visual revamp (Visual Bar)',
+  'social-image-contract.js': 'The image option on the Social Media Post tool',
 };
 
 let failed = 0;
@@ -95,7 +97,7 @@ const ran = [];
    tree there is no excuse and a refusal is a failure. The merge gate requires
    a clean, fully-committed branch, so at the moment that matters these always
    execute. */
-const MUTATION_HARNESSES = new Set(['mutate-fetch.js', 'mutate-gao.js']);
+const MUTATION_HARNESSES = new Set(['mutate-fetch.js', 'mutate-gao.js', 'mutate-social-image.js']);
 const TREE_BEFORE = (() => {
   const r = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' });
   return r.status === 0 ? r.stdout : null;   // null = git unreadable, treated as dirty
