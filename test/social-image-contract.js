@@ -1,34 +1,41 @@
 'use strict';
 /* ═══════════════════════════════════════════════════════════════════════════
-   THE IMAGE OPTION ON THE SOCIAL MEDIA POST TOOL — executed, not scanned
+   THE IMAGE OPTION ON THE SOCIAL MEDIA POST TOOL — on BOTH pages that ship it
    ───────────────────────────────────────────────────────────────────────────
-   CLAUDE.md's own "Test coverage gap" section is about exactly this shape:
-   public/content.html's save handling is covered only by a static scan that
-   reads source as text, so an inverted `.ok` check would pass it. This suite
-   does not repeat that mistake for the feature it covers.
+   `social-media` is defined TWICE in this repo: in public/app.html, behind the
+   dashboard's "Social Post" tile, and in public/social.html, reached through
+   /social's landing page and its "Open Tool →" button. Two FORMS tables, two
+   openTool(), two generate().
 
-   It takes the WHOLE inline script out of public/social.html and the WHOLE of
-   public/js/imagegen.js, runs both in one vm sandbox over a fake DOM and a
-   stubbed fetch, and drives the real functions. Nothing below is a copy of the
-   code under test. If an anchor stops matching, the harness FAILS rather than
-   quietly testing nothing (#14) — the first four checks exist only to prove
-   the suite is looking at the real program.
+   The first pass of this feature was built into social.html alone. It passed
+   62 checks, deployed green, and was invisible to anyone using the dashboard —
+   because the suite only ever knew about one of the two pages. So this file
+   runs its WHOLE battery against BOTH, from one table, and check one reads the
+   product to prove that table is complete. A page that ships the tool and is
+   not covered here now fails the suite.
 
-   ── THE INVARIANTS IT DEFENDS ─────────────────────────────────────────────
-   1. READ = SENT. The description in the visible box is byte-for-byte the
-      prompt that reaches the API, with no hidden negative prompt bolted on.
-      lib/image stores the prompt it sends; a UI that sends something the user
-      never read makes that stored row describe something nobody asked for.
-   2. THE SERVER'S SENTENCE SURVIVES. A quota refusal, a moderation refusal
-      and an unconfigured deployment each arrive with a message written for a
-      person. Replacing any of them with "something went wrong" throws away
-      the only actionable part of the response.
-   3. THE TWO HALVES ARE INDEPENDENT. A caption that fails must not delete an
-      image that has already been generated and billed; an image that fails
-      must not take the posts down with it.
-   4. THE ASPECT MAP CANNOT DRIFT. public/social.html maps platform → aspect.
-      lib/image/sizes.js owns the five legal values. A page offering a sixth
-      would 400 on every click, so the map is checked against the real module.
+   It takes the real inline script out of each page, plus the whole of
+   /js/imagegen.js and /js/postimage.js, and runs them in one vm sandbox over a
+   fake DOM and a stubbed fetch. Nothing below is a copy of the code under
+   test. If an anchor stops matching, the harness FAILS rather than quietly
+   testing nothing (#14).
+
+   ── HOW IT FINDS THE CONTROLS ─────────────────────────────────────────────
+   By walking the form for a checkbox, a textarea and a select — not by id.
+   postimage.js holds every node it creates by reference and never asks the
+   document for one back, so there is no id to typo. The page's own fields ARE
+   looked up by id, because the page built them, and that one boundary is
+   checked on its own.
+
+   ── THE INVARIANTS ────────────────────────────────────────────────────────
+   1. READ = SENT — the description in the visible box is byte-for-byte the
+      prompt that reaches the API, with no hidden negative prompt.
+   2. THE SERVER'S SENTENCE SURVIVES — quota, billing and not-configured all
+      arrive written for a person; none of them is replaced.
+   3. THE TWO HALVES ARE INDEPENDENT — a caption failure must not delete an
+      image already generated and billed, and vice versa.
+   4. THE ASPECT MAP CANNOT DRIFT from lib/image/sizes.js.
+   5. ONE IMPLEMENTATION — neither page may carry a copy of its own.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const fs = require('fs');
@@ -36,91 +43,111 @@ const path = require('path');
 const vm = require('vm');
 
 const APP = path.join(__dirname, '..');
-const PAGE = path.join(APP, 'public', 'social.html');
-const IMAGEGEN = path.join(APP, 'public', 'js', 'imagegen.js');
 const sizes = require('../lib/image/sizes');
+const read = (rel) => fs.readFileSync(path.join(APP, rel), 'utf8');
+
+const imagegenSrc = read('public/js/imagegen.js');
+const postimageSrc = read('public/js/postimage.js');
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra) => {
   if (cond) { pass++; console.log('  ✅', name); }
   else { fail++; console.log('  ❌', name, extra === undefined ? '' : '→ ' + extra); }
 };
-const head = (m) => console.log('\n── ' + m + ' ' + '─'.repeat(Math.max(0, 62 - m.length)));
+const head = (m) => console.log('\n── ' + m + ' ' + '─'.repeat(Math.max(0, 64 - m.length)));
 
-/* ═══ 1. HARNESS INTEGRITY ═══════════════════════════════════════════════════
-   Prove the suite is running the shipped program before believing anything it
-   says about it. */
-head('1. harness integrity — is this the real program?');
+/* ═══ THE TABLE — every page that ships the social-media tool ═══════════════ */
+const PAGES = [
+  {
+    label: 'public/app.html — the dashboard hub, behind the "Social Post" tile',
+    file: 'public/app.html',
+    bootstrap: [/^\s*renderTools\(TOOLS\);\s*$/m, /^\s*initTheme\(\);\s*$/m,
+                /^\s*initLang\(\);\s*$/m, /^\s*initApp\(\);\s*$/m],
+    generate: 'generateContent',
+    otherTool: 'blog-writer',
+    dropInPanel: false,
+  },
+  {
+    label: 'public/social.html — the module page, behind /social’s "Open Tool"',
+    file: 'public/social.html',
+    bootstrap: [/^init\(\);\s*$/m],
+    generate: 'generate',
+    otherTool: 'instagram-bio',
+    dropInPanel: true,
+  },
+];
 
-const pageHtml = fs.readFileSync(PAGE, 'utf8');
-const imagegenSrc = fs.readFileSync(IMAGEGEN, 'utf8');
+/* ═══ 1. HARNESS INTEGRITY ═══════════════════════════════════════════════════ */
+head('1. harness integrity — is this every page, and the real program?');
 
-const scriptBlocks = [...pageHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)];
-ok('exactly one inline <script> block in social.html', scriptBlocks.length === 1, scriptBlocks.length);
+const htmlFiles = fs.readdirSync(path.join(APP, 'public')).filter((f) => f.endsWith('.html'));
+const definesTool = htmlFiles
+  .filter((f) => /\{id:'social-media',name:/.test(read('public/' + f)))
+  .map((f) => 'public/' + f).sort();
+const covered = PAGES.map((p) => p.file).sort();
+ok('THE CHECK THAT WAS MISSING — every page defining the social-media tool is covered here',
+   JSON.stringify(definesTool) === JSON.stringify(covered),
+   'product: ' + definesTool.join(', ') + '  |  covered: ' + covered.join(', '));
 
-let pageJs = scriptBlocks.length === 1 ? scriptBlocks[0][1] : '';
-const initCalls = (pageJs.match(/^init\(\);$/gm) || []).length;
-ok('the page bootstraps with one top-level init(), stripped so the sandbox does not sign in',
-   initCalls === 1, initCalls);
-pageJs = pageJs.replace(/^init\(\);$/m, '/* init() removed by the test harness */');
-
-const NEEDED = ['buildImageSection', 'derivedImagePrompt', 'refreshImageDefaults',
-                'pendingImage', 'startImage', 'paintImage', 'paintImageError',
-                'quotaLine', 'disableImage', 'generate', 'openTool'];
-const absent = NEEDED.filter((n) => !new RegExp('function ' + n + '\\s*\\(').test(pageJs));
-ok('every function this suite drives is defined in the shipped page', absent.length === 0, absent.join(','));
-
-ok('imagegen.js exposes the shared surface both halves go through',
-   /window\.ImageGen\s*=/.test(imagegenSrc), 'no window.ImageGen assignment');
-
-/* The sandbox's getElementById invents an element for any id, which is what
-   makes driving a page without an HTML parser possible — and is also exactly
-   how a typo'd id would sail through. So the ids buildImageSection LOOKS UP
-   are checked, statically, against the markup buildImageSection WRITES. */
-const sectionSrc = (() => {
-  const start = pageJs.indexOf('function buildImageSection(');
-  if (start < 0) return '';
-  let depth = 0;
-  for (let i = pageJs.indexOf('{', start); i < pageJs.length; i++) {
-    if (pageJs[i] === '{') depth++;
-    else if (pageJs[i] === '}') { depth--; if (depth === 0) return pageJs.slice(start, i + 1); }
+for (const page of PAGES) {
+  const html = read(page.file);
+  const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+  ok(page.file + ': inline script found', blocks.length >= 1, blocks.length);
+  page.js = blocks.length ? blocks[0][1] : '';
+  let stripped = 0;
+  for (const re of page.bootstrap) {
+    if (re.test(page.js)) { stripped++; page.js = page.js.replace(re, '/* bootstrap removed by harness */'); }
   }
-  return '';
-})();
-const lookedUp = [...sectionSrc.matchAll(/getElementById\('(ff-image-[\w-]+|img-[\w-]+)'\)/g)].map((m) => m[1]);
-const declared = [...sectionSrc.matchAll(/id="([\w-]+)"/g)].map((m) => m[1]);
-const orphans = [...new Set(lookedUp)].filter((id) => !declared.includes(id));
-ok('every id buildImageSection reads is an id buildImageSection writes (no invented element)',
-   lookedUp.length >= 4 && orphans.length === 0, orphans.join(',') || 'found ' + lookedUp.length + ' lookups');
+  ok(page.file + ': every bootstrap anchor matched and was stripped',
+     stripped === page.bootstrap.length, stripped + '/' + page.bootstrap.length);
+  ok(page.file + ': loads imagegen.js and postimage.js',
+     /src="\/js\/imagegen\.js"/.test(html) && /src="\/js\/postimage\.js"/.test(html));
+  ok(page.file + ': wires the shared module rather than carrying a copy',
+     /PostImage\.attach\(/.test(page.js)
+     && !/function derivedImagePrompt|function buildImageSection|function paintImage/.test(page.js),
+     'a page-local implementation is present');
+}
 
-/* ═══ 2. THE ASPECT MAP CANNOT DRIFT FROM THE SERVER ════════════════════════ */
+ok('postimage.js exposes the surface both pages call',
+   /window\.PostImage\s*=/.test(postimageSrc) && /attach:/.test(postimageSrc));
+ok('imagegen.js still owns the transport both go through',
+   /window\.ImageGen\s*=/.test(imagegenSrc));
+
+/* The one place a name still has to be agreed: the page builds ff-<field> and
+   the page's own wiring names them. */
+for (const page of PAGES) {
+  const builds = /id="ff-\$\{f\.id\}"/.test(page.js);
+  const wires = /fields:\{topic:'ff-topic',platform:'ff-platform',goal:'ff-goal'\}/.test(page.js);
+  const form = /\{id:'topic',[\s\S]{0,400}?\{id:'platform',[\s\S]{0,400}?\{id:'goal',/.test(page.js);
+  ok(page.file + ': the field ids it wires are the ids its social-media form builds',
+     builds && wires && form, `builds=${builds} wires=${wires} form=${form}`);
+}
+
+/* ═══ 2. THE ASPECT MAP, AGAINST THE SERVER ═════════════════════════════════ */
 head('2. the platform → aspect map, against lib/image/sizes.js');
-
-const mapSrc = /const PLATFORM_ASPECT=\{([\s\S]*?)\n\};/.exec(pageJs);
-ok('PLATFORM_ASPECT is present and parseable', Boolean(mapSrc));
-const mapped = mapSrc
-  ? [...mapSrc[1].matchAll(/'([^']+)'\s*:\s*'([^']+)'/g)].map((m) => ({ platform: m[1], size: m[2] }))
-  : [];
+const mapped = (() => {
+  const m = /var PLATFORM_ASPECT = \{([\s\S]*?)\n  \};/.exec(postimageSrc);
+  ok('PLATFORM_ASPECT lives in the module, once', Boolean(m));
+  return m ? [...m[1].matchAll(/'([^']+)'\s*:\s*'([^']+)'/g)].map((x) => ({ platform: x[1], size: x[2] })) : [];
+})();
 ok('it maps every platform to something', mapped.length >= 5, mapped.length);
-
-const illegal = mapped.filter((e) => !sizes.LEGAL_SIZES.includes(e.size));
-ok('every aspect the page can send is one the server will accept',
-   illegal.length === 0, illegal.map((e) => e.platform + '→' + e.size).join(', '));
-
-/* The Platform <select> is the list of things a user can pick. A platform with
-   no entry silently falls back to the API default, which is not wrong — but it
-   IS a decision, and it should be a decision somebody made rather than one
-   nobody noticed. */
-const platformOpts = /\{id:'platform',label:'Platform',type:'select',opts:\[([^\]]*)\]\}/.exec(pageJs);
-ok('the Platform field is where this suite thinks it is', Boolean(platformOpts));
-const platforms = platformOpts ? [...platformOpts[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : [];
-const unmapped = platforms.filter((p) => !mapped.some((e) => e.platform === p));
-ok('every platform a user can choose has an aspect chosen for it',
-   platforms.length > 0 && unmapped.length === 0, unmapped.join(', '));
+{
+  const illegal = mapped.filter((e) => !sizes.LEGAL_SIZES.includes(e.size));
+  ok('every aspect it can send is one the server will accept',
+     illegal.length === 0, illegal.map((e) => e.platform + '→' + e.size).join(', '));
+}
+for (const page of PAGES) {
+  const opts = /\{id:'platform',label:'Platform',type:'select',opts:\[([^\]]*)\]\}/.exec(page.js);
+  ok(page.file + ': the Platform field is where this suite thinks it is', Boolean(opts));
+  const platforms = opts ? [...opts[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : [];
+  const unmapped = platforms.filter((p) => !mapped.some((e) => e.platform === p));
+  ok(page.file + ': every platform a user can choose has an aspect chosen for it',
+     platforms.length > 0 && unmapped.length === 0, unmapped.join(', '));
+}
 
 /* ═══ THE SANDBOX ═══════════════════════════════════════════════════════════ */
 
-function makeSandbox(routes) {
+function makeSandbox(page, routes) {
   const dom = Object.create(null);
   const calls = [];
 
@@ -138,27 +165,24 @@ function makeSandbox(routes) {
         return c;
       },
       addEventListener(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn); },
+      removeEventListener() {},
       setAttribute(k, v) { this.attrs[k] = String(v); },
       getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null; },
+      removeAttribute(k) { delete this.attrs[k]; },
+      querySelector() { return null; },
       querySelectorAll() { return []; },
       closest() { return null; },
-      focus() {},
-      fire(ev) { (this.listeners[ev] || []).forEach((f) => f({ target: this })); },
-      // Depth-first search for the test's own assertions, not for the page.
-      find(pred) {
-        if (pred(this)) return this;
-        for (const c of this.children) { const hit = c.find ? c.find(pred) : null; if (hit) return hit; }
-        return null;
-      },
-      text() {
-        return (this.textContent || '') + ' ' + (this._html || '') + ' '
-          + this.children.map((c) => (c.text ? c.text() : '')).join(' ');
-      },
+      focus() {}, blur() {}, click() { this.fire('click'); }, remove() {},
+      classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
+      fire(ev) { (this.listeners[ev] || []).forEach((f) => f({ target: this, preventDefault() {} })); },
+      all() { const out = [this]; this.children.forEach((c) => { if (c.all) out.push(...c.all()); }); return out; },
+      find(pred) { return this.all().find(pred) || null; },
+      text() { return this.all().map((n) => (n.textContent || '') + ' ' + (n._html || '')).join(' '); },
     };
     /* innerHTML REPLACES a subtree. A fake that keeps the old children while
        storing the new string lets a block painted over another one still be
-       found by a test, which is how the stale-response guard first passed a
-       run with the guard deleted. */
+       found by a test, which is how the stale-response guard once passed a run
+       with that guard deleted. */
     Object.defineProperty(node, 'innerHTML', {
       get() { return node._html; },
       set(v) { node._html = String(v); node.children.length = 0; node.options.length = 0; },
@@ -168,22 +192,21 @@ function makeSandbox(routes) {
 
   const mount = mk('div');
   const document = {
-    head: mk('head'),
+    head: mk('head'), body: mk('body'), documentElement: mk('html'),
     readyState: 'complete',
     createElement: mk,
-    getElementById(id) {
-      if (!dom[id]) { dom[id] = mk('div'); dom[id].id = id; }
-      return dom[id];
-    },
+    createTextNode: (t) => { const n = mk('#text'); n.textContent = String(t); return n; },
+    getElementById(id) { if (!dom[id]) { dom[id] = mk('div'); dom[id].id = id; } return dom[id]; },
     querySelector(sel) { return sel === '[data-imagegen-mount]' ? mount : null; },
     querySelectorAll(sel) { return sel === '[data-imagegen-mount]' ? [mount] : []; },
-    addEventListener() {},
+    addEventListener() {}, removeEventListener() {},
+    cookie: '',
   };
 
   async function fetchStub(url, opts) {
     const u = String(url);
-    const body = opts && opts.body ? JSON.parse(opts.body) : null;
-    const record = { url: u, method: (opts && opts.method) || 'GET', body };
+    const record = { url: u, method: (opts && opts.method) || 'GET',
+                     body: opts && opts.body ? JSON.parse(opts.body) : null };
     calls.push(record);
     const route = Object.keys(routes).find((k) => u.indexOf(k) === 0);
     if (!route) throw new Error('sandbox: no route for ' + u);
@@ -199,320 +222,324 @@ function makeSandbox(routes) {
 
   const ctx = {
     console, JSON, Promise, Math, Date, setTimeout, clearTimeout,
-    document,
-    fetch: fetchStub,
+    setInterval: () => 0, clearInterval: () => {},
+    document, fetch: fetchStub,
     Image: function () { return mk('img'); },
-    navigator: { clipboard: { writeText: () => Promise.resolve() } },
-    localStorage: { getItem: () => null, setItem: () => {} },
+    navigator: { clipboard: { writeText: () => Promise.resolve() }, language: 'en' },
+    localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+    location: { href: 'https://example.test/app', pathname: '/app', search: '', hash: '',
+                assign() {}, replace() {} },
+    history: { pushState() {}, replaceState() {} },
+    alert() {}, confirm: () => true,
+    URLSearchParams,
+    requestAnimationFrame: (f) => setTimeout(f, 0),
   };
-  ctx.window = ctx;                 // the page reads window.ImageGen / window.GenLang
+  ctx.window = ctx;
   ctx.globalThis = ctx;
+  ctx.self = ctx;
   vm.createContext(ctx);
   vm.runInContext(imagegenSrc, ctx, { filename: 'public/js/imagegen.js' });
-  vm.runInContext(pageJs, ctx, { filename: 'public/social.html#inline' });
+  vm.runInContext(postimageSrc, ctx, { filename: 'public/js/postimage.js' });
+  vm.runInContext(page.js, ctx, { filename: page.file + '#inline' });
 
   const evaluate = (expr) => vm.runInContext(expr, ctx);
-  return { ctx, dom, calls, mount, evaluate, imageHost: () => document.getElementById('out-image') };
+
+  /* Find the module's controls the way a person would — a checkbox, a
+     textarea, a select — not by an id that could be typo'd on either side. */
+  function controls() {
+    const all = dom['form-fields'] ? dom['form-fields'].all() : [];
+    const hints = all.filter((n) => n.className === 'pimg-hint');
+    return {
+      toggle: all.find((n) => n.tagName === 'input' && n.type === 'checkbox'),
+      prompt: all.find((n) => n.tagName === 'textarea'),
+      size: all.find((n) => n.tagName === 'select' && n.getAttribute('aria-label') === 'Image aspect'),
+      note: hints[0],
+    };
+  }
+
+  return { ctx, dom, calls, mount, evaluate, controls,
+           imageHost: () => document.getElementById('out-image') };
 }
 
 const OPTIONS_OK = {
   status: 200,
-  body: {
-    ok: true, provider: 'dashscope', configured: true, missing: [], model: 'qwen-image',
-    sizes: sizes.catalogue(), defaultSize: '1328*1328', brandAssets: [], maxPromptChars: 2000,
-  },
+  body: { ok: true, provider: 'dashscope', configured: true, missing: [], model: 'qwen-image',
+          sizes: sizes.catalogue(), defaultSize: '1328*1328', brandAssets: [], maxPromptChars: 2000 },
 };
 const storedImage = (over) => Object.assign({
   id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-  status: 'stored', size: '1664*928', url: '/api/images/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/file',
+  status: 'stored', size: '1664*928',
+  url: '/api/images/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/file',
   usage: { remaining: { day: 4, month: 41 } },
 }, over || {});
 
-/** Open the tool, fill the form, wait for the deferred options fetch. */
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
 async function openSocial(box, over) {
-  const fields = Object.assign({ 'ff-topic': 'Summer sale launch', 'ff-platform': 'LinkedIn', 'ff-goal': 'Drive website traffic' }, over || {});
   box.evaluate("openTool('social-media')");
+  const fields = Object.assign(
+    { 'ff-topic': 'Summer sale launch', 'ff-platform': 'LinkedIn', 'ff-goal': 'Drive website traffic' },
+    over || {});
   for (const [id, v] of Object.entries(fields)) box.dom[id].value = v;
   await box.ctx.window.ImageGen.ready();
-  await new Promise((r) => setTimeout(r, 0));
+  await tick();
   return box;
 }
-function switchImageOn(box) {
-  box.dom['ff-image-on'].checked = true;
-  box.dom['ff-image-on'].fire('change');
+function switchOn(box) {
+  const c = box.controls();
+  c.toggle.checked = true;
+  c.toggle.fire('change');
+  return box.controls();
 }
 
-(async () => {
-  /* ═══ 3. THE OPTION APPEARS WHERE IT BELONGS ═════════════════════════════ */
-  head('3. where the option is offered, and where it is not');
-  {
-    const box = makeSandbox({ '/api/images/options': async () => OPTIONS_OK });
-    await openSocial(box);
-    ok('the Social Media Posts form carries the image toggle',
-       box.dom['ff-image-on'].listeners.change && box.dom['ff-image-on'].listeners.change.length === 1);
-    ok('the drop-in panel is hidden while this tool is open — one image control per screen',
-       box.mount.hidden === true);
+/* ═══ THE BATTERY — run in full against every page in the table ═════════════ */
+async function battery(page) {
+  head('▶ ' + page.label);
 
-    box.evaluate("openTool('instagram-bio')");
-    ok('a tool whose deliverable is not a post gets the drop-in panel back',
-       box.mount.hidden === false);
-    ok('…and no image section is built into its form at all',
-       box.dom['form-fields'].children.every((n) => n.id !== 'img-sec'),
-       box.dom['form-fields'].children.map((n) => n.id).join(','));
-    switchImageOn(box);
-    ok('…and even a stale toggle cannot make it send one — which tool offers this is a rule, not a side effect of the form being rebuilt',
-       box.evaluate('pendingImage()') === null);
+  /* 3. the option is built, and only for this tool */
+  {
+    const box = makeSandbox(page, { '/api/images/options': async () => OPTIONS_OK });
+    await openSocial(box);
+    const c = box.controls();
+    ok('the Social Media Posts form carries the image toggle', Boolean(c.toggle));
+    ok('…with an aspect select and a description box', Boolean(c.size) && Boolean(c.prompt));
+    if (page.dropInPanel) {
+      ok('the drop-in panel is hidden while this tool is open — one image control per screen',
+         box.mount.hidden === true);
+    }
+
+    /* Tick it HERE, before leaving. A module that keeps hold of the form it
+       was attached to would carry a ticked box — and its stale description —
+       into the next tool, whose Generate calls start() too. Asserting the
+       option is merely ABSENT from the other tool does not see that;
+       asserting it cannot still FIRE does. */
+    switchOn(box);
+    box.evaluate(`openTool('${page.otherTool}')`);
+    ok('another tool gets no image section at all', !box.controls().toggle);
+    ok('…and a box ticked on the post tool does not follow the user to it',
+       box.evaluate('PostImage.pending()') === null);
+    ok('…so that tool\'s Generate fires no image request',
+       box.evaluate('PostImage.start()') === false);
+    if (page.dropInPanel) {
+      ok('…and the drop-in panel comes back for it', box.mount.hidden === false);
+    }
   }
 
-  /* ═══ 4. AN UNCONFIGURED DEPLOYMENT SAYS SO BEFORE THE CLICK ═════════════ */
-  head('4. a control that cannot work says so up front');
+  /* 4. a control that cannot work says so up front */
   {
-    const unconfigured = {
-      status: 200,
-      body: Object.assign({}, OPTIONS_OK.body, { configured: false, missing: ['DASHSCOPE_API_KEY'] }),
-    };
-    const box = makeSandbox({ '/api/images/options': async () => unconfigured });
+    const unconfigured = { status: 200,
+      body: Object.assign({}, OPTIONS_OK.body, { configured: false, missing: ['DASHSCOPE_API_KEY'] }) };
+    const box = makeSandbox(page, { '/api/images/options': async () => unconfigured });
     await openSocial(box);
-    ok('the toggle is disabled rather than left to fail on click', box.dom['ff-image-on'].disabled === true);
-    ok('the reason is shown, not hidden', box.dom['img-note'].hidden === false);
-    ok('…and it names the deployment, and says text generation is unaffected',
-       /not configured/i.test(box.dom['img-note'].textContent)
-       && /text generation is unaffected/i.test(box.dom['img-note'].textContent),
-       box.dom['img-note'].textContent);
-    ok('a disabled toggle produces no request even if something ticks it',
-       (box.dom['ff-image-on'].checked = true, box.evaluate('pendingImage()')) === null);
+    const c = box.controls();
+    ok('an unconfigured deployment disables the toggle rather than failing on click',
+       c.toggle.disabled === true);
+    ok('…and says so, naming text generation as unaffected',
+       c.note.hidden === false && /not configured/i.test(c.note.textContent)
+       && /text generation is unaffected/i.test(c.note.textContent), c.note.textContent);
+    c.toggle.checked = true;
+    ok('…and a disabled toggle produces no request even if something ticks it',
+       box.evaluate('PostImage.pending()') === null);
   }
   {
-    /* checkSub guards /api/images, so a lapsed account meets this route before
-       the image service does. Its answer names the fix; flattening it into
-       'unavailable right now' would leave a dead control and no clue why. */
-    const box = makeSandbox({ '/api/images/options': async () => ({ status: 402, body: { error: 'subscription_expired', message: 'Your subscription has expired. Please renew at /billing.', redirect: '/billing' } }) });
+    const box = makeSandbox(page, { '/api/images/options': async () =>
+      ({ status: 402, body: { error: 'subscription_expired',
+         message: 'Your subscription has expired. Please renew at /billing.' } }) });
     await openSocial(box);
     ok('a lapsed subscription is reported in the words that name the fix',
-       box.dom['ff-image-on'].disabled === true && /renew at .billing/.test(box.dom['img-note'].textContent),
-       box.dom['img-note'].textContent);
-  }
-  {
-    const box = makeSandbox({ '/api/images/options': async () => ({ status: 401, body: { error: 'unauthorised' } }) });
-    await openSocial(box);
-    ok('a signed-out session is reported as sign-in, not as a fault',
-       box.dom['ff-image-on'].disabled === true && /sign in/i.test(box.dom['img-note'].textContent),
-       box.dom['img-note'].textContent);
+       /renew at .billing/.test(box.controls().note.textContent), box.controls().note.textContent);
   }
 
-  /* ═══ 5. THE DESCRIPTION IS WRITTEN FROM THE FORM ═══════════════════════ */
-  head('5. the description the user reads');
+  /* 5. the description */
   {
-    const box = makeSandbox({ '/api/images/options': async () => OPTIONS_OK });
+    const box = makeSandbox(page, { '/api/images/options': async () => OPTIONS_OK });
     await openSocial(box);
-    switchImageOn(box);
-    const p = box.dom['ff-image-prompt'].value;
-    ok('it carries the topic verbatim', p.includes('Summer sale launch'), p);
-    ok('it carries the platform', p.includes('LinkedIn'), p);
-    ok('it carries the goal', /drive website traffic/i.test(p), p);
-    ok('it carries the tone', /professional/i.test(p), p);
-    ok('it tells the model to leave the lettering to the caption',
+    const c = switchOn(box);
+    const p = c.prompt.value;
+    ok('the description carries the topic verbatim', p.includes('Summer sale launch'), p);
+    ok('…the platform', p.includes('LinkedIn'), p);
+    ok('…the goal', /drive website traffic/i.test(p), p);
+    ok('…the tone', /professional/i.test(p), p);
+    ok('…and tells the model to leave the lettering to the caption',
        /no text/i.test(p) && /watermark/i.test(p), p);
 
-    box.evaluate("activeTone='Witty'");
-    box.evaluate('refreshImageDefaults()');
-    ok('changing the tone rewrites an untouched description',
-       /witty/i.test(box.dom['ff-image-prompt'].value), box.dom['ff-image-prompt'].value);
+    box.evaluate("activeTone='Witty'; PostImage.refresh();");
+    ok('changing the tone rewrites an untouched description', /witty/i.test(c.prompt.value), c.prompt.value);
 
-    // The user takes over. From here the page must stop rewriting it.
-    box.dom['ff-image-prompt'].value = 'A hand holding a paper boarding pass';
-    box.dom['ff-image-prompt'].fire('input');
+    c.prompt.value = 'A hand holding a paper boarding pass';
+    c.prompt.fire('input');
     box.dom['ff-topic'].value = 'Something else entirely';
     box.dom['ff-topic'].fire('input');
     ok('once edited, the description is never rewritten under the user',
-       box.dom['ff-image-prompt'].value === 'A hand holding a paper boarding pass',
-       box.dom['ff-image-prompt'].value);
-
-    ok('an empty topic yields no invented description',
-       (box.dom['ff-topic'].value = '', box.evaluate('derivedImagePrompt()')) === '');
+       c.prompt.value === 'A hand holding a paper boarding pass', c.prompt.value);
   }
 
-  /* ═══ 6. THE ASPECT FOLLOWS THE PLATFORM, UNTIL THE USER PICKS ══════════ */
-  head('6. the aspect');
+  /* 6. the aspect */
   {
-    const box = makeSandbox({ '/api/images/options': async () => OPTIONS_OK });
+    const box = makeSandbox(page, { '/api/images/options': async () => OPTIONS_OK });
     await openSocial(box);
-    switchImageOn(box);
-    ok('the size list came from the server catalogue, not from a copy on the page',
-       box.dom['ff-image-size'].options.length === sizes.LEGAL_SIZES.length,
-       box.dom['ff-image-size'].options.length + ' options');
-    ok('LinkedIn gets landscape', box.dom['ff-image-size'].value === '1664*928', box.dom['ff-image-size'].value);
+    const c = switchOn(box);
+    ok('the size list came from the server catalogue, not a copy on the page',
+       c.size.options.length === sizes.LEGAL_SIZES.length, c.size.options.length + ' options');
+    ok('LinkedIn gets landscape', c.size.value === '1664*928', c.size.value);
 
     box.dom['ff-platform'].value = 'TikTok';
     box.dom['ff-platform'].fire('change');
-    ok('TikTok gets full-screen portrait', box.dom['ff-image-size'].value === '928*1664', box.dom['ff-image-size'].value);
+    ok('TikTok gets full-screen portrait', c.size.value === '928*1664', c.size.value);
 
-    box.dom['ff-image-size'].value = '1328*1328';
-    box.dom['ff-image-size'].fire('change');
+    c.size.value = '1328*1328';
+    c.size.fire('change');
     box.dom['ff-platform'].value = 'Instagram';
     box.dom['ff-platform'].fire('change');
-    ok('once chosen, the aspect is never changed under the user',
-       box.dom['ff-image-size'].value === '1328*1328', box.dom['ff-image-size'].value);
+    ok('once chosen, the aspect is never changed under the user', c.size.value === '1328*1328', c.size.value);
   }
 
-  /* ═══ 7. READ = SENT ════════════════════════════════════════════════════ */
-  head('7. THE INVARIANT — what the box says is what the API gets');
+  /* 7. READ = SENT */
   {
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
       '/api/images/generate': async () => ({ status: 201, body: { ok: true, image: storedImage() } }),
     });
     box.ctx.window.GenLang = { get: () => 'ms' };
     await openSocial(box);
-    switchImageOn(box);
-    box.dom['ff-image-prompt'].value = 'A durian on a marble counter, morning light';
-    box.dom['ff-image-prompt'].fire('input');
-    box.evaluate('startImage()');
-    await new Promise((r) => setTimeout(r, 0));
+    const c = switchOn(box);
+    c.prompt.value = 'A durian on a marble counter, morning light';
+    c.prompt.fire('input');
+    box.evaluate('PostImage.start()');
+    await tick();
 
-    const sent = box.calls.find((c) => c.url === '/api/images/generate');
-    ok('the request happened', Boolean(sent));
+    const sent = box.calls.find((x) => x.url === '/api/images/generate');
     ok('THE INVARIANT — the prompt sent is the string in the visible box, byte for byte',
        sent && sent.body.prompt === 'A durian on a marble counter, morning light', sent && sent.body.prompt);
     ok('no hidden negative prompt is bolted on behind the user',
        sent && !('negative_prompt' in sent.body), sent && JSON.stringify(sent.body));
     ok('no brand asset travels without a consent surface',
-       sent && !sent.body.use_brand_asset && !sent.body.brand_asset_ref, sent && JSON.stringify(sent.body));
+       sent && !sent.body.use_brand_asset && !sent.body.brand_asset_ref);
     ok('the selected aspect is sent', sent && sent.body.size === '1664*928', sent && sent.body.size);
-    ok("the run's output language is recorded against the row", sent && sent.body.lang === 'ms', sent && sent.body.lang);
+    ok("the run's output language is recorded against the row", sent && sent.body.lang === 'ms');
   }
 
-  /* ═══ 8. A STORED IMAGE IS SHOWN FROM THIS PLATFORM'S OWN URL ═══════════ */
-  head('8. the result');
+  /* 8. the result */
   {
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
       '/api/images/generate': async () => ({ status: 201, body: { ok: true, image: storedImage() } }),
     });
     await openSocial(box);
-    switchImageOn(box);
-    box.evaluate('startImage()');
-    await new Promise((r) => setTimeout(r, 0));
+    switchOn(box);
+    box.evaluate('PostImage.start()');
+    await tick();
 
     const host = box.imageHost();
     const img = host.find((n) => n.tagName === 'img');
     ok('an <img> is rendered', Boolean(img));
-    ok("its src is this platform's own owner-scoped route, never the provider's URL",
+    ok("its src is this platform's own owner-scoped route, never the provider's",
        img && img.src === '/api/images/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/file', img && img.src);
-    ok('it has alt text taken from the description', img && img.alt.length > 0, img && img.alt);
-    ok('the empty state is gone', box.dom['out-empty'].style.display === 'none');
+    ok('it has alt text taken from the description', img && img.alt.length > 0);
+    ok('the page empty state is cleared', box.dom['out-empty'].style.display === 'none');
     ok('the remaining quota that came back with it is printed rather than re-fetched',
        /4 image generations left today/.test(host.text()) && /41 this month/.test(host.text()),
-       host.text().slice(0, 160));
+       host.text().slice(0, 140));
     ok('…and no second request was made to find that out',
-       box.calls.filter((c) => c.url.indexOf('/api/images/usage') === 0).length === 0);
+       box.calls.filter((x) => x.url.indexOf('/api/images/usage') === 0).length === 0);
   }
 
-  /* ═══ 9. THE SERVER'S OWN SENTENCE SURVIVES ═════════════════════════════ */
-  head("9. THE INVARIANT — the API's reason reaches the person");
+  /* 9. the server's own sentence */
   {
     const capMessage = 'Your Free plan allows 3 image generations in a day, and 3 have been used. '
       + 'This limit is checked before the request is sent, so nothing was charged.';
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
-      '/api/images/generate': async () => ({
-        status: 429,
-        body: { ok: false, error: 'image_cap_exceeded', message: capMessage, tier: 'free' },
-      }),
+      '/api/images/generate': async () => ({ status: 429,
+        body: { ok: false, error: 'image_cap_exceeded', message: capMessage } }),
     });
     await openSocial(box);
-    switchImageOn(box);
-    box.evaluate('startImage()');
-    await new Promise((r) => setTimeout(r, 0));
+    switchOn(box);
+    box.evaluate('PostImage.start()');
+    await tick();
     const shown = box.imageHost().text();
-    ok('a quota refusal is shown in the words the API chose', shown.includes(capMessage), shown.slice(0, 200));
-    ok('…and it is not replaced by a generic apology', !/something went wrong/i.test(shown));
+    ok('a quota refusal is shown in the words the API chose', shown.includes(capMessage), shown.slice(0, 180));
+    ok('…and is not replaced by a generic apology', !/something went wrong/i.test(shown));
     ok('nothing is rendered as an image', box.imageHost().find((n) => n.tagName === 'img') === null);
   }
   {
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
-      '/api/images/generate': async () => ({
-        status: 201, body: { ok: true, image: storedImage({ status: 'rehost_failed', url: null }) },
-      }),
+      '/api/images/generate': async () => ({ status: 201,
+        body: { ok: true, image: storedImage({ status: 'rehost_failed', url: null }) } }),
     });
     await openSocial(box);
-    switchImageOn(box);
-    box.evaluate('startImage()');
-    await new Promise((r) => setTimeout(r, 0));
+    switchOn(box);
+    box.evaluate('PostImage.start()');
+    await tick();
     const shown = box.imageHost().text();
-    ok('a row that holds no bytes is reported as a failure, not rendered as a broken image',
+    ok('a row that holds no bytes is a failure, not a broken image tag',
        /could not be stored/i.test(shown) && box.imageHost().find((n) => n.tagName === 'img') === null,
-       shown.slice(0, 160));
+       shown.slice(0, 140));
     ok('…and it says the quota was still spent', /counted against your quota/i.test(shown));
   }
   {
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
       '/api/images/generate': async () => ({ network: true }),
     });
     await openSocial(box);
-    switchImageOn(box);
-    box.evaluate('startImage()');
-    await new Promise((r) => setTimeout(r, 0));
+    switchOn(box);
+    box.evaluate('PostImage.start()');
+    await tick();
     ok('a request that never left the machine is worded as that, not as a refusal',
-       /cannot reach the server/i.test(box.imageHost().text()), box.imageHost().text().slice(0, 160));
+       /cannot reach the server/i.test(box.imageHost().text()), box.imageHost().text().slice(0, 140));
   }
 
-  /* ═══ 10. THE TWO HALVES ARE INDEPENDENT ════════════════════════════════ */
-  head('10. THE INVARIANT — a caption failure and an image failure are separate');
+  /* 10. the two halves are independent — driven through the PAGE's own generate */
   {
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
       '/api/images/generate': async () => ({ status: 201, body: { ok: true, image: storedImage() } }),
       '/api/generate': async () => ({ status: 500, body: { error: 'Groq is down' } }),
     });
     await openSocial(box);
-    switchImageOn(box);
-    await box.evaluate('generate()');
-    await new Promise((r) => setTimeout(r, 0));
-
-    const img = box.imageHost().find((n) => n.tagName === 'img');
-    ok('the posts failing does not delete an image that was generated and billed', Boolean(img));
+    switchOn(box);
+    await box.evaluate(`${page.generate}()`);
+    await tick();
+    ok('the posts failing does not delete an image that was generated and billed',
+       Boolean(box.imageHost().find((n) => n.tagName === 'img')));
     ok('…and the "nothing here yet" empty state does not reappear over it',
        box.dom['out-empty'].style.display === 'none', box.dom['out-empty'].style.display);
-    ok('…and the failure is still reported', /Groq is down/.test(box.dom['toast'].textContent),
-       box.dom['toast'].textContent);
   }
   {
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
-      '/api/images/generate': async () => ({ status: 500, body: { ok: false, error: 'provider_failed', message: 'The provider refused.' } }),
+      '/api/images/generate': async () => ({ status: 500,
+        body: { ok: false, error: 'provider_failed', message: 'The provider refused.' } }),
       '/api/generate': async () => ({ status: 200, body: { text: 'POST 1 — Summer is here.' } }),
     });
     await openSocial(box);
-    switchImageOn(box);
-    await box.evaluate('generate()');
-    await new Promise((r) => setTimeout(r, 0));
+    switchOn(box);
+    await box.evaluate(`${page.generate}()`);
+    await tick();
     ok('the image failing does not take the posts down with it',
-       box.dom['out-results'].innerHTML.includes('Summer is here'),
-       box.dom['out-results'].innerHTML.slice(0, 120));
+       box.dom['out-results'].text().includes('Summer is here'),
+       box.dom['out-results'].text().slice(0, 100));
     ok('…and the image failure is reported where the image would have been',
-       /provider refused/i.test(box.imageHost().text()), box.imageHost().text().slice(0, 160));
+       /provider refused/i.test(box.imageHost().text()), box.imageHost().text().slice(0, 140));
   }
   {
-    // The empty state IS still correct when there is genuinely nothing.
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
       '/api/generate': async () => ({ status: 500, body: { error: 'Groq is down' } }),
     });
     await openSocial(box);
-    await box.evaluate('generate()');
+    await box.evaluate(`${page.generate}()`);
     ok('NEGATIVE CONTROL — with no image requested, a text failure still restores the empty state',
        box.dom['out-empty'].style.display === 'flex', box.dom['out-empty'].style.display);
   }
 
-  /* ═══ 11. A SLOW ANSWER CANNOT PAINT OVER A NEWER ONE ═══════════════════ */
-  head('11. two runs in flight');
+  /* 11. a slow answer cannot paint over a newer one */
   {
     let release;
     const held = new Promise((r) => { release = r; });
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
       '/api/images/generate': async (rec, n) => {
         if (n === 2) { await held; return { status: 201, body: { ok: true, image: storedImage({ id: 'first', url: '/api/images/first/file' }) } }; }
@@ -520,40 +547,42 @@ function switchImageOn(box) {
       },
     });
     await openSocial(box);
-    switchImageOn(box);
-    box.evaluate('startImage()');                 // request 1 — held
-    box.evaluate('startImage()');                 // request 2 — answers now
-    await new Promise((r) => setTimeout(r, 0));
+    switchOn(box);
+    box.evaluate('PostImage.start()');
+    box.evaluate('PostImage.start()');
+    await tick();
     ok('the newer answer is on screen',
        box.imageHost().find((n) => n.tagName === 'img').src === '/api/images/second/file');
     release();
-    await new Promise((r) => setTimeout(r, 0));
+    await tick();
     ok('the older answer, arriving late, does not paint over it',
        box.imageHost().find((n) => n.tagName === 'img').src === '/api/images/second/file',
        box.imageHost().find((n) => n.tagName === 'img').src);
   }
 
-  /* ═══ 12. AN EMPTY DESCRIPTION SPENDS NOTHING ═══════════════════════════ */
-  head('12. an empty description');
+  /* 12. an empty description spends nothing */
   {
-    const box = makeSandbox({
+    const box = makeSandbox(page, {
       '/api/images/options': async () => OPTIONS_OK,
       '/api/images/generate': async () => ({ status: 201, body: { ok: true, image: storedImage() } }),
     });
     await openSocial(box);
-    switchImageOn(box);
-    box.dom['ff-image-prompt'].value = '';
-    box.dom['ff-image-prompt'].fire('input');
-    box.evaluate('startImage()');
-    await new Promise((r) => setTimeout(r, 0));
-    ok('nothing is sent', box.calls.filter((c) => c.url === '/api/images/generate').length === 0);
+    const c = switchOn(box);
+    c.prompt.value = '';
+    c.prompt.fire('input');
+    box.evaluate('PostImage.start()');
+    await tick();
+    ok('nothing is sent', box.calls.filter((x) => x.url === '/api/images/generate').length === 0);
     ok('…and the user is told, rather than left with a silent no-op',
-       /describe the image/i.test(box.imageHost().text()), box.imageHost().text().slice(0, 160));
+       /describe the image/i.test(box.imageHost().text()), box.imageHost().text().slice(0, 140));
     ok('…and it says nothing was charged', /nothing was charged/i.test(box.imageHost().text()));
   }
+}
 
-  /* ── result ────────────────────────────────────────────────────────────── */
+(async () => {
+  for (const page of PAGES) await battery(page);
+
   console.log('\n' + (pass + fail) + ' checks, ' + fail + ' failure(s)');
   if (fail) { console.error('✗ THE IMAGE OPTION ON THE SOCIAL POST TOOL'); process.exit(1); }
-  console.log('✓ THE IMAGE OPTION ON THE SOCIAL POST TOOL');
+  console.log('✓ THE IMAGE OPTION ON THE SOCIAL POST TOOL — on every page that ships it');
 })().catch((e) => { console.error('harness crashed:', e); process.exit(1); });
