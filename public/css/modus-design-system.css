@@ -343,6 +343,36 @@
   --accent-contrast: #ffffff;   /* 8.6:1 on #344889 — WCAG AAA */
 }
 
+[data-platform="pos"] {
+  /* M-EasyPOS AI+ — point of sale, inventory and warehouse.
+
+     #BE185D is a deep rose. It was chosen by MEASURING the ecosystem rather
+     than by taste: every existing accent was converted to HSL and the
+     300–345° magenta band was the only region with nothing in it. Nearest
+     neighbour by hue is campus #DC2626 at 25° away, and the two do not read
+     alike — campus is a pure red, this is magenta-shifted, and at sidebar
+     size that is the difference between "red" and "raspberry".
+
+     Contrast, measured not assumed, because the ecosystem already carries
+     eleven text pairs below 4.5:1 and a new platform should not add a
+     twelfth:
+       #ffffff on #BE185D  — 6.04:1  (button label, WCAG AA at any size)
+       #A21550 on #ffffff  — 7.61:1  (--accent-text on a card, AAA)
+       #F082B3 on #0f1115  — 7.69:1  (dark --accent-text, AAA)
+
+     Rejected: #DB2777 (4.60:1 on white — clears AA by 0.1 and would be the
+     ecosystem's most fragile accent), and #A21CAF fuchsia (better hue
+     separation from campus, but sits 33° from member's violet and the two
+     are harder to tell apart on a dashboard than rose and red are).       */
+  --accent: #BE185D;
+  --accent-2: #9D174D;
+  --accent-bg: rgba(190,24,93,0.08);
+  --accent-glow: rgba(190,24,93,0.20);
+  --accent-light: #FBDDEA;
+  --accent-text: #A21550;       /* 7.6:1 on white — WCAG AAA */
+  --accent-contrast: #ffffff;   /* 6.0:1 on #BE185D — WCAG AA */
+}
+
 /* ── 4. DARK MODE ────────────────────────────────────────────────────── */
 [data-theme="dark"] {
   --bg: #0f172a;
@@ -409,6 +439,7 @@
 [data-theme="dark"][data-platform="esg"]      { --accent-light: rgba(77,124,15,0.22); --accent-text: #6fb316; }
 [data-theme="dark"][data-platform="dgcs"]     { --accent-light: rgba(124,45,18,0.22); --accent-text: #e8815e; }
 [data-theme="dark"][data-platform="migs"]     { --accent-light: rgba(52,72,137,0.22); --accent-text: #899ad2; }
+[data-theme="dark"][data-platform="pos"]      { --accent-light: rgba(190,24,93,0.22); --accent-text: #f082b3; }
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
 *, *::before, *::after {
