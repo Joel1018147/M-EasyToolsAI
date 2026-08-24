@@ -2495,6 +2495,38 @@ tr:hover td { background: var(--bg-soft); }
 .block      { display: block; }
 .hidden     { display: none !important; }
 
+/* The hidden ATTRIBUTE, not the class above.
+
+   The browser's own `[hidden] { display: none }` lives in the UA origin, and
+   EVERY author declaration outranks that origin however weak its selector. So
+   any one of the ~150 rules in this sheet that declares a display — .form-group,
+   .field-error, .auth-tabs, .alert, .modal-footer, .settings-row, .chip-row … —
+   silently defeats it. The element keeps hidden="", `el.hidden` still reads
+   true, and it renders anyway.
+
+   Two measured instances, both shipped:
+
+     #regRoleGroup — the register portal's "I am signing up as" selector, a
+     .form-group{display:flex} that §48's script unhides only when the platform
+     declares more than one self-service role. M-EasyPOS declares none, so the
+     branch never ran and the row rendered 85px tall and required-looking on
+     every POS signup, above the invite-code field people are meant to use.
+
+     .auth-tabs — {display:grid}. showView() sets .auth-tabs.hidden = true on
+     the forgot-password and OTP views; the tabs stayed 44px tall on all
+     thirteen platforms.
+
+   §49 already patched ONE of these per-element (.settings-savebar[hidden],
+   left below and now redundant). A per-element exemption fixes the instance and
+   leaves the bug waiting behind the next hidden component, which is how the two
+   above shipped. So: the rule, not the exemption.
+
+   `!important` because the whole point is to outrank an author `display`; the
+   .hidden class above already uses it for the same reason. Nothing in the
+   ecosystem shows a [hidden] element via inline style.display — verified across
+   all thirteen repos before this landed — so nothing legitimate loses. */
+[hidden]    { display: none !important; }
+
 /* Flex */
 .flex-col       { flex-direction: column; }
 .flex-wrap      { flex-wrap: wrap; }

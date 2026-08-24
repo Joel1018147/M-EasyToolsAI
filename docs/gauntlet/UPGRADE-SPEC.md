@@ -81,7 +81,7 @@ policed. What is not policed is whether any page actually **consumes** it.
 
 ### 0.4 The orange is not a decision this round has to make
 
-`public/css/modus-design-system.css` is byte-identical (md5 `eced11f8…`) across
+`public/css/modus-design-system.css` is byte-identical (md5 `90709d5c…`) across
 M-EasyTools, M-EasyDo, M-EasyMember and the `Modus-Agent-OS/design` master, and
 it already declares:
 
