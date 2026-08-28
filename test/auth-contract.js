@@ -67,7 +67,13 @@ console.log('\n=== §4.1 auth contract ===');
 // ═══ 1. TWO PATHS, ONE HANDLER ══════════════════════════════════════════
 head('two paths, one handler');
 {
-  const REG = /app\.(post|get)\('([^']+)',\s*(?:authLimiter,\s*)?(?:requireAuth(?:JSON)?,\s*)?([A-Za-z_$][\w$]*)\)/g;
+  // previewLock.guardCredentials sits between the limiter and the handler on
+  // the credentialed routes (private preview, layer 2). It is middleware, not a
+  // second handler — what this contract is about, one handler shared by the
+  // canonical and the legacy path, is unchanged. So the pattern admits it
+  // rather than reporting both routes as unregistered, which is what a
+  // structural test should do when structure it does not name is added.
+  const REG = /app\.(post|get)\('([^']+)',\s*(?:authLimiter,\s*)?(?:previewLock\.guardCredentials,\s*)?(?:requireAuth(?:JSON)?,\s*)?([A-Za-z_$][\w$]*)\)/g;
   const mounts = {};
   for (let m; (m = REG.exec(src)) !== null; ) mounts[m[2]] = m[3];
   const seen = Object.keys(mounts).filter((p) => p.includes('auth'));

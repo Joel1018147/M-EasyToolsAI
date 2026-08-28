@@ -61,8 +61,13 @@ const PLANTS = [
     harness: 'test/auth-contract.js',
     file: 'server.js',
     what: 'the canonical /auth/register grows a SECOND handler (the Run 11 defect)',
-    fromExact: "app.post('/auth/register',     authLimiter, handleRegister);",
-    to: "app.post('/auth/register',     authLimiter, handleRegisterV2);",
+    // The line grew previewLock.guardCredentials between the limiter and the
+    // handler (private preview, layer 2). The PLANT is still the handler name —
+    // that is the Run 11 defect this control reproduces — but the anchor has to
+    // match the line as it is now, or the control reports ANCHOR ROTTED and
+    // proves nothing.
+    fromExact: "app.post('/auth/register',     authLimiter, previewLock.guardCredentials, handleRegister);",
+    to: "app.post('/auth/register',     authLimiter, previewLock.guardCredentials, handleRegisterV2);",
   },
   {
     harness: 'test/auth-contract.js',

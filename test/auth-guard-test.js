@@ -87,7 +87,12 @@ console.log('  parsed server.js: requireAuth (' + guard.split('\n').length + ' l
 console.log('  required for real: helpers/wantsJson.js\n');
 
 // eslint-disable-next-line no-new-func
-const requireAuth = new Function('wantsJson', guard + '; return requireAuth;')(wantsJson);
+// requireAuth now closes over previewLock (private-preview layer 3), so the
+// harness has to supply it. The REAL module, not a stub: an unauthenticated
+// request never reaches guardSession, so every assertion below still measures
+// what it always did.
+const previewLock = require('../lib/previewLock');
+const requireAuth = new Function('wantsJson', 'previewLock', guard + '; return requireAuth;')(wantsJson, previewLock);
 // eslint-disable-next-line no-new-func
 const requireAuthJSON = new Function(guardJson + '; return requireAuthJSON;')();
 
@@ -98,6 +103,10 @@ function makeReq({ url = '/', accept = '', xhr = false, authed = false } = {}) {
     originalUrl: url, path: url, xhr,
     headers: { accept: a },
     isAuthenticated: () => authed,
+    // Layer 3 of the private-preview lock reads req.user, so an authenticated
+    // request here carries an ALLOWLISTED address: these assertions are about
+    // html-vs-json negotiation, not about the lock, which has its own suite.
+    user: authed ? { email: previewLock.CODE_ALLOWLIST[0] } : undefined,
     accepts(types) {
       const list = Array.isArray(types) ? types : [types];
       const html = a.includes('text/html');

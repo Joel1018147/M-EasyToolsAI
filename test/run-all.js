@@ -36,6 +36,7 @@ const TEST_DIR = __dirname;
 /* Order matters — these run first and in exactly this sequence, because the
    negative controls assume the harnesses they mutate have already passed. */
 const LEGACY = [
+  'private-preview-test.js',
   'gate3-structure.js',
   'negative-control-gate3.js',
   'auth-guard-test.js',

@@ -33,6 +33,7 @@ const { Resend } = require('resend');
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const EMAIL_FROM = process.env.EMAIL_FROM || 'pr@modusaiassociates.com';
 
+const previewLock = require('./lib/previewLock');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 const GROQ_KEY      = process.env.GROQ_API_KEY;
@@ -314,6 +315,19 @@ passport.deserializeUser(async (id, done) => {
 // ════════════════════════════════════════════════════
 app.set('trust proxy', 1);
 
+const previewLockPublic = require('./lib/previewLock');
+
+// ── Private preview, the public half ─────────────────────────────────────────
+// The landing page asks this whether the lock is on, and rewrites its sign-in
+// buttons into "Request a demo" when it is. It is deliberately public and
+// deliberately uncacheable: it is one boolean, and a cached answer would
+// outlive the change it describes. It reveals nothing — the refusal message
+// it carries is the same one a refused visitor already sees.
+app.get('/preview-state', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ locked: previewLockPublic.isLocked(), message: previewLockPublic.MESSAGE });
+});
+
 app.use(session({
   store: new pgSession({ pool, tableName: 'user_sessions', createTableIfMissing: true }),
   secret: SESSION_SECRET,
@@ -382,8 +396,14 @@ function safeUser(u) {
 // See that module for why the /api/ prefix is the signal and Accept is not.
 const { wantsJson } = require('./helpers/wantsJson');
 
+// PRIVATE PREVIEW, LAYER 3. Every authenticated path goes through requireAuth,
+// so this is the one place that can promise a session belonging to a refused
+// address cannot be used — including sessions that predate the lock and any
+// credential path added later that forgets layers 1 and 2. It destroys the
+// session rather than only refusing, so a signed-in visitor is not left
+// bouncing off every page. See previewLock.js.
 function requireAuth(req, res, next) {
-  if (req.isAuthenticated()) return next();
+  if (req.isAuthenticated()) return previewLock.guardSession(req, res, next);
   if (wantsJson(req)) return res.status(401).json({ error: 'Please log in' });
   res.redirect('/login');
 }
@@ -538,10 +558,10 @@ function handleForgot(req, res) {
   });
 }
 
-app.post('/api/auth/register', authLimiter, handleRegister);
-app.post('/api/auth/login',    authLimiter, handleLogin);
-app.post('/auth/register',     authLimiter, handleRegister);
-app.post('/auth/login',        authLimiter, handleLogin);
+app.post('/api/auth/register', authLimiter, previewLock.guardCredentials, handleRegister);
+app.post('/api/auth/login',    authLimiter, previewLock.guardCredentials, handleLogin);
+app.post('/auth/register',     authLimiter, previewLock.guardCredentials, handleRegister);
+app.post('/auth/login',        authLimiter, previewLock.guardCredentials, handleLogin);
 app.post('/auth/forgot',       authLimiter, handleForgot);
 app.post('/api/auth/forgot',   authLimiter, handleForgot);
 
@@ -558,6 +578,10 @@ app.get('/auth/google', (req, res, next) => {
 
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login?error=google_cancelled' }),
+  // The Google address is not known until passport has resolved the profile, so
+  // the preview lock runs HERE rather than on /auth/google. A refused account
+  // holds a session for the length of this handler and no longer.
+  previewLock.guardSession,
   (req, res) => {
     let redirect = '/app';
     try {
