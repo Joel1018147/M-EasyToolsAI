@@ -40,7 +40,7 @@ const PUBLIC = path.join(ROOT, 'public');
 
 const DS = 'css/modus-design-system.css';
 const TOKENS = 'css/r2-tokens.css';
-const MASTER_CSS_MD5 = '90709d5ca866cab8ac13976094faf3fa';   // the same constant ui-contract.js pins
+const MASTER_CSS_MD5 = 'edc02c0c08d78eeb5665f12e07a02b07';   // the same constant ui-contract.js pins
 
 // ── THE SURFACES LANE E CONVERTED ──────────────────────────────────────────
 // Split exactly as GAUNTLET.md §V splits them, because the two halves are held

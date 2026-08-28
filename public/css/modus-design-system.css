@@ -4275,3 +4275,245 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   .metric-row-label { min-width: 0; }
   .panel-meta { display: none; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   53. STAT CAROUSEL
+   ───────────────────────────────────────────────────────────────────────────
+   A .stat-grid whose cards can be TAPPED OPEN. The tapped card becomes a hero
+   above the grid; the rest shrink and reflow into a tighter row beneath it.
+
+   ── Opt-in, and that is the whole compatibility story ──────────────────────
+
+   A bare `.stat-grid` is untouched by every rule in this section. Nothing here
+   applies until a wrapper carries `.stat-carousel`, so the ninety-odd stat
+   grids across this ecosystem that have not adopted it render exactly as they
+   did. §52's "a composition layer ADDS" rule, applied one section later.
+
+   ── Where the motion is, and why none of it is here ────────────────────────
+
+   The layout has two states and this file declares both. The MOVEMENT between
+   them is a FLIP — measure, reflow, invert, play — and it is driven from
+   stat-carousel.js with the Web Animations API, because a CSS transition
+   cannot animate a grid reflow: the cards change parent, column and size at
+   once, and there is no interpolable property between the two layouts.
+
+   That is also why this section adds no `prefers-reduced-motion` block. §6a is
+   explicit that there is exactly ONE in this file and a second would make the
+   result depend on source order; the script reads the media query itself and
+   skips the animation, so the layout change lands instantly and every resting
+   state below is already the final one. Nothing here is revealed BY motion, so
+   nothing here can be hidden by its absence.
+
+   ── The tones ──────────────────────────────────────────────────────────────
+
+   `data-tone` is declared at the top of this section rather than inside the
+   carousel, because which colour a statistic carries is a property of the
+   STATISTIC and not of the interaction. A page that never adopts the carousel
+   can still tone its cards.
+
+   Each tone spends three tokens that already exist and pairs them the way
+   `.badge-*` already pairs them: the tint as the surface, the status colour as
+   the rail, the -text variant as the figure. §6 forbids a status colour as
+   TEXT, which is exactly why the rail takes `--amber` and the figure takes
+   `--amber-text` rather than both taking one of them.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 53a. TONES — usable on any .stat-card, carousel or not ─────────────── */
+.stat-card[data-tone] { background: var(--surface); }
+
+.stat-card[data-tone="amber"]   { background: var(--amber-bg); }
+.stat-card[data-tone="amber"]::before   { background: var(--amber); }
+.stat-card[data-tone="amber"] .stat-value   { color: var(--amber-text); }
+
+.stat-card[data-tone="purple"]  { background: var(--purple-bg); }
+.stat-card[data-tone="purple"]::before  { background: var(--purple); }
+.stat-card[data-tone="purple"] .stat-value  { color: var(--purple-text); }
+
+.stat-card[data-tone="green"]   { background: var(--green-bg); }
+.stat-card[data-tone="green"]::before   { background: var(--green); }
+.stat-card[data-tone="green"] .stat-value   { color: var(--green-text); }
+
+.stat-card[data-tone="blue"]    { background: var(--blue-bg); }
+.stat-card[data-tone="blue"]::before    { background: var(--blue); }
+.stat-card[data-tone="blue"] .stat-value    { color: var(--blue-text); }
+
+.stat-card[data-tone="red"]     { background: var(--red-bg); }
+.stat-card[data-tone="red"]::before     { background: var(--red); }
+.stat-card[data-tone="red"] .stat-value     { color: var(--red-text); }
+
+/* The platform's own colour. This is the one tone that differs between
+   platforms, and it differs by exactly the amount THE ONE RULE permits. */
+.stat-card[data-tone="accent"]  { background: var(--accent-bg); }
+.stat-card[data-tone="accent"]::before  { background: var(--accent); }
+.stat-card[data-tone="accent"] .stat-value  { color: var(--accent-text); }
+
+/* No tint and no colour on the figure — for a total, which is not a status.
+   The rail stays the platform accent, as every untoned stat card's already is. */
+.stat-card[data-tone="neutral"] { background: var(--surface); }
+.stat-card[data-tone="neutral"] .stat-value { color: var(--text); }
+
+/* NOT MEASURED, which is not the same as zero and must not look like it.
+   §7's checklist requires empty states to separate uninstrumented from
+   instrumented-but-empty from a real zero, and a tile has only its figure and
+   its colour to say which it is. The figure goes to --muted so a dash reads as
+   "no reading" rather than as a number that happens to be small, and the rail
+   goes with it so the card does not claim the platform accent for a statistic
+   nobody is collecting. --muted is 4.6:1 on --surface in both themes, measured
+   in §6 — quiet, and still readable. */
+.stat-card[data-tone="muted"] { background: var(--surface); }
+.stat-card[data-tone="muted"]::before { background: var(--border-2); }
+.stat-card[data-tone="muted"] .stat-value { color: var(--muted); }
+
+/* ── 53b. THE CAROUSEL ──────────────────────────────────────────────────── */
+.stat-carousel { display: block; margin-bottom: 20px; }
+
+/* The grid inside a carousel drops §11's auto-fit for a FIXED two columns.
+   auto-fit is right for a row of read-only tiles and wrong here: the count of
+   cards changes when one is promoted to hero, and auto-fit would re-solve the
+   track count on its own, mid-flight, fighting the measured FLIP. */
+.stat-carousel .stat-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0;
+}
+.stat-carousel.is-expanded .stat-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* §11 sets `transition: all` on .stat-card, which would fight every transform
+   the FLIP writes and then animate it back on release. Narrowed to the one
+   property that should still ease. */
+.stat-carousel .stat-card {
+  transition: box-shadow var(--motion-base) var(--ease-out);
+}
+
+/* The slot the hero moves INTO. Empty and out of flow until then, so a
+   collapsed carousel occupies exactly the height its grid does. */
+.stat-carousel-hero { display: none; margin-bottom: 14px; }
+.stat-carousel.is-expanded .stat-carousel-hero { display: block; }
+
+/* ── 53c. THE CARD AS A CONTROL ─────────────────────────────────────────── */
+/* The whole card is the target, and it is a real <button> rather than a div
+   with a click handler: focus, Enter, Space, the accessibility tree and the
+   focus ring all come free and correct. The button carries the label and the
+   value; the ::after stretches its hit area over the entire card so the
+   padding is clickable too. */
+.stat-cc-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.stat-cc-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+/* §11 styles .stat-label / .stat-value / .stat-sub without ever setting a
+   display, because everywhere else they are divs and a div is already a block.
+   A <button> may only contain PHRASING content, so inside the trigger they are
+   spans — and a span with a margin-bottom and no display renders inline, which
+   silently collapses the whole card onto one line. Declared here rather than
+   by using divs inside a button and relying on browsers to forgive it. */
+.stat-cc-btn .stat-label,
+.stat-cc-btn .stat-value,
+.stat-cc-btn .stat-sub { display: block; }
+/* NO FOCUS RULE HERE ON PURPOSE. §41 already draws a 2px --accent outline at
+   2px offset on every :focus-visible, and §6 says never remove it. The button
+   fills the card's CONTENT box, so that ring lands inside the card's 18px of
+   padding and is not clipped by §11's `overflow: hidden` — which is exactly
+   what a hand-rolled replacement here would have had to work around. Checked
+   by rendering, not assumed: an earlier draft removed the outline and rebuilt
+   it with :has(), which would have left no ring at all on a browser without
+   :has() support. */
+
+/* ── 53d. THE HERO ──────────────────────────────────────────────────────── */
+.stat-card.is-hero {
+  padding: 24px 26px;
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--r-lg);
+}
+/* NO RULE ON ::before HERE, AND THAT IS THE POINT. §11 draws the tone rail as
+   a 3px bar across the TOP of the card; a platform layer is free to move it,
+   and one already has — M-EasyPOS re-inets it to a full-height rail down the
+   LEFT edge. A hero rule thickening it with `height: 6px` therefore did not
+   thicken anything: it overrode that platform's `height: auto` and collapsed a
+   full-height left rail to a 6px stub, so the promoted card was the one card on
+   the page with no tone rail at all. Caught by looking at the rendered hero.
+
+   The rail's geometry belongs to whoever last set it. §53 only decides which
+   COLOUR it takes, in 53a, which works whichever edge it is on. */
+.stat-card.is-hero .stat-label { font-size: 12px; margin-bottom: 10px; }
+.stat-card.is-hero .stat-value { font-size: 46px; letter-spacing: -1.5px; }
+
+/* Actions sit ABOVE the stretched hit area, so pressing one does not also
+   collapse the card underneath it. */
+.stat-cc-actions {
+  position: relative;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.stat-card.is-hero .stat-cc-actions { display: flex; }
+
+/* Close, top-right of the hero. Its own control rather than relying on the
+   card's own toggle, because "press the thing again" is a discoverable gesture
+   and not an obvious one. */
+.stat-cc-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
+}
+.stat-card.is-hero .stat-cc-close { display: flex; }
+.stat-cc-close:hover { color: var(--text); border-color: var(--border); }
+
+/* ── 53e. THE SHRUNKEN REST ─────────────────────────────────────────────── */
+/* Denser, not merely narrower. Three columns of the resting card's padding and
+   type would overflow every one of them on a phone. */
+.stat-carousel.is-expanded .stat-grid .stat-card { padding: 12px 13px; }
+.stat-carousel.is-expanded .stat-grid .stat-label {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+.stat-carousel.is-expanded .stat-grid .stat-value {
+  font-size: 18px;
+  letter-spacing: -0.3px;
+}
+
+/* ── 53f. THE PHONE ─────────────────────────────────────────────────────── */
+/* The same 768px the app shell already uses — §52 established that this file
+   gets one breakpoint and it is that one. Two columns collapse to two, and the
+   expanded row stays at three: three shrunken tiles fit 320px at the type size
+   above, and dropping to two would reflow the grid a second time mid-gesture. */
+@media (max-width: 768px) {
+  .stat-carousel .stat-grid { gap: 10px; }
+  .stat-card.is-hero { padding: 20px; }
+  .stat-card.is-hero .stat-value { font-size: 36px; }
+  .stat-carousel.is-expanded .stat-grid .stat-value { font-size: 15px; }
+  .stat-cc-actions { margin-top: 14px; }
+}
