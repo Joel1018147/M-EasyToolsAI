@@ -373,6 +373,66 @@
   --accent-contrast: #ffffff;   /* 6.0:1 on #BE185D — WCAG AA */
 }
 
+[data-platform="eko"] {
+  /* Duke EkoCheras Marketplace — EkoVest Berhad. Ruled by Joel 2026-09-01.
+
+     #F58220 is the EkoCheras brand orange, read from the mall's own logo
+     (ekocherasmall.com/images/logo.png, which has exactly two opaque colours:
+     #FFFFFF and #F58220). The site's CSS is a stock Bootstrap 4 theme and
+     carries no brand value — the same trap the migs note records about the
+     Astra globals. Read the logo, not the stylesheet, for a client brand.
+
+     THIS BLOCK KNOWINGLY BREAKS THE 15 deg HUE RULE. #F58220 is hue 28 deg,
+     5 deg from mall #D97706, 10 deg from tools, 12 deg from dgcs. Joel ruled
+     brand fidelity over intra-ecosystem separation for this build: it is a
+     client-named deployment for EkoVest, the audiences do not overlap, and no
+     user sees this UI and M-EasyMall's side by side. DO NOT "FIX" THIS BY
+     DRIFTING THE HUE. If a check or a reviewer flags the 5 deg gap, cite
+     BUILD_PLAN §4.10 and leave it. The ecosystem already ships a 0 deg
+     collision — migs 226 deg and school 226 deg, accepted deliberately as the
+     two education platforms. If the rule is ever revisited, what gets
+     revisited is its SCOPE (client-named builds vs the M-Easy* products), not
+     this value.
+
+     --accent is DARKENED from the brand orange at constant hue, and that is
+     not cosmetic. Five components hardcode `color:#fff` DIRECTLY on
+     `background: var(--accent)` and never read --accent-contrast:
+     .topbar-brand-dot, .topbar-avatar, .sidebar-brand-dot, .page-btn.active,
+     .step.active .step-dot. So the fill has to carry white whatever this block
+     declares, and a dark --accent-contrast would be ignored by all five.
+     #fff on #F58220 is 2.59:1 — below even AA-large, and worse than any accent
+     the ecosystem ships (the floor is mall's 3.19). #B85908 is the same hue at
+     4.71:1. The brand orange is not lost: it IS the dark-theme accent text.
+
+     Margins are deliberate. Run 63 rejected #DB2777 for clearing AA by 0.1 as
+     "the ecosystem's most fragile accent"; a bare >= 4.5 search returns
+     #BC5B08, clearing by 0.01, which would be worse than the thing it refused.
+
+     Reproduce every value here with:
+         node design/measure-accent.js --block '#F58220' --name eko
+
+     The dark --accent-text is the brand orange ITSELF, unmodified. It only
+     had to clear --surface-2 (#263348), the LIGHTEST dark backdrop and so the
+     tightest — `.panel-index on a quiet surface`. An earlier candidate
+     (#ED730B) was derived against --bg and --surface only, cleared both at
+     6.00 and 4.92, and failed §6 at 4.28:1 on --surface-2. measure-accent.js
+     now reads all three; if you add a dark backdrop, add it there too.
+
+     Contrast, measured not assumed:
+       #ffffff on #B85908  — 4.71:1  (button label, WCAG AA)
+       #A34F07 on #ffffff  — 5.71:1  (--accent-text on a card, WCAG AA)
+       #F58220 on #0f172a  — 6.89:1  (dark --accent-text on --bg)
+       #F58220 on #1e293b  — 5.65:1  (dark --accent-text on --surface)
+       #F58220 on #263348  — 4.92:1  (dark --accent-text on --surface-2)    */
+  --accent: #B85908;
+  --accent-2: #9A4B07;
+  --accent-bg: rgba(184,89,8,0.08);
+  --accent-glow: rgba(184,89,8,0.20);
+  --accent-light: #FBE4D0;
+  --accent-text: #A34F07;       /* 5.7:1 on white — WCAG AA */
+  --accent-contrast: #ffffff;   /* 4.7:1 on #B85908 — WCAG AA */
+}
+
 /* ── 4. DARK MODE ────────────────────────────────────────────────────── */
 [data-theme="dark"] {
   --bg: #0f172a;
@@ -440,6 +500,7 @@
 [data-theme="dark"][data-platform="dgcs"]     { --accent-light: rgba(124,45,18,0.22); --accent-text: #e8815e; }
 [data-theme="dark"][data-platform="migs"]     { --accent-light: rgba(52,72,137,0.22); --accent-text: #899ad2; }
 [data-theme="dark"][data-platform="pos"]      { --accent-light: rgba(190,24,93,0.22); --accent-text: #f082b3; }
+[data-theme="dark"][data-platform="eko"]      { --accent-light: rgba(184,89,8,0.22); --accent-text: #F58220; }
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
 *, *::before, *::after {
