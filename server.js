@@ -26,6 +26,7 @@ const { GROQ_MODEL, normaliseModel, chat } = require('./helpers/groq');
 const { createGenerator, LANG_DIRECTIVES } = require('./helpers/generation');
 const langHelper = require('./helpers/lang');
 const { checkSub, updateExpiredSubscriptions, sendTrialReminders } = require('./middleware/checkSub');
+const subscriptionMode = require('./helpers/subscriptionMode');
 const subscriptionRoutes = require('./routes/subscription');
 const { Resend } = require('resend');
 // Resend throws if constructed without a key, so only init when configured.
@@ -1893,7 +1894,8 @@ app.listen(PORT, () => {
 ║  Seller Panel:   ✓ Ready (/seller)              ║
 ║  Team Workspaces:✓ Ready                        ║
 ║  Content Scoring:✓ Ready                        ║
-║  Billing System: ✓ Ready (/billing)             ║
+║  Subscriptions:  ${subscriptionMode.isEnforced() ? '✓ ENFORCED (/billing)' : '○ NOT enforced — all' }  ║
+║  ${subscriptionMode.isEnforced() ? '                                              ' : 'accounts have full access                     '}  ║
 ╚══════════════════════════════════════════════════╝
 `);
   // §4.3d requirement 1. The banner above says "✓ Ready" for things it never

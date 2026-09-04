@@ -427,6 +427,31 @@ function renderStatusCard(data) {
   skeleton.style.display = 'none';
   content.style.display  = 'block';
 
+  /* NOTHING IS ENFORCED. First, and it returns — the row underneath still
+     says 'expired' or 'trial' and every branch below would report that as a
+     restriction the user does not actually have. Telling somebody their
+     account has lapsed while they have full access is the same class of lie
+     as telling them it is fine while it is locked.
+
+     The pricing section goes with it. A "Choose a Plan" button here posts to
+     /billing/checkout, which answers 500 while the iPay88 merchant
+     credentials are unset, so leaving it on screen offers a control that
+     cannot succeed — worse than not offering it (§4.2, an inert control). */
+  if (data.enforced === false) {
+    header.textContent = '✅ Full access';
+    body.textContent   = data.notice || 'Subscriptions are not being enforced on this deployment.';
+    badge.className    = 'badge badge-green';
+    badge.textContent  = 'Open';
+    trialWrap.style.display = 'none';
+    warnWrap.innerHTML = '';
+    errWrap.innerHTML  = '';
+    cta.innerHTML      = '';
+
+    var pricing = document.getElementById('pricing');
+    if (pricing) pricing.style.display = 'none';
+    return;
+  }
+
   if (data.status === 'trial') {
     var dl   = data.daysLeft != null ? data.daysLeft : 30;
     var pct  = Math.min(100, Math.round(((30 - dl) / 30) * 100));

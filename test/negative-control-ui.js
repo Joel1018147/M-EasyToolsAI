@@ -83,6 +83,32 @@ const PLANTS = [
       + "  Object.freeze({ method: 'GET', path: '/api/stats' }),",
   },
 
+  // ── test/subscription-mode-test.js ───────────────────────────────────
+  // Every anchor here is a SINGLE line: these three files are CRLF, and a
+  // multi-line `fromExact` written with \n matches nothing in them and reports
+  // ANCHOR ROTTED rather than a hole in the tests.
+  {
+    harness: 'test/subscription-mode-test.js',
+    file: 'middleware/checkSub.js',
+    what: 'the enforcement switch is read INVERTED — one word, the §31 shape',
+    fromExact: '    if (!subscriptionMode.isEnforced()) {',
+    to: '    if (subscriptionMode.isEnforced()) {',
+  },
+  {
+    harness: 'test/subscription-mode-test.js',
+    file: 'lib/image/caps.js',
+    what: 'GATE 2 stays shut — the open status is not mapped, so image generation caps everyone at 3/day',
+    fromExact: "  if (status === 'open') return { tier: TIERS.agency, recognised: true };",
+    to: '  // plant: the open status falls through to the floor tier',
+  },
+  {
+    harness: 'test/subscription-mode-test.js',
+    file: 'helpers/subscriptionMode.js',
+    what: 'an absent variable defaults to ENFORCED, so losing it re-locks every account silently',
+    fromExact: "  if (typeof raw !== 'string') return false;",
+    to: "  if (typeof raw !== 'string') return true;",
+  },
+
   // ── test/auth-contract.js ────────────────────────────────────────────
   {
     harness: 'test/auth-contract.js',

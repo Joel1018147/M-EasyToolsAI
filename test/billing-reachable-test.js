@@ -28,6 +28,18 @@
    quiet.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* THIS SUITE IS ABOUT THE ENFORCED MODE, so it says so before requiring
+   anything. Since 2026-09-04 the deployment default is that no subscription is
+   enforced at all (helpers/subscriptionMode.js — Joel's call), and under that
+   default there is no lock, so a "renewal surface" is not a meaningful idea:
+   every assertion below about a route REFUSING a locked user would pass
+   vacuously, in the direction that looks green.
+
+   The paywall code is switched off, not deleted, and this is the suite that
+   keeps it honest for the day it is switched back on.
+   test/subscription-mode-test.js owns the other mode, and asserts both. */
+process.env.SUBSCRIPTION_ENFORCEMENT = 'on';
+
 const fs = require('fs');
 const path = require('path');
 const http = require('http');

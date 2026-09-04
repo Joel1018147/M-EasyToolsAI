@@ -81,6 +81,13 @@ const LEGACY = [
      guarding a total lock-out should not be able to go quiet by being
      deleted. */
   'billing-reachable-test.js',
+
+  /* The other mode of the same switch, and the reason it is next to its
+     neighbour rather than in the discovered manifest: between them these two
+     suites are the only description anywhere of what this product charges for.
+     One of them passing while the other is missing is not half the answer, it
+     is a green run about a mode nobody is in. */
+  'subscription-mode-test.js',
 ];
 
 /* The manifest. Each lane's suite is expected once that lane has landed;

@@ -4,6 +4,7 @@ const express = require('express');
 const crypto  = require('crypto');
 const { pool } = require('../db');
 const { Resend } = require('resend');
+const { OPEN_NOTICE } = require('../helpers/subscriptionMode');
 
 const router = express.Router();
 
@@ -163,7 +164,16 @@ async function statusHandler(req, res) {
     const row = rows[0] || {};
     const sub = req.subscription || {};
 
+    /* Whether this deployment enforces anything is read off req.subscription,
+       not from the environment: helpers/subscriptionMode.js is the one reader
+       of that variable and checkSub is the one thing that asks it. Two readers
+       of one switch is how the answer starts differing between the page and
+       the guard (#15's duplication trap, one layer up). */
+    const enforced = sub.enforced !== false;
+
     res.json({
+      enforced,
+      notice:        enforced ? null : OPEN_NOTICE,
       status:        row.status        ?? sub.status  ?? null,
       plan:          row.plan          ?? null,
       billing_cycle: row.billing_cycle ?? null,

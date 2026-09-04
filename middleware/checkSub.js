@@ -3,6 +3,7 @@
 const path = require('path');
 const { pool } = require('../db');
 const { wantsJson } = require('../helpers/wantsJson');
+const subscriptionMode = require('../helpers/subscriptionMode');
 
 /* ═══════════════════════════════════════════════════════════════════════════
    THE RENEWAL SURFACE
@@ -61,6 +62,18 @@ function isRenewalSurface(req) {
 
 async function checkSub(req, res, next) {
   try {
+    /* NOTHING IS ENFORCED — the first thing this middleware asks, before any
+       query. Ahead of the database on purpose: an open deployment must not
+       depend on `subscriptions` being readable to let anybody in, and a row
+       that does not exist must not be auto-provisioned into a trial that will
+       never be enforced. Everything downstream reads status 'open' — the image
+       cap maps it to the top tier, /api/subscription/status reports it, and
+       billing.html says it on the page. */
+    if (!subscriptionMode.isEnforced()) {
+      req.subscription = subscriptionMode.openSubscription();
+      return next();
+    }
+
     const { rows } = await pool.query(
       'SELECT * FROM subscriptions WHERE user_id = $1',
       [req.user.id]
@@ -194,6 +207,18 @@ async function updateExpiredSubscriptions(pool) {
 }
 
 async function sendTrialReminders(pool) {
+  /* "Your free trial ends in 3 day(s). Upgrade now to keep access." is false
+     when nothing is enforced — nobody is going to lose access — and it asks
+     for money through a checkout that answers 500 without iPay88 credentials.
+     `updateExpiredSubscriptions` deliberately KEEPS running: the rows should
+     go on recording what is true, so re-arming enforcement is accurate rather
+     than starting from a fiction. Only the promise to the user stops.
+
+     Re-arming has a consequence worth knowing: the accounts that aged out
+     while this was off get locked with no warning email, because the reminder
+     thresholds are one-shot per account (`reminder_sent`). */
+  if (!subscriptionMode.isEnforced()) return;
+
   const { sendTrialReminder } = require('../routes/subscription');
 
   const thresholds = [
