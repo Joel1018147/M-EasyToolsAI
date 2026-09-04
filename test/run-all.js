@@ -71,6 +71,16 @@ const LEGACY = [
   'mutate-fetch.js',
   'mutate-gao.js',
   'mutate-social-image.js',
+
+  /* ── LEGACY, NOT A LANE SUITE, DELIBERATELY ─────────────────────────────
+     This one goes here rather than in the discovered manifest below because
+     absence must be a FAILURE, not an orange line. It is the only suite that
+     executes middleware/checkSub.js, and the defect it covers — /billing
+     redirecting to itself, so nobody whose subscription had lapsed could
+     renew — was live in production for as long as the file existed. A suite
+     guarding a total lock-out should not be able to go quiet by being
+     deleted. */
+  'billing-reachable-test.js',
 ];
 
 /* The manifest. Each lane's suite is expected once that lane has landed;

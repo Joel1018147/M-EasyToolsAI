@@ -56,6 +56,33 @@ const PLANTS = [
     to: "app.get('/auth/me',     requireAuth, handleMe);",
   },
 
+  // ── test/billing-reachable-test.js ───────────────────────────────────
+  // Both directions of the same guard, because they fail independently and
+  // only one of them is a lock-out. M1 is the defect as it shipped: the
+  // renewal surface stops being reachable and /billing redirects to itself.
+  // M2 is the one a green run hides — a route quietly added to the surface
+  // that the billing page never uses. A widening makes the OTHER assertions
+  // pass harder (one fewer route in the "still refuses" loop), so nothing but
+  // the paired check against billing.html's own fetches can see it.
+  {
+    harness: 'test/billing-reachable-test.js',
+    file: 'middleware/checkSub.js',
+    what: 'the renewal surface stops being exempt — /billing redirects to itself again',
+    fromExact: '    if (isRenewalSurface(req)) return next();',
+    to: '    // plant: the exemption reverted',
+  },
+  {
+    harness: 'test/billing-reachable-test.js',
+    file: 'middleware/checkSub.js',
+    what: 'the renewal surface grows a route the billing page does not use (#13)',
+    fromExact: "  Object.freeze({ method: 'GET',  path: '/api/subscription/invoices' }),",
+    // Re-spaced deliberately: the runner's read-back asserts the ANCHOR IS
+    // GONE, so a `to` that still contains it verbatim reports PLANT DID NOT
+    // LAND however correctly it applied. Found the first time this ran.
+    to: "  Object.freeze({ method: 'GET', path: '/api/subscription/invoices' }),\n"
+      + "  Object.freeze({ method: 'GET', path: '/api/stats' }),",
+  },
+
   // ── test/auth-contract.js ────────────────────────────────────────────
   {
     harness: 'test/auth-contract.js',
