@@ -40,7 +40,13 @@ const STYLES = path.join(APP, 'lib/image/styles.js');
 const INDEX = path.join(APP, 'lib/image/index.js');
 const DASH = path.join(APP, 'lib/image/providers/dashscope.js');
 const IGEN = path.join(APP, 'public/js/imagegen.js');
-const SUITE = path.join(__dirname, 'image-contract.js');
+/* TWO suites, because the feature has two halves and each can be broken
+   without the other noticing. The server can append exactly the right
+   sentence while the panel prints a different one; the panel can print the
+   right one while the server appends nothing. Every mutation below names
+   which suite is supposed to catch it, and both must be green at baseline. */
+const SERVER_SUITE = path.join(__dirname, 'image-contract.js');
+const PANEL_SUITE = path.join(__dirname, 'imagegen-panel-contract.js');
 
 const TARGETS = [STYLES, INDEX, DASH, IGEN];
 const md5 = (f) => crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex');
@@ -69,10 +75,16 @@ function cleanup() {
   for (const f of TARGETS) { try { fs.unlinkSync(backup(f)); } catch (e) { /* already gone */ } }
 }
 
-function run() {
-  const r = spawnSync(process.execPath, [SUITE], { encoding: 'utf8', cwd: APP });
-  const m = /(\d+) checks passed/.exec(r.stdout || '');
-  const named = (r.stdout || '').split('\n').filter((l) => l.includes('✗')).map((l) => l.trim());
+function run(suite) {
+  const r = spawnSync(process.execPath, [suite || SERVER_SUITE], { encoding: 'utf8', cwd: APP });
+  /* BOTH streams. image-contract.js prints its passes to stdout and its
+     FAILURES to stderr, so a harness reading stdout alone sees a kill it
+     cannot name and reports every one as "suite aborted" — which reads
+     exactly like the harness having crashed the suite by accident rather
+     than the guard having fired on purpose. */
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /(\d+) checks passed/.exec(out);
+  const named = out.split('\n').filter((l) => l.includes('✗')).map((l) => l.trim());
   return { exit: r.status, checks: m ? +m[1] : NaN, named };
 }
 
@@ -108,7 +120,14 @@ const MUTATIONS = [
                    'return { ref: s.ref, label: s.label, summary: s.summary, phrase: null };')],
 
   ['M6  store the raw prompt while sending the composed one', () =>
-    mutate(INDEX, '        prompt: composed.prompt,\n', '        prompt: rawPrompt,\n')],
+    /* `prompt: composed.prompt,` appears TWICE — once in the row that gets
+       written and once in the call that gets made — and mutating the wrong
+       one tests the opposite property. The anchor carries the comment line
+       above the first, so it can only match there. */
+    mutate(INDEX, 'that produced the image describes something that did not happen.\n'
+                + '        prompt: composed.prompt,',
+                  'that produced the image describes something that did not happen.\n'
+                + '        prompt: rawPrompt,')],
 
   ['M7  stop recording WHICH kind shaped the image', () =>
     mutate(INDEX, '        style: styled.styleRef,', '        style: null,')],
@@ -119,16 +138,45 @@ const MUTATIONS = [
   ['M9  drop the visible negative prompt on the way to the provider', () =>
     mutate(DASH, "if (typeof negativePrompt === 'string' && negativePrompt.trim() !== '') {",
                  'if (false) {')],
+
+  /* ── the panel half ────────────────────────────────────────────────────
+     These four leave the server perfect. Each one is a panel that appends,
+     hides or misreports the art direction while every server-side check
+     stays green — which is why they are checked against the other suite. */
+  ['P1  stop printing the appended sentence in the preview', PANEL_SUITE, () =>
+    mutate(IGEN, "prevBody.appendChild(part('Added by “' + st.label + '”', st.phrase));",
+                 'void st;')],
+
+  ['P2  fold the style text into the prompt on the client', PANEL_SUITE, () =>
+    mutate(IGEN, '      generate({\n        prompt: prompt,',
+                 '      generate({\n        prompt: prompt + (chosenStyle() && chosenStyle().phrase '
+                 + "? ' ' + chosenStyle().phrase : ''),")],
+
+  ['P3  ignore the default the server named', PANEL_SUITE, () =>
+    mutate(IGEN, 'if (want && s.ref === want) opt.selected = true;', 'void want;')],
+
+  ['P4  prefill a negative prompt the user never typed', PANEL_SUITE, () =>
+    mutate(IGEN, 'if (r.negative_prompt) body.negative_prompt = r.negative_prompt;',
+                 "body.negative_prompt = r.negative_prompt || 'text, watermark';")],
 ];
 
+/* Each entry is [label, apply] or [label, suite, apply]. */
+const parse = (m) => (m.length === 3 ? { label: m[0], suite: m[1], apply: m[2] }
+                                     : { label: m[0], suite: SERVER_SUITE, apply: m[1] });
+
 console.log('── baseline ' + '─'.repeat(52));
-const base = run();
-console.log(`    ${base.checks} checks, exit ${base.exit}`);
-if (base.exit !== 0) { console.error('Baseline is not green — aborting.'); cleanup(); process.exit(1); }
+let baseFailed = false;
+for (const suite of [SERVER_SUITE, PANEL_SUITE]) {
+  const b = run(suite);
+  console.log(`    ${path.basename(suite)}: ${b.checks} checks, exit ${b.exit}`);
+  if (b.exit !== 0) baseFailed = true;
+}
+if (baseFailed) { console.error('Baseline is not green — aborting.'); cleanup(); process.exit(1); }
 
 console.log('\n── mutations ' + '─'.repeat(51));
 let survived = 0;
-for (const [label, apply] of MUTATIONS) {
+for (const m of MUTATIONS) {
+  const { label, suite, apply } = parse(m);
   try {
     apply();
   } catch (e) {
@@ -137,7 +185,7 @@ for (const [label, apply] of MUTATIONS) {
     survived++;
     continue;
   }
-  const r = run();
+  const r = run(suite);
   restore();
   if (r.exit === 0) { survived++; console.log(`  ✗ SURVIVED  ${label}`); }
   else {
@@ -147,13 +195,17 @@ for (const [label, apply] of MUTATIONS) {
 }
 
 console.log('\n── restored ' + '─'.repeat(52));
-const green = run();
-console.log(`    ${green.checks} checks, exit ${green.exit}`);
+let notGreen = false;
+for (const suite of [SERVER_SUITE, PANEL_SUITE]) {
+  const g = run(suite);
+  console.log(`    ${path.basename(suite)}: ${g.checks} checks, exit ${g.exit}`);
+  if (g.exit !== 0) notGreen = true;
+}
 cleanup();
 
-if (survived || green.exit !== 0) {
+if (survived || notGreen) {
   console.error(`\n✗ ${survived} mutation(s) survived`
-    + (green.exit !== 0 ? ' and the tree did not come back green' : ''));
+    + (notGreen ? ' and the tree did not come back green' : ''));
   process.exit(1);
 }
 console.log(`\n✓ all ${MUTATIONS.length} mutations caught, and the restored tree is green`);

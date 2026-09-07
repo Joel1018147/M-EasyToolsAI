@@ -876,7 +876,7 @@ async function main() {
       const nothing = cat.filter((s) => s.phrase === null);
       check(nothing.length === 1,
         'exactly ONE kind appends nothing — more than one "adds nothing" option is two names for the same thing');
-      check(nothing[0].ref === styles.DEFAULT_STYLE,
+      check(nothing.length === 1 && nothing[0].ref === styles.DEFAULT_STYLE,
         'and it is the DEFAULT, so a caller that names no style is treated the same as one that named this');
       check(cat.filter((s) => s.phrase !== null)
                .every((s) => typeof s.phrase === 'string' && s.phrase.trim().length > 20),
