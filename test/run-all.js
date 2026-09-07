@@ -72,6 +72,12 @@ const LEGACY = [
   'mutate-gao.js',
   'mutate-social-image.js',
 
+  /* The style picker's guards. §7b of image-contract.js grew seventy checks
+     in one round, and seventy ticks over a catalogue is exactly the shape
+     that can go quiet by the catalogue going empty. This breaks each of them
+     on the real files and requires the suite to notice. */
+  'mutate-image-style.js',
+
   /* ── LEGACY, NOT A LANE SUITE, DELIBERATELY ─────────────────────────────
      This one goes here rather than in the discovered manifest below because
      absence must be a FAILURE, not an orange line. It is the only suite that
@@ -115,7 +121,8 @@ const ran = [];
    tree there is no excuse and a refusal is a failure. The merge gate requires
    a clean, fully-committed branch, so at the moment that matters these always
    execute. */
-const MUTATION_HARNESSES = new Set(['mutate-fetch.js', 'mutate-gao.js', 'mutate-social-image.js']);
+const MUTATION_HARNESSES = new Set(['mutate-fetch.js', 'mutate-gao.js', 'mutate-social-image.js',
+                                    'mutate-image-style.js']);
 const TREE_BEFORE = (() => {
   const r = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' });
   return r.status === 0 ? r.stdout : null;   // null = git unreadable, treated as dirty

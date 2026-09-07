@@ -105,11 +105,13 @@ function makePool({ events = [], dayCount = 0, monthCount = 0, seed = [] } = {})
 
       if (/^INSERT INTO image_generations/i.test(sql)) {
         const [user_id, team_id, prompt, negative_prompt, lang, provider, model, size,
-               status, moderation_status, moderation_reason, used_brand_asset, brand_asset_ref] = params;
+               status, moderation_status, moderation_reason, used_brand_asset, brand_asset_ref,
+               style] = params;
         const row = {
           id: crypto.randomUUID(),
           user_id, team_id, prompt, negative_prompt, lang, provider, model, size,
           status, moderation_status, moderation_reason, used_brand_asset, brand_asset_ref,
+          style,
           content: null, content_type: null, byte_size: null, sha256: null,
           source_url: null, source_url_expires_at: null, provider_request_id: null,
           error_text: null, created_at: new Date().toISOString(),
@@ -396,7 +398,7 @@ async function main() {
   process.env.DASHSCOPE_API_KEY = 'test-key-never-sent-anywhere';
 
   const image = require('../lib/image');
-  const { sizes, moderation, brand, caps, rehost } = image;
+  const { sizes, styles, moderation, brand, caps, rehost } = image;
 
   /* ── 0. the modules' own self-tests ─────────────────────────────────── */
   await section('0 · module self-tests (a guard that cannot fail is not a guard)', async () => {
@@ -840,6 +842,193 @@ async function main() {
         { prompt: USER_PROMPT, use_brand_asset: true, brand_asset_ref: 'brand_desc' });
       check(res.status === 400 && res.json.error === 'brand_asset_empty',
         'opting in to an unset asset is an error, not a prompt containing "null"');
+      await srv.close();
+    }
+  });
+
+  /* ── 7b. the style picker ───────────────────────────────────────────────
+     A style APPENDS text the user did not type, which is the one thing this
+     lane's whole design is arranged to make impossible to do silently. It is
+     allowed here on exactly one condition — that the appended sentence is
+     PUBLISHED, so the client can print it before sending and the audit row
+     stores it after. These checks are that condition, in four parts:
+
+       the default adds nothing at all;
+       a named kind adds its own published sentence and nothing else;
+       an unnamed kind is refused before any spend;
+       and the client holds no copy of any of it.
+     ───────────────────────────────────────────────────────────────────── */
+  await section('7b · the KIND of image is opt-in, published, and recorded', async () => {
+    const user = makeUser();
+    const USER_PROMPT = 'A cold brew bottle on a wooden counter';
+
+    /* (a) THE CATALOGUE ITSELF. Derived checks only — nothing below lists a
+           ref, a label or a phrase, so adding a twelfth kind cannot leave a
+           test asserting the old ten. */
+    {
+      const cat = styles.catalogue();
+      check(cat.length >= 5, `the catalogue offers a real choice (${cat.length} kinds)`);
+      check(new Set(cat.map((s) => s.ref)).size === cat.length, 'every ref is unique');
+      check(cat.every((s) => typeof s.label === 'string' && s.label.trim() !== ''
+                          && typeof s.summary === 'string' && s.summary.trim() !== ''),
+        'every kind carries a label and a plain-language summary a non-designer can pick from');
+
+      const nothing = cat.filter((s) => s.phrase === null);
+      check(nothing.length === 1,
+        'exactly ONE kind appends nothing — more than one "adds nothing" option is two names for the same thing');
+      check(nothing[0].ref === styles.DEFAULT_STYLE,
+        'and it is the DEFAULT, so a caller that names no style is treated the same as one that named this');
+      check(cat.filter((s) => s.phrase !== null)
+               .every((s) => typeof s.phrase === 'string' && s.phrase.trim().length > 20),
+        'every other kind carries a real art-direction sentence, not an adjective');
+      check(styles.resolve(undefined).phrase === null && styles.resolve('').phrase === null,
+        'an absent style resolves to no phrase at all');
+    }
+
+    /* (b) THE DEFAULT ADDS NOTHING — asserted on the WIRE, twice: once for a
+           request that omits `style` and once for one that names the
+           add-nothing ref explicitly. Both must reach the provider
+           byte-identical, because every caller written before this feature
+           existed is the first case and must not have been changed under it. */
+    for (const body of [{ prompt: USER_PROMPT },
+                        { prompt: USER_PROMPT, style: styles.DEFAULT_STYLE }]) {
+      const events = [];
+      const pool = makePool({ events });
+      const fetchImpl = makeFetch({ events });
+      const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
+      const res = await post(srv.base, '/api/images/generate', body);
+      const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.input.messages[0].content[0].text;
+      check(res.status === 201 && sent === USER_PROMPT,
+        `${'style' in body ? 'naming the add-nothing kind' : 'naming no kind'} sends the prompt BYTE-IDENTICAL`);
+      await srv.close();
+    }
+
+    /* (c) A NAMED KIND. Every kind that carries a phrase is driven through
+           the real route — not one sampled kind, because a catalogue where
+           one entry's phrase never reaches the wire is exactly the defect
+           this checks for. */
+    {
+      for (const s of styles.catalogue().filter((x) => x.phrase !== null)) {
+        const events = [];
+        const pool = makePool({ events });
+        const fetchImpl = makeFetch({ events });
+        const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
+        const res = await post(srv.base, '/api/images/generate', { prompt: USER_PROMPT, style: s.ref });
+        const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.input.messages[0].content[0].text;
+        check(res.status === 201 && sent.includes(USER_PROMPT) && sent.includes(s.phrase),
+          `"${s.label}" sends the user's words AND the exact sentence /options publishes for it`);
+        check(res.json.image.prompt === sent,
+          `and the row for "${s.label}" STORES what was sent`);
+        check(res.json.image.style === s.ref,
+          `and records WHICH kind shaped it — a query, not a substring search over prose`);
+        check(!sent.includes(user.brand_name) && !sent.includes(user.brand_desc),
+          `picking "${s.label}" is not an opt-in to anything else`);
+        await srv.close();
+      }
+    }
+
+    /* (d) AN UNKNOWN KIND IS REFUSED, BEFORE THE MONEY. A stale preset or a
+           typo would otherwise generate a perfectly good image of the wrong
+           kind, indefinitely, with nothing to notice. */
+    {
+      const events = [];
+      const pool = makePool({ events });
+      const fetchImpl = makeFetch({ events });
+      const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
+      for (const ref of ['photorealistic', 'NONE', 'photo-realistic', 42, { ref: 'photo' }]) {
+        const res = await post(srv.base, '/api/images/generate', { prompt: USER_PROMPT, style: ref });
+        check(res.status === 400 && res.json.error === 'unknown_style',
+          `style ${JSON.stringify(ref)} is refused rather than quietly ignored`);
+      }
+      check(fetchImpl.calls.length === 0, 'and not one of them reached the provider');
+
+      /* Case is NOT normalised and whitespace IS trimmed, matching
+         ../lib/image/sizes.js exactly. The distinction is whether the value
+         is ambiguous: ' photo ' can only have meant `photo` and a trailing
+         space is a transport artifact, while 'NONE' is a different string a
+         client believed in, and silently accepting it would hide the fact
+         that its catalogue is out of date. */
+      {
+        const known = styles.catalogue().find((x) => x.phrase !== null);
+        const res = await post(srv.base, '/api/images/generate',
+          { prompt: USER_PROMPT, style: `  ${known.ref}  ` });
+        check(res.status === 201 && res.json.image.style === known.ref,
+          'whitespace around a known ref is trimmed, and the row records the CANONICAL ref');
+      }
+      const res = await post(srv.base, '/api/images/generate', { prompt: USER_PROMPT, style: 'nope' });
+      check(Array.isArray(res.json.allowed) && res.json.allowed.length === styles.allowedRefs().length,
+        'the refusal carries the legal set, so the next request can be right');
+      await srv.close();
+    }
+
+    /* (e) THE CATALOGUE IS PUBLISHED, PHRASES AND ALL. This is what makes
+           the appended sentence readable rather than hidden: a client can
+           only print what it was told. */
+    {
+      const srv = await makeServer({ pool: makePool({}), fetchImpl: makeFetch({}), user,
+                                     subscription: { status: 'trial' } });
+      const res = await get(srv.base, '/api/images/options');
+      const published = res.json.styles;
+      check(Array.isArray(published) && published.length === styles.catalogue().length,
+        'GET /options returns the whole style catalogue');
+      /* Deep equality, not a shape check. `hasOwnProperty('phrase')` is
+         satisfied by `phrase: null` on every entry — a catalogue that has
+         quietly stopped publishing its sentences passes a shape check while
+         leaving the panel with nothing to print. */
+      assert.deepStrictEqual(published, styles.catalogue());
+      ok('with the ref, the label, the summary AND the exact phrase each one appends');
+      check(published.filter((s) => s.phrase).length === published.length - 1,
+        'and every kind but the add-nothing one publishes a real sentence');
+      check(res.json.defaultStyle === styles.DEFAULT_STYLE,
+        'and names which one starts selected, so the client hard-codes no ref');
+      await srv.close();
+    }
+
+    /* (f) THE CLIENT HOLDS NO COPY. The whole invariant — the sentence you
+           read is the sentence we send — collapses the moment public/js
+           carries its own wording, because then the panel can print one thing
+           while the server appends another and both look correct in isolation. */
+    {
+      /* Over the STRING LITERALS, not over the raw file. A substring scan
+         reports `display:none` inside a CSS rule as the ref `none` and
+         `line-height` as the ref `line`, which is a guard that fails on a
+         clean file — and a guard that cries wolf gets deleted. Equality
+         against the literals a browser could actually render is the question
+         being asked: does this file SAY any of it? */
+      const client = stripComments(fs.readFileSync(path.join(ROOT, 'public/js/imagegen.js'), 'utf8'));
+      const literals = new Set(
+        (client.match(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g) || [])
+          .map((q) => q.slice(1, -1)));
+      const leaked = styles.catalogue().filter(
+        (s) => literals.has(s.ref) || literals.has(s.label)
+            || (s.phrase && [...literals].some((l) => l.includes(s.phrase.slice(0, 30)))));
+      check(leaked.length === 0,
+        'public/js/imagegen.js enumerates no style ref, label or phrase — it renders what /options sent'
+        + (leaked.length ? ' (leaked: ' + leaked.map((s) => s.ref).join(', ') + ')' : ''));
+      check(literals.size > 30, `the scan actually read the file (${literals.size} string literals)`);
+    }
+
+    /* (g) THE VISIBLE NEGATIVE PROMPT. The panel now offers one; the rule was
+           always about a HIDDEN one, so what matters is that it travels only
+           when supplied, and that it is recorded. */
+    {
+      const events = [];
+      const pool = makePool({ events });
+      const fetchImpl = makeFetch({ events });
+      const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
+
+      const plain = await post(srv.base, '/api/images/generate', { prompt: USER_PROMPT });
+      const plainBody = fetchImpl.calls.find((c) => c.kind === 'generate').body;
+      check(plain.status === 201 && !('negative_prompt' in plainBody.parameters),
+        'no negative_prompt is invented for a request that did not send one');
+
+      const withNeg = await post(srv.base, '/api/images/generate',
+        { prompt: USER_PROMPT, negative_prompt: 'text, lettering, watermark' });
+      const negBody = fetchImpl.calls.filter((c) => c.kind === 'generate').pop().body;
+      check(withNeg.status === 201 && negBody.parameters.negative_prompt === 'text, lettering, watermark',
+        'a negative prompt the user typed reaches the provider verbatim');
+      check(withNeg.json.image.negative_prompt === 'text, lettering, watermark',
+        'and is recorded on the row beside the prompt it qualifies');
       await srv.close();
     }
   });

@@ -84,8 +84,9 @@ function sendError(res, err, where) {
 /* ─────────────────────────────────────────────────────────────────────────
    GET /api/images/options
    What a UI needs to render the controls: the legal sizes (from the one
-   source of truth), the model, whether this deployment is configured at all,
-   and which brand assets can be explicitly opted into.
+   source of truth), the style catalogue WITH THE PHRASE EACH ONE APPENDS, the
+   model, whether this deployment is configured at all, and which brand assets
+   can be explicitly opted into.
    ───────────────────────────────────────────────────────────────────────── */
 router.get('/options', (req, res) => {
   try {
@@ -114,9 +115,15 @@ router.get('/usage', async (req, res) => {
 
    Body:
      prompt            required, ≤2000 chars
-     negative_prompt   optional, ≤500 chars
+     negative_prompt   optional, ≤500 chars — what to keep OUT of the image
      size              optional; one of lib/image/sizes.js's five legal values
                        — 1024*1024 IS REJECTED, locally, before any spend
+     style             optional; one of lib/image/styles.js's refs. The KIND
+                       of image — photograph, flat vector, watercolour. Its
+                       art-direction sentence is appended to the prompt, and
+                       that sentence is published by GET /options so a client
+                       can show it before sending. Absent or 'none' appends
+                       nothing and the prompt travels byte-identical
      lang              optional 'en' | 'ms' | 'zh'
      use_brand_asset   optional; strictly boolean true to opt in
      brand_asset_ref   required when use_brand_asset is true

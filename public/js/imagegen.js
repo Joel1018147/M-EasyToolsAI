@@ -27,7 +27,10 @@
    ║  ImageGen.options() → that object once ready() has resolved             ║
    ║  ImageGen.error()   → why it is not usable, in a sentence, or null      ║
    ║  ImageGen.sizes()   → [{value,label,isDefault}], normalised             ║
-   ║  ImageGen.generate({prompt,size,lang})                                  ║
+   ║  ImageGen.styles()  → [{ref,label,summary,phrase}] — the KINDS, with    ║
+   ║          the exact sentence each one appends. Published so a            ║
+   ║          page can SHOW it; never re-typed on the client.                ║
+   ║  ImageGen.generate({prompt,size,style,negative_prompt,lang})            ║
    ║        → Promise<{ok:true, image} | {ok:false, message, status}>        ║
    ║          It REJECTS only when the request never reached the server.     ║
    ╚═════════════════════════════════════════════════════════════════════════╝
@@ -67,6 +70,23 @@
    editable prompt instead. The prompt stored against the image is then the
    prompt the user read, which is the same invariant lib/image keeps on the
    server side when it stores the composed prompt rather than the raw one.
+
+   The panel now offers a negative prompt DIRECTLY, in a box, and that is the
+   same rule rather than an exception to it: what was refused is a HIDDEN one.
+   Nothing is prefilled, no style implies one, and an empty box puts no
+   `negative_prompt` field on the wire at all.
+
+   ── THE STYLE PICKER, AND WHY IT KEEPS THAT INVARIANT ─────────────────────
+   A style DOES append a sentence the user did not type, which looks like the
+   thing the paragraph above forbids. It is not, and the difference is where
+   the sentence lives. lib/image/styles.js publishes every phrase through
+   GET /api/images/options; the panel prints the selected one under "Exactly
+   what will be sent" BEFORE anything is sent; the server stores the composed
+   prompt. The text is on screen, in the response and in the audit row.
+
+   Nothing on the client enumerates a style. Refs, labels, summaries and
+   phrases all arrive from /options, and `style` goes on the wire as a REF —
+   so this file cannot show one sentence while the server appends another.
 
    ── STYLING ───────────────────────────────────────────────────────────────
    Every colour resolves through a design-system token — var(--accent),
@@ -113,6 +133,36 @@
       '.igen-btn:hover:not(:disabled){opacity:.88}',
       '.igen-btn:disabled{opacity:.5;cursor:default}',
       '.igen-note{margin-top:9px;font-size:.75rem;color:var(--text-2,currentColor)}',
+      '.igen-count{margin-top:4px;font-size:.6875rem;color:var(--text-2,currentColor);text-align:right}',
+      '.igen-count[data-over="1"]{color:var(--red-text,currentColor);font-weight:600}',
+      '.igen-lbl{display:block;margin-top:11px;font-size:.75rem;font-weight:600;',
+      '  color:var(--text-2,currentColor)}',
+      '.igen-lbl>select,.igen-lbl>input{display:block;margin-top:5px;font-weight:400;',
+      '  color:var(--text,currentColor)}',
+      '.igen-sel-wide{width:100%;box-sizing:border-box}',
+      '.igen-in{width:100%;box-sizing:border-box;padding:7px 9px;',
+      '  border:1px solid var(--border,currentColor);border-radius:var(--r-sm,6px);',
+      '  background:var(--bg,transparent);color:var(--text,currentColor);font:inherit}',
+      '.igen-in:focus-visible{outline:2px solid var(--accent,currentColor);outline-offset:1px}',
+      '.igen-hint{margin-top:5px;font-size:.75rem;color:var(--text-2,currentColor);line-height:1.5}',
+      '.igen-link{padding:7px 10px;border:1px solid var(--border,currentColor);',
+      '  border-radius:var(--r-sm,6px);background:transparent;color:var(--text-2,currentColor);',
+      '  font:inherit;font-size:.8125rem;cursor:pointer}',
+      '.igen-link:hover{color:var(--text,currentColor)}',
+      '.igen-link:focus-visible{outline:2px solid var(--accent,currentColor);outline-offset:1px}',
+      '.igen-prev{margin-top:11px;font-size:.8125rem}',
+      '.igen-prev>summary{cursor:pointer;font-size:.75rem;color:var(--text-2,currentColor)}',
+      '.igen-prev>summary:focus-visible{outline:2px solid var(--accent,currentColor);outline-offset:2px}',
+      '.igen-prev-body{margin-top:8px;padding:10px 12px;border:1px solid var(--border,currentColor);',
+      '  border-radius:var(--r-sm,6px);background:var(--bg,transparent);',
+      '  color:var(--text,currentColor);line-height:1.55}',
+      '.igen-prev-part+.igen-prev-part{margin-top:9px;padding-top:9px;',
+      '  border-top:1px solid var(--border,currentColor)}',
+      '.igen-prev-lbl{font-size:.6875rem;font-weight:600;text-transform:uppercase;',
+      '  letter-spacing:.04em;color:var(--text-2,currentColor);margin-bottom:3px}',
+      '.igen-prev-muted{opacity:.7}',
+      '.igen-prev-foot{margin-top:10px;font-size:.6875rem;color:var(--text-2,currentColor)}',
+      '.igen-avoid[hidden]{display:none}',
       '.igen-msg{margin-top:9px;padding:8px 11px;border-radius:var(--r-sm,6px);',
       '  border:1px solid var(--border,currentColor);color:var(--text,currentColor);font-size:.8125rem}',
       '.igen-msg[data-kind="error"]{border-color:var(--red,currentColor);color:var(--red-text,currentColor)}',
@@ -219,6 +269,28 @@
   }
 
   /**
+   * The style catalogue, normalised to {ref,label,summary,phrase}.
+   *
+   * lib/image/styles.js owns the refs, the labels AND the sentences. This
+   * enumerates none of them — a hard-coded "Watercolour" here would be a
+   * second catalogue, and the day the server rewords a phrase the panel would
+   * still be printing the old one under a box that sends the new one. That is
+   * the exact failure this whole design is arranged to prevent: what the user
+   * READS has to be what gets SENT.
+   */
+  function normalisedStyles() {
+    var raw = (options && options.styles) || [];
+    return raw.map(function (s) {
+      return {
+        ref: typeof s === 'string' ? s : s.ref,
+        label: (typeof s === 'string' ? s : s.label) || s.ref,
+        summary: (s && s.summary) || '',
+        phrase: (s && s.phrase) || null
+      };
+    }).filter(function (s) { return Boolean(s.ref); });
+  }
+
+  /**
    * ONE mapping from a failed response to a sentence a person can act on.
    *
    * The API answers with a named reason — image_cap_exceeded,
@@ -239,6 +311,21 @@
   }
 
   /**
+   * The remaining-quota sentence, from the usage block the server returns
+   * WITH the image. Empty string when there is nothing to say, so a caller
+   * can append it unconditionally. Worded once here, like the failure
+   * sentences above, so the panel and public/js/postimage.js cannot report
+   * the same number two different ways.
+   */
+  function quota(usage) {
+    var day = usage && usage.remaining ? usage.remaining.day : undefined;
+    var month = usage && usage.remaining ? usage.remaining.month : undefined;
+    if (typeof day !== 'number') return '';
+    return day + ' image generation' + (day === 1 ? '' : 's') + ' left today'
+      + (typeof month === 'number' ? ', ' + month + ' this month' : '') + '.';
+  }
+
+  /**
    * POST /api/images/generate.
    *
    * Resolves {ok:true, image} or {ok:false, message, status}. It rejects ONLY
@@ -250,6 +337,18 @@
     var body = { prompt: typeof r.prompt === 'string' ? r.prompt : '' };
     if (r.size) body.size = r.size;
     if (r.lang) body.lang = r.lang;
+    /* The KIND the user picked, sent as a REF and never as prose. The
+       sentence it stands for lives in lib/image/styles.js; this file shows it
+       from the catalogue /options returned and holds no copy of its own, so
+       there is nothing here to drift — not even the name of the ref that
+       means "add nothing", which is why this is a plain truthy check and not
+       a comparison against a literal. */
+    if (r.style) body.style = r.style;
+    /* What to keep OUT of the picture. ONLY ever what the user typed into the
+       visible box: no default list, nothing implied by the chosen style, and
+       nothing this file adds on anyone's behalf. A negative prompt the user
+       cannot see is a prompt they cannot be said to have read. */
+    if (r.negative_prompt) body.negative_prompt = r.negative_prompt;
 
     return call('POST', '/api/images/generate', body).then(function (res) {
       if (!res.ok || !res.data || !res.data.image) {
@@ -282,11 +381,35 @@
     options: function () { return options; },
     error: function () { return optionsError; },
     sizes: normalisedSizes,
+    styles: normalisedStyles,
     generate: generate
   };
 
   /* ══ CONTRACT A — the drop-in panel ═════════════════════════════════════ */
 
+  /* ── THE PANEL ────────────────────────────────────────────────────────────
+     Four controls, in the order a person actually decides them:
+
+       1. WHAT   — the description. The box that was already here.
+       2. WHAT KIND — the style picker. New, and the reason this round exists:
+          the panel used to hand a four-word prompt straight to the model,
+          which then chose the medium, the palette and the lighting itself,
+          differently every time. Two images made for one campaign did not
+          look related. A kind is one click and it is worth a paragraph of
+          typing nobody was doing.
+       3. SHAPE  — the aspect, unchanged.
+       4. AVOID  — optional, collapsed, and VISIBLE. The API has always taken
+          a negative prompt and no surface here ever offered one; the reason
+          it stayed unoffered was that a hidden one is a prompt the user
+          cannot be said to have read. A box they type into is not hidden.
+
+     And under them, "Exactly what will be sent" — the user's own words and,
+     when a kind is picked, the sentence that kind appends, shown as separate
+     blocks rather than one concatenated string. Two blocks because a joined
+     preview would mean this file owning a copy of the server's join rule, and
+     a copy is a thing that drifts. The parts are the server's; the order is
+     stated in words.
+     ───────────────────────────────────────────────────────────────────────── */
   function build(host) {
     if (host.getAttribute('data-imagegen-ready') === '1') return;
     host.setAttribute('data-imagegen-ready', '1');
@@ -298,19 +421,54 @@
     wrap.appendChild(head);
 
     var ta = el('textarea', 'igen-ta');
-    ta.placeholder = 'Describe the image — subject, setting, lighting, style. Be specific.';
+    ta.placeholder = 'What should be in the picture? A subject, where it is, '
+      + 'what is happening. Leave the look to the style below.';
     ta.setAttribute('aria-label', 'Image description');
     wrap.appendChild(ta);
 
+    var count = el('div', 'igen-count');
+    wrap.appendChild(count);
+
+    /* ── the kind ───────────────────────────────────────────────────────── */
+    var styleLab = el('label', 'igen-lbl', 'What kind of image?');
+    var styleSel = el('select', 'igen-sel igen-sel-wide');
+    styleLab.appendChild(styleSel);
+    wrap.appendChild(styleLab);
+
+    var styleNote = el('div', 'igen-hint');
+    wrap.appendChild(styleNote);
+
+    /* ── shape, avoid, go ───────────────────────────────────────────────── */
     var row = el('div', 'igen-row');
     var sel = el('select', 'igen-sel');
-    sel.setAttribute('aria-label', 'Image size');
+    sel.setAttribute('aria-label', 'Image shape');
     row.appendChild(sel);
+
+    var avoidBtn = el('button', 'igen-link', '+ Avoid');
+    avoidBtn.type = 'button';
+    avoidBtn.setAttribute('aria-expanded', 'false');
+    row.appendChild(avoidBtn);
 
     var btn = el('button', 'igen-btn', 'Generate image');
     btn.type = 'button';
     row.appendChild(btn);
     wrap.appendChild(row);
+
+    var avoidWrap = el('label', 'igen-lbl igen-avoid', 'Keep these out of the image');
+    avoidWrap.hidden = true;
+    var avoid = el('input', 'igen-in');
+    avoid.type = 'text';
+    avoid.placeholder = 'e.g. text, lettering, watermark, extra hands';
+    avoidWrap.appendChild(avoid);
+    wrap.appendChild(avoidWrap);
+
+    /* ── what will actually be sent ─────────────────────────────────────── */
+    var prev = el('details', 'igen-prev');
+    var prevSum = el('summary', null, 'Exactly what will be sent');
+    prev.appendChild(prevSum);
+    var prevBody = el('div', 'igen-prev-body');
+    prev.appendChild(prevBody);
+    wrap.appendChild(prev);
 
     var msg = el('div', 'igen-msg');
     msg.hidden = true;
@@ -339,7 +497,7 @@
       sel.innerHTML = '';
       var list = normalisedSizes();
       if (!list.length) {
-        var o = el('option', null, 'Default size');
+        var o = el('option', null, 'Default shape');
         o.value = '';
         sel.appendChild(o);
         return;
@@ -352,12 +510,94 @@
       });
     }
 
+    function fillStyles() {
+      styleSel.innerHTML = '';
+      var list = normalisedStyles();
+      if (!list.length) {
+        /* The server sent no catalogue — an older deployment, or an /options
+           call that failed. One inert option with an EMPTY value, so nothing
+           is put on the wire: offering a ref this server might not accept
+           would turn a missing catalogue into a 400 on click. Its wording is
+           deliberately not any catalogue label, so the drift guard in
+           test/image-contract.js §7c can assert this file holds no copy of
+           lib/image/styles.js. */
+        var o = el('option', null, 'Default — nothing added');
+        o.value = '';
+        styleSel.appendChild(o);
+        return;
+      }
+      /* Which one starts selected is the SERVER's call, named in
+         options.defaultStyle. When it names nothing the browser selects the
+         first, which is the catalogue's own first entry — this file does not
+         know or hard-code which ref that is. */
+      var want = options && options.defaultStyle;
+      list.forEach(function (s) {
+        var opt = el('option', null, s.label);
+        opt.value = s.ref;
+        if (want && s.ref === want) opt.selected = true;
+        styleSel.appendChild(opt);
+      });
+    }
+
+    /** The catalogue entry currently picked, or null. */
+    function chosenStyle() {
+      var ref = styleSel.value;
+      if (!ref) return null;
+      var list = normalisedStyles();
+      for (var i = 0; i < list.length; i++) if (list[i].ref === ref) return list[i];
+      return null;
+    }
+
+    function part(label, text, muted) {
+      var b = el('div', 'igen-prev-part' + (muted ? ' igen-prev-muted' : ''));
+      b.appendChild(el('div', 'igen-prev-lbl', label));
+      b.appendChild(el('div', null, text));
+      return b;
+    }
+
+    /** Redraw the style summary, the counter and the send preview. */
+    function reflect() {
+      var st = chosenStyle();
+      styleNote.textContent = st ? st.summary : '';
+
+      var max = (options && options.maxPromptChars) || 0;
+      var typed = ta.value.trim();
+      count.textContent = max ? (ta.value.length + ' / ' + max) : '';
+      count.setAttribute('data-over', max && ta.value.length > max ? '1' : '0');
+
+      prevBody.innerHTML = '';
+      prevBody.appendChild(typed
+        ? part('Your description', typed)
+        : part('Your description', 'Nothing typed yet.', true));
+      if (st && st.phrase) {
+        prevBody.appendChild(part('Added by “' + st.label + '”', st.phrase));
+      }
+      var neg = avoid.value.trim();
+      if (neg) prevBody.appendChild(part('Kept out', neg));
+      prevBody.appendChild(el('div', 'igen-prev-foot',
+        st && st.phrase
+          ? 'Both paragraphs are sent, in that order, and both are saved with the image.'
+          : 'Sent exactly as written, and saved with the image.'));
+    }
+
     function setBusy(on) {
       btn.disabled = on;
       ta.disabled = on;
       sel.disabled = on;
+      styleSel.disabled = on;
+      avoid.disabled = on;
       btn.textContent = on ? 'Generating…' : 'Generate image';
     }
+
+    ta.addEventListener('input', reflect);
+    avoid.addEventListener('input', reflect);
+    styleSel.addEventListener('change', reflect);
+    avoidBtn.addEventListener('click', function () {
+      avoidWrap.hidden = !avoidWrap.hidden;
+      avoidBtn.setAttribute('aria-expanded', avoidWrap.hidden ? 'false' : 'true');
+      avoidBtn.textContent = avoidWrap.hidden ? '+ Avoid' : '− Avoid';
+      if (!avoidWrap.hidden) avoid.focus();
+    });
 
     btn.addEventListener('click', function () {
       var prompt = ta.value.trim();
@@ -366,7 +606,12 @@
       if (!prompt) { say('error', 'Describe the image first.'); ta.focus(); return; }
 
       setBusy(true);
-      generate({ prompt: prompt, size: sel.value || undefined }).then(function (result) {
+      generate({
+        prompt: prompt,
+        size: sel.value || undefined,
+        style: styleSel.value || undefined,
+        negative_prompt: avoid.value.trim() || undefined
+      }).then(function (result) {
         setBusy(false);
         if (!result.ok) { say('error', result.message); return; }
 
@@ -382,8 +627,19 @@
         open.target = '_blank';
         open.rel = 'noopener';
         actions.appendChild(open);
+        var dl = el('a', null, 'Download');
+        dl.href = img.url;
+        dl.download = 'image-' + img.id;
+        actions.appendChild(dl);
         if (img.size) actions.appendChild(el('span', 'igen-sub', img.size));
         out.appendChild(actions);
+
+        /* The server returns the caller's own remaining quota alongside the
+           image. Printing it costs nothing — "how many do I have left" is the
+           next question every time, and asking again would be a second round
+           trip for a number already in hand. */
+        var left = quota(img.usage);
+        if (left) out.appendChild(el('div', 'igen-note', left));
       }, function () {
         /* The second argument to .then, not a trailing .catch: this handler is
            for a request that never left the machine, and a .catch here would
@@ -394,11 +650,14 @@
       });
     });
 
-    // Reflect whatever the options call already told us.
-    if (options) { fillSizes(); }
-    else if (optionsError) { fillSizes(); say('error', optionsError); btn.disabled = true; }
+    function fill() { fillSizes(); fillStyles(); reflect(); }
 
-    mounted.push({ fillSizes: fillSizes, say: say, btn: btn });
+    // Reflect whatever the options call already told us.
+    if (options) { fill(); }
+    else if (optionsError) { fill(); say('error', optionsError); btn.disabled = true; }
+    else { reflect(); }
+
+    mounted.push({ fill: fill, say: say, btn: btn });
   }
 
   function scan() {
@@ -411,7 +670,7 @@
     scan();
     ensureOptions().then(function () {
       mounted.forEach(function (m) {
-        m.fillSizes();
+        m.fill();
         if (optionsError) { m.say('error', optionsError); m.btn.disabled = true; }
       });
     });

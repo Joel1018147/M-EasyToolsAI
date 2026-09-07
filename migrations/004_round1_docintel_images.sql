@@ -250,3 +250,23 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS idx_audit_log_user   ON audit_log (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_log_actor  ON audit_log (actor, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log (entity, entity_id);
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ADDED LATER — the KIND of image the user picked
+-- ─────────────────────────────────────────────────────────────────────────────
+-- server.js re-runs this whole file on every boot, so a new column cannot go
+-- inside the CREATE TABLE above: `CREATE TABLE IF NOT EXISTS` is a no-op on a
+-- table that already exists, and every deployment's image_generations already
+-- does. It has to be an ALTER, and it has to be idempotent.
+--
+-- Nullable with no default, deliberately. NULL means "this request named no
+-- style", which is exactly what every row written before this column existed
+-- did — backfilling them to 'none' would invent a choice nobody made. The
+-- legal values are lib/image/styles.js's refs; there is no CHECK constraint
+-- because that file adds kinds and a constraint here would be a second copy
+-- of its catalogue that a migration has to chase.
+ALTER TABLE image_generations ADD COLUMN IF NOT EXISTS style TEXT;
+
+COMMENT ON COLUMN image_generations.style IS
+  'The style ref from lib/image/styles.js whose phrase was appended to prompt. NULL = none named.';
