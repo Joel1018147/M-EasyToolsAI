@@ -44,6 +44,7 @@ const vm = require('vm');
 
 const APP = path.join(__dirname, '..');
 const sizes = require('../lib/image/sizes');
+const styles = require('../lib/image/styles');
 const read = (rel) => fs.readFileSync(path.join(APP, rel), 'utf8');
 
 const imagegenSrc = read('public/js/imagegen.js');
@@ -136,6 +137,21 @@ ok('it maps every platform to something', mapped.length >= 5, mapped.length);
   ok('every aspect it can send is one the server will accept',
      illegal.length === 0, illegal.map((e) => e.platform + '→' + e.size).join(', '));
 }
+{
+  /* The look a post starts as is a ref this module names but does not own —
+     the same arrangement as the aspect above, and the same failure if it
+     drifts: a preference for a kind lib/image/styles.js no longer has would
+     leave every post silently starting on whatever the browser picked first. */
+  const m = /var PREFERRED_STYLE = '([^']+)';/.exec(postimageSrc);
+  ok('the preferred look lives in the module, once', Boolean(m));
+  ok('and it is a ref the server actually offers',
+     Boolean(m) && styles.allowedRefs().includes(m[1]), m && m[1]);
+  ok('it is not the add-nothing default — a social post wants art direction',
+     Boolean(m) && m[1] !== styles.DEFAULT_STYLE, m && m[1]);
+  const quoted = styles.catalogue().filter((s) => s.phrase && postimageSrc.includes(s.phrase));
+  ok('and no phrase from the catalogue is re-typed into the module',
+     quoted.length === 0, quoted.map((s) => s.ref).join(', '));
+}
 for (const page of PAGES) {
   const opts = /\{id:'platform',label:'Platform',type:'select',opts:\[([^\]]*)\]\}/.exec(page.js);
   ok(page.file + ': the Platform field is where this suite thinks it is', Boolean(opts));
@@ -187,6 +203,27 @@ function makeSandbox(page, routes) {
       get() { return node._html; },
       set(v) { node._html = String(v); node.children.length = 0; node.options.length = 0; },
     });
+
+    /* A <select>'s value is DERIVED from its selected option, and a plain
+       `value: ''` property is not that. Code that marks an option selected
+       and then reads `sel.value` back got the empty string here — so a
+       control with a correct default looked, to this suite, exactly like one
+       that contributes nothing. That is the same class of harness bug as the
+       innerHTML note above: the fake, not the product, was wrong, and the
+       first thing it did once fixed was fail a check that had been passing. */
+    if (node.tagName === 'select') {
+      Object.defineProperty(node, 'value', {
+        get() {
+          const chosen = node.options.find((o) => o.selected);
+          return chosen ? chosen.value : (node.options[0] ? node.options[0].value : '');
+        },
+        set(v) {
+          const target = node.options.find((o) => o.value === String(v));
+          if (!target) return;              // a browser ignores an unknown value
+          node.options.forEach((o) => { o.selected = o === target; });
+        },
+      });
+    }
     return node;
   }
 
@@ -253,6 +290,7 @@ function makeSandbox(page, routes) {
       toggle: all.find((n) => n.tagName === 'input' && n.type === 'checkbox'),
       prompt: all.find((n) => n.tagName === 'textarea'),
       size: all.find((n) => n.tagName === 'select' && n.getAttribute('aria-label') === 'Image aspect'),
+      style: all.find((n) => n.tagName === 'select' && n.getAttribute('aria-label') === 'Image look'),
       note: hints[0],
     };
   }
@@ -264,7 +302,9 @@ function makeSandbox(page, routes) {
 const OPTIONS_OK = {
   status: 200,
   body: { ok: true, provider: 'dashscope', configured: true, missing: [], model: 'qwen-image',
-          sizes: sizes.catalogue(), defaultSize: '1328*1328', brandAssets: [], maxPromptChars: 2000 },
+          sizes: sizes.catalogue(), defaultSize: '1328*1328',
+          styles: styles.catalogue(), defaultStyle: styles.DEFAULT_STYLE,
+          brandAssets: [], maxPromptChars: 2000 },
 };
 const storedImage = (over) => Object.assign({
   id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
@@ -372,6 +412,77 @@ async function battery(page) {
     box.dom['ff-topic'].fire('input');
     ok('once edited, the description is never rewritten under the user',
        c.prompt.value === 'A hand holding a paper boarding pass', c.prompt.value);
+  }
+
+  /* 5b. the look ─────────────────────────────────────────────────────────
+     The picker writes the chosen kind's art direction INTO the visible box
+     rather than sending a ref, because this description is editable — a ref
+     would re-append direction the user had just deleted. So the checks are:
+     the sentence appears in the box, it is the catalogue's own, changing the
+     look rewrites an untouched box, and nothing extra reaches the wire. */
+  {
+    const box = makeSandbox(page, { '/api/images/options': async () => OPTIONS_OK,
+      '/api/images/generate': async () => ({ status: 201, body: { ok: true, image: storedImage() } }) });
+    await openSocial(box);
+    const c = switchOn(box);
+    ok('the option carries a Look picker', Boolean(c.style));
+
+    const offered = c.style ? c.style.options.map((o) => ({ ref: o.value, label: o.textContent })) : [];
+    const expected = styles.catalogue().map((s) => ({ ref: s.ref, label: s.label }));
+    ok('it offers the server\'s catalogue, in the server\'s order',
+       JSON.stringify(offered) === JSON.stringify(expected), JSON.stringify(offered).slice(0, 120));
+
+    /* Resolved defensively. When PREFERRED_STYLE names a ref the catalogue no
+       longer has, the static check above already failed — and every check
+       below it would then throw on `preferred.phrase`, turning a named
+       failure into a stack trace that says nothing about what drifted. */
+    const wantRef = (/var PREFERRED_STYLE = '([^']+)';/.exec(postimageSrc) || [])[1];
+    const preferred = styles.catalogue().find((s) => s.ref === wantRef);
+    if (!preferred) {
+      ok(`PREFERRED_STYLE names "${wantRef}", which the server does not offer — `
+         + 'the rest of this section cannot be checked', false);
+      return;
+    }
+    ok('the preferred look starts selected',
+       c.style.options.filter((o) => o.selected).map((o) => o.value).join(',') === preferred.ref);
+    ok('THE INVARIANT — its published sentence is IN the visible description, not hidden behind it',
+       c.prompt.value.includes(preferred.phrase), c.prompt.value);
+
+    /* Every other kind, driven through the real control. */
+    let rewrote = 0;
+    for (const s of styles.catalogue().filter((x) => x.phrase && x.ref !== preferred.ref)) {
+      c.style.value = s.ref;
+      c.style.fire('change');
+      if (c.prompt.value.includes(s.phrase) && !c.prompt.value.includes(preferred.phrase)) rewrote += 1;
+      else ok(`"${s.label}" did NOT rewrite the description`, false, c.prompt.value.slice(0, 160));
+    }
+    ok(`changing the look rewrites an untouched description — all ${rewrote} other kinds`,
+       rewrote === styles.catalogue().filter((x) => x.phrase && x.ref !== preferred.ref).length);
+
+    const addsNothing = styles.catalogue().find((s) => !s.phrase);
+    c.style.value = addsNothing.ref;
+    c.style.fire('change');
+    ok('and the add-nothing kind leaves the description with no art direction at all',
+       !styles.catalogue().some((s) => s.phrase && c.prompt.value.includes(s.phrase)), c.prompt.value);
+    ok('…while keeping the guidance this tool owns', /no text/i.test(c.prompt.value)
+       && /caption/i.test(c.prompt.value), c.prompt.value);
+
+    /* Edited, then the look changed: the box must stay as the user left it. */
+    c.style.value = preferred.ref;
+    c.style.fire('change');
+    c.prompt.value = 'A hand holding a paper boarding pass';
+    c.prompt.fire('input');
+    const other = styles.catalogue().find((s) => s.phrase && s.ref !== preferred.ref);
+    c.style.value = other.ref;
+    c.style.fire('change');
+    ok('once the description is edited, changing the look does not overwrite it',
+       c.prompt.value === 'A hand holding a paper boarding pass', c.prompt.value);
+
+    box.evaluate('PostImage.start()');
+    await tick();
+    const sent = box.calls.find((x) => x.url === '/api/images/generate');
+    ok('no style ref goes on the wire from here — the words are already in the prompt',
+       sent && !('style' in sent.body), sent && JSON.stringify(sent.body));
   }
 
   /* 6. the aspect */

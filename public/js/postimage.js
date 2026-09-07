@@ -48,10 +48,30 @@
 
    ── THE TRANSPORT IS NOT HERE ─────────────────────────────────────────────
    /js/imagegen.js owns window.ImageGen: the options fetch, the legal size
-   catalogue and the sentences a refusal is reported with. This module is the
-   social-post POLICY on top of it — which platform wants which aspect, and
-   how a topic becomes a description. Both pages get the same policy and the
-   same transport, and neither holds a copy of either.
+   catalogue, the STYLE catalogue and the sentences a refusal is reported
+   with. This module is the social-post POLICY on top of it — which platform
+   wants which aspect, which look a post starts as, and how a topic becomes a
+   description. Both pages get the same policy and the same transport, and
+   neither holds a copy of either.
+
+   ── THE LOOK PICKER APPLIES THE KIND DIFFERENTLY FROM THE PANEL ───────────
+   Two mechanisms, one catalogue, and the difference is deliberate.
+
+   imagegen.js's drop-in panel sends a REF and lets the server append the
+   sentence; the box there holds only the user's own words, and the panel
+   prints the appended sentence beside it.
+
+   Here the sentence is written INTO the visible description and no ref goes
+   on the wire at all. Because this description is DERIVED and EDITABLE: it is
+   built from the topic, platform, tone and look, and the user is invited to
+   rewrite it. Sending a ref as well would silently re-append art direction
+   that somebody had just deleted from the box — the prompt they read would no
+   longer be the prompt that was sent, which is the one rule this module has.
+
+   Both read `lib/image/styles.js` through ImageGen.styles(); neither types a
+   label or a phrase of its own. PREFERRED_STYLE below names a ref, the way
+   PLATFORM_ASPECT names sizes, and is dropped if the server does not offer
+   it.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -73,6 +93,16 @@
     'Facebook': '1664*928',
     'All platforms': '1328*1328'  // square is the one that survives every crop
   };
+
+  /* Which KIND of image a social post starts as.
+     The refs come from lib/image/styles.js and this names ONE of them, the
+     way PLATFORM_ASPECT names sizes it does not own — and with the same
+     guard: a preference the server does not offer is DROPPED, not forced, so
+     the catalogue can change without this file being able to send a ref that
+     no longer exists. Photography, because a post that looks like a photo is
+     what the previous version of this description asked for in prose and
+     what most posts want; every other kind is one select away. */
+  var PREFERRED_STYLE = 'photo';
 
   var cfg = null;            // the current attachment, or null
   var ui = null;             // the nodes this module made, by reference
@@ -129,16 +159,32 @@
      field would mean the prompt stored against the image is not the one
      anybody saw. So it goes in the visible box, where it can be read, kept or
      deleted. */
+  /**
+   * The catalogue entry for the picked kind, or null.
+   *
+   * lib/image/styles.js owns the refs, the labels and the sentences; they
+   * arrive through ImageGen.styles() and nothing here re-types one.
+   */
+  function chosenStyle() {
+    if (!ui || !window.ImageGen || typeof window.ImageGen.styles !== 'function') return null;
+    var ref = ui.style ? ui.style.value : '';
+    if (!ref) return null;
+    var list = window.ImageGen.styles();
+    for (var i = 0; i < list.length; i++) if (list[i].ref === ref) return list[i];
+    return null;
+  }
+
   function derived() {
     var topic = fieldValue('topic');
     if (!topic) return '';
     var platform = fieldValue('platform') || 'social media';
     var goal = fieldValue('goal');
     var tone = (cfg && typeof cfg.tone === 'function' && cfg.tone()) || '';
+    var st = chosenStyle();
     return 'A ' + (tone ? tone.toLowerCase() + ' ' : '') + platform + ' image for: ' + topic + '.'
       + (goal ? ' It has to carry this at a glance: ' + goal.toLowerCase() + '.' : '')
-      + ' Photographic, sharp, bright even lighting, one clear subject, uncluttered'
-      + ' background with room for a caption to sit over it.'
+      + (st && st.phrase ? ' ' + st.phrase : '')
+      + ' One clear subject, and an uncluttered area where a caption can sit over it.'
       + ' No text, no lettering, no logo and no watermark anywhere in the image.';
   }
 
@@ -203,6 +249,12 @@
     var detail = el('div');
     detail.hidden = true;
 
+    var styleLabel = el('div', (css.label || '') + ' pimg-sub', 'Look');
+    var style = el('select', css.select || '');
+    style.setAttribute('aria-label', 'Image look');
+    detail.appendChild(styleLabel);
+    detail.appendChild(style);
+
     var sizeLabel = el('div', (css.label || '') + ' pimg-sub', 'Aspect');
     var size = el('select', css.select || '');
     size.setAttribute('aria-label', 'Image aspect');
@@ -217,13 +269,14 @@
     detail.appendChild(promptLabel);
     detail.appendChild(prompt);
     detail.appendChild(el('div', 'pimg-hint',
-      'Written from your topic, platform and tone, and sent exactly as you see it. '
+      'Written from your topic, platform, tone and look, and sent exactly as you see it. '
       + 'Edit it and it stays as you left it.'));
 
     section.appendChild(detail);
     options.form.appendChild(section);
 
-    ui = { section: section, toggle: toggle, detail: detail, size: size, prompt: prompt, note: note };
+    ui = { section: section, toggle: toggle, detail: detail, style: style, size: size,
+           prompt: prompt, note: note };
 
     toggle.addEventListener('change', function () {
       detail.hidden = !toggle.checked;
@@ -231,6 +284,11 @@
     });
     prompt.addEventListener('input', function () { promptEdited = true; });
     size.addEventListener('change', function () { sizeEdited = true; });
+    /* Changing the look REWRITES the description — that is the whole point of
+       the control — but only while the user has not taken the description
+       over. `refresh()` already holds that rule for the topic and the tone,
+       and this goes through it rather than around it. */
+    style.addEventListener('change', refresh);
 
     // The module wires itself to the page's fields, so neither page has to.
     ['topic', 'platform', 'goal'].forEach(function (name) {
@@ -260,6 +318,23 @@
         if (z.isDefault) o.selected = true;
         size.appendChild(o);
       });
+      /* The kinds, from the server's catalogue, in the server's order. The
+         preference above is honoured only if the server actually offers it —
+         same rule as PLATFORM_ASPECT, so a catalogue change cannot leave this
+         file selecting a ref that no longer exists. */
+      var kinds = typeof window.ImageGen.styles === 'function' ? window.ImageGen.styles() : [];
+      var offered = kinds.some(function (k) { return k.ref === PREFERRED_STYLE; });
+      kinds.forEach(function (k) {
+        var o = el('option', null, k.label);
+        o.value = k.ref;
+        if (offered && k.ref === PREFERRED_STYLE) o.selected = true;
+        style.appendChild(o);
+      });
+      /* An older deployment publishes no catalogue. An empty <select> is a
+         blank box that looks broken, so the control is removed rather than
+         shown empty — and the description simply carries no art direction,
+         which is what it did before this control existed. */
+      if (!kinds.length) { styleLabel.hidden = true; style.hidden = true; }
       var opts = window.ImageGen.options();
       if (opts && opts.maxPromptChars) prompt.maxLength = opts.maxPromptChars;
       refresh();

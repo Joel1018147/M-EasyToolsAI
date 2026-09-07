@@ -40,15 +40,18 @@ const STYLES = path.join(APP, 'lib/image/styles.js');
 const INDEX = path.join(APP, 'lib/image/index.js');
 const DASH = path.join(APP, 'lib/image/providers/dashscope.js');
 const IGEN = path.join(APP, 'public/js/imagegen.js');
-/* TWO suites, because the feature has two halves and each can be broken
-   without the other noticing. The server can append exactly the right
-   sentence while the panel prints a different one; the panel can print the
-   right one while the server appends nothing. Every mutation below names
-   which suite is supposed to catch it, and both must be green at baseline. */
+const POST = path.join(APP, 'public/js/postimage.js');
+/* THREE suites, because the feature has three surfaces and each can be broken
+   without the others noticing. The server can append exactly the right
+   sentence while the panel prints a different one; the panel can be perfect
+   while the Social Post tool writes art direction nobody chose into an
+   editable box. Every mutation below names which suite is supposed to catch
+   it, and all three must be green at baseline. */
 const SERVER_SUITE = path.join(__dirname, 'image-contract.js');
 const PANEL_SUITE = path.join(__dirname, 'imagegen-panel-contract.js');
+const SOCIAL_SUITE = path.join(__dirname, 'social-image-contract.js');
 
-const TARGETS = [STYLES, INDEX, DASH, IGEN];
+const TARGETS = [STYLES, INDEX, DASH, IGEN, POST];
 const md5 = (f) => crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex');
 const backup = (f) => `${f}.mutstyle.bak`;
 
@@ -83,8 +86,18 @@ function run(suite) {
      exactly like the harness having crashed the suite by accident rather
      than the guard having fired on purpose. */
   const out = (r.stdout || '') + (r.stderr || '');
-  const m = /(\d+) checks passed/.exec(out);
-  const named = out.split('\n').filter((l) => l.includes('✗')).map((l) => l.trim());
+  /* Two spellings, because social-image-contract.js reports "N checks, 0
+     failure(s)" while the other two say "N checks passed". A regex that knew
+     only one would print NaN for the other's baseline — a harness that cannot
+     say how big the suite it is protecting is. */
+  const m = /(\d+) checks passed/.exec(out) || /(\d+) checks, \d+ failure/.exec(out);
+  /* Both failure marks, too: social-image-contract.js prints ❌ and the other
+     two print ✗. Reading one only made every kill on that suite report as
+     "suite aborted", which is the harness describing its own blind spot as
+     the product's behaviour. */
+  const named = out.split('\n')
+    .filter((l) => l.includes('✗') || l.includes('❌'))
+    .map((l) => l.trim());
   return { exit: r.status, checks: m ? +m[1] : NaN, named };
 }
 
@@ -158,6 +171,26 @@ const MUTATIONS = [
   ['P4  prefill a negative prompt the user never typed', PANEL_SUITE, () =>
     mutate(IGEN, 'if (r.negative_prompt) body.negative_prompt = r.negative_prompt;',
                  "body.negative_prompt = r.negative_prompt || 'text, watermark';")],
+
+  /* ── the Social Post half ──────────────────────────────────────────────
+     This surface applies a kind the OTHER way round — the sentence goes into
+     the visible, editable description and no ref goes on the wire — so its
+     failure modes are different ones, and none of them are visible to the
+     two suites above. */
+  ['S1  pick a look, write none of it into the description', SOCIAL_SUITE, () =>
+    mutate(POST, "+ (st && st.phrase ? ' ' + st.phrase : '')", "+ ''")],
+
+  ['S2  send a ref as well, re-appending direction the user may have deleted', SOCIAL_SUITE, () =>
+    mutate(POST, "      prompt: String(ui.prompt.value || '').trim(),",
+                 "      prompt: String(ui.prompt.value || '').trim(),\n"
+               + "      style: ui.style ? ui.style.value : '',")],
+
+  ['S3  prefer a look lib/image/styles.js does not offer', SOCIAL_SUITE, () =>
+    mutate(POST, "var PREFERRED_STYLE = 'photo';", "var PREFERRED_STYLE = 'photorealistic';")],
+
+  ['S4  let the look overwrite a description the user has edited', SOCIAL_SUITE, () =>
+    mutate(POST, "style.addEventListener('change', refresh);",
+                 "style.addEventListener('change', function () { promptEdited = false; refresh(); });")],
 ];
 
 /* Each entry is [label, apply] or [label, suite, apply]. */
@@ -166,7 +199,7 @@ const parse = (m) => (m.length === 3 ? { label: m[0], suite: m[1], apply: m[2] }
 
 console.log('── baseline ' + '─'.repeat(52));
 let baseFailed = false;
-for (const suite of [SERVER_SUITE, PANEL_SUITE]) {
+for (const suite of [SERVER_SUITE, PANEL_SUITE, SOCIAL_SUITE]) {
   const b = run(suite);
   console.log(`    ${path.basename(suite)}: ${b.checks} checks, exit ${b.exit}`);
   if (b.exit !== 0) baseFailed = true;
@@ -196,7 +229,7 @@ for (const m of MUTATIONS) {
 
 console.log('\n── restored ' + '─'.repeat(52));
 let notGreen = false;
-for (const suite of [SERVER_SUITE, PANEL_SUITE]) {
+for (const suite of [SERVER_SUITE, PANEL_SUITE, SOCIAL_SUITE]) {
   const g = run(suite);
   console.log(`    ${path.basename(suite)}: ${g.checks} checks, exit ${g.exit}`);
   if (g.exit !== 0) notGreen = true;
