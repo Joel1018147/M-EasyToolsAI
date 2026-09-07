@@ -738,6 +738,8 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 .pr-score-label{font-size:11px;color:var(--mist);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
 .pr-score-val{font-size:20px;font-weight:800;line-height:1}
 </style>
+<link rel="stylesheet" href="/css/tools-mobile.css">
+<script src="/js/mobile-nav.js" defer></script>
 </head>
 <body>
 <div id="sub-banner" style="grid-column:2;"></div>
@@ -1368,7 +1370,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;margin-top:20px">
+      <div class="tmob-split" style="--tmob-col:320px;gap:20px;margin-top:20px">
         <!-- Config panel -->
         <div style="background:var(--white);border:1px solid var(--fog);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm)">
           <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px">Configuration</div>
@@ -1446,7 +1448,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
 
       <!-- ── WRITE TAB ── -->
       <div id="prpanel-write">
-        <div style="display:grid;grid-template-columns:360px 1fr;gap:20px">
+        <div class="tmob-split" style="--tmob-col:360px;gap:20px">
 
           <!-- Form panel -->
           <div style="background:var(--white);border:1px solid var(--fog);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm)">
@@ -1456,7 +1458,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
             <div class="f-group"><div class="f-label">Key Messages *</div><textarea class="f-textarea" id="pr-messages" rows="4" placeholder="List 3–5 key points you want journalists to know..."></textarea></div>
             <div class="f-group"><div class="f-label">Spokesperson Quote</div><input class="f-input" id="pr-quote" placeholder="e.g. This will transform how Malaysian SMEs operate"></div>
             <div class="f-group"><div class="f-label">Spokesperson Name & Title</div><input class="f-input" id="pr-spokesperson" placeholder="e.g. Joel Tan, Founder & Director"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="tmob-split" style="--tmob-col:1fr;gap:10px">
               <div class="f-group"><div class="f-label">Target Media</div>
                 <select class="f-select" id="pr-audience">
                   <option>General Business Media</option><option>Tech & Innovation Press</option>
@@ -1532,7 +1534,7 @@ body{font-family:var(--font);color:var(--navy);display:flex;flex-direction:colum
         <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">Choose Your Distribution Package</div>
         <div style="font-size:13px;color:var(--mist);margin-bottom:20px">Your press release will be emailed to verified media outlets and journalists in our network. Our team confirms publications and updates your report.</div>
 
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+        <div class="tmob-cards" style="--tmob-n:3;gap:16px;margin-bottom:24px">
           <div class="pr-pkg" id="pkgcard-starter" onclick="prSelectPkg('starter')">
             <div class="pr-pkg-name">Starter</div>
             <div class="pr-pkg-price">RM 149</div>
@@ -3756,7 +3758,7 @@ async function prViewReport(distId) {
         <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px">${d.headline}</div>
         <div style="font-size:13px;color:var(--mist)">${d.company_name} · ${d.package_name} Package · ${new Date(d.submitted_at).toLocaleDateString()}</div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="tmob-grid" style="--tmob-n:4;gap:12px;margin-bottom:20px">
         <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Emails Sent</div><div class="pr-score-val" style="color:var(--navy)">${d.emails_sent||0}</div></div>
         <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Published</div><div class="pr-score-val" style="color:var(--green-text)">${published}</div></div>
         <div class="pr-score-box" style="flex-direction:column;align-items:flex-start"><div class="pr-score-label">Total Reach</div><div class="pr-score-val" style="color:var(--orange)">${totalReach}</div></div>

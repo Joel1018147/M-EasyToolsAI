@@ -1,0 +1,681 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   M-EasyTools AI+ — MOBILE LAYER
+   ═══════════════════════════════════════════════════════════════════════════
+
+   WHY THIS FILE EXISTS, AND WHY IT IS NOT AN EDIT TO THE DESIGN SYSTEM.
+
+   CLAUDE.md §1: `css/modus-design-system.css` is byte-identical to the master
+   and a per-repo edit to it is a defect. The master already carries a mobile
+   contract — at <=768px it hides `.app-sidebar` and shows `.app-bottom-nav`.
+   Four pages here honour it (auth, settings, billing, audiobook, all built on
+   the canonical `.app-layout` grid).
+
+   The two biggest screens in the product do not, and cannot: `app.html` and
+   `gao.html` predate the canonical shell. They declare their OWN `.app-sidebar`
+   / `.sidebar` in an inline <style> that loads AFTER the design system, at the
+   same specificity (0,1,0), so `display:flex` wins over the master's
+   `display:none` at every width. Measured before this file existed:
+
+       app.html @390px   sidebar 242px = 62% of the viewport,
+                         .main-area clipped to a 148px column,
+                         html{overflow:hidden} so it cannot even be scrolled to
+       gao.html @390px   sidebar 220px = 56%
+       api-docs @390px   nav.sidebar 737px = 189%, page overflows by +367px
+
+   Rewriting either page onto `.app-layout` is a 4,000-line diff nobody can
+   review. So this file adds a mobile layer instead, and every rule in it is
+   anchored on `[data-platform="tools"]` — an attribute already on <html> of
+   all 25 pages. That is (0,2,0), which beats any page's single-class rule
+   REGARDLESS of source order, so this sheet does not depend on being linked
+   last to work. Nothing here targets a desktop width.
+
+   Nothing in this file is !important. If a rule ever stops applying, the cause
+   is an INLINE style attribute (the only thing that outranks it) and the fix is
+   to move that value into a class — see the .tmob-* utilities at the bottom,
+   which exist for exactly that reason.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ── 1. OFF-CANVAS NAV ──────────────────────────────────────────────────────
+   app.html and gao.html carry 11 and 8 nav items across three labelled
+   sections. That does not fold into a 5-slot bottom nav without throwing items
+   away, so these two get a drawer instead: the full sidebar, off-screen until
+   asked for. The canonical `.app-layout` pages keep the bottom nav — same
+   destination, different shell, and the master decides for those.
+
+   GATED ON `.mnav-ready`, which js/mobile-nav.js sets on <html>. If that
+   script fails to load, the sidebar keeps its current always-visible layout —
+   cramped, which is today's behaviour, rather than hidden with no way to open
+   it, which would be worse than today's behaviour. A drawer with no opener is
+   not a degraded nav, it is no nav.
+   ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  [data-platform="tools"].mnav-ready .app-sidebar,
+  [data-platform="tools"].mnav-ready .shell > .sidebar {
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    width: min(84vw, 300px);
+    min-width: 0;
+    height: 100%;
+    max-height: 100%;
+    z-index: 1001;
+    transform: translateX(-100%);
+    /* visibility, not just transform: a translated element is still hittable
+       and still focusable. Off-screen must mean unreachable, for a fingertip
+       and for a screen reader's tab order alike. */
+    visibility: hidden;
+    overscroll-behavior: contain;
+    transition: transform .24s ease, visibility 0s linear .24s;
+  }
+
+  [data-platform="tools"].mnav-ready.mnav-open .app-sidebar,
+  [data-platform="tools"].mnav-ready.mnav-open .shell > .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform .24s ease, visibility 0s;
+    box-shadow: 0 0 40px rgba(0, 0, 0, .38);
+  }
+
+  /* The scrim is a real element (js/mobile-nav.js injects it) rather than a
+     pseudo-element, because it has to take a tap to close the drawer. */
+  [data-platform="tools"] .mnav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, .45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .24s ease, visibility 0s linear .24s;
+    border: 0;
+    padding: 0;
+  }
+  [data-platform="tools"].mnav-open .mnav-scrim {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .24s ease, visibility 0s;
+  }
+
+  /* With the sidebar out of flow, the main column is the whole screen. */
+  [data-platform="tools"].mnav-ready .main-area,
+  [data-platform="tools"].mnav-ready .shell > .main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* The drawer opens over the page; the page behind it must not scroll. */
+  [data-platform="tools"].mnav-open body {
+    overflow: hidden;
+  }
+
+  /* The rule that SHOWS the hamburger lives in section 7, immediately after the
+     base rule that hides it. It used to live here, and did not work: both rules
+     are (0,2,0), a media query adds no specificity, and section 7 is further
+     down the file — so `display:none` won at every width and the drawer had no
+     opener. Equal specificity means source order decides, and the only way to
+     keep that readable is to keep the pair together. */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-platform="tools"] .app-sidebar,
+  [data-platform="tools"] .shell > .sidebar,
+  [data-platform="tools"] .mnav-scrim {
+    transition-duration: 0s;
+  }
+}
+
+
+/* ── 2. SHELLS THAT ASSUME A DESKTOP WIDTH ──────────────────────────────────
+   Each of these was measured overflowing or clipped at 390px. */
+@media (max-width: 768px) {
+
+  /* app.html sets html,body{overflow:hidden} for its desktop shell, where the
+     inner .page-body does the scrolling. That is still true on a phone, but
+     the topbar's buttons need room to wrap rather than being pushed out. */
+  [data-platform="tools"] .app-topbar {
+    padding: 0 14px;
+    gap: 8px;
+  }
+  [data-platform="tools"] .topbar {
+    padding: 0 14px;
+    gap: 8px;
+  }
+  [data-platform="tools"] .topbar-title {
+    font-size: 15px;
+    /* One line, ellipsised. Wrapping the title is what pushed the topbar's
+       action buttons off the right edge of a 390px screen. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  [data-platform="tools"] .page-body,
+  [data-platform="tools"] .billing-shell,
+  [data-platform="tools"] .settings-content {
+    padding: 16px 14px;
+  }
+  [data-platform="tools"] .dash-banner {
+    padding: 20px 16px;
+  }
+  /* The 160px watermark glyph is what made .dash-banner's scrollWidth 208px
+     inside a 148px box. Decoration must not set a layout minimum. */
+  [data-platform="tools"] .dash-banner::after,
+  [data-platform="tools"] .current-plan-banner::after {
+    display: none;
+  }
+
+  /* Two-pane editors: stack, and let the panes size to content instead of
+     inheriting a desktop row track. */
+  [data-platform="tools"] .editor-layout,
+  [data-platform="tools"] .settings-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    overflow: visible;
+  }
+  [data-platform="tools"] .form-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  /* settings.nav is a column of items on desktop; on a phone it is a scrolling
+     strip above the content it filters. */
+  [data-platform="tools"] .settings-nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  [data-platform="tools"] .settings-nav .sn-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  [data-platform="tools"] .sn-section {
+    display: none;
+  }
+
+  /* Card and metric grids that were still 3- and 4-up at 390px. */
+  [data-platform="tools"] .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 14px;
+  }
+  [data-platform="tools"] .plan-cards-grid,
+  [data-platform="tools"] .seo-tools-grid,
+  [data-platform="tools"] .citation-grid,
+  [data-platform="tools"] .entity-grid,
+  [data-platform="tools"] .enricher-compare,
+  [data-platform="tools"] .ip-grid {
+    grid-template-columns: 1fr;
+  }
+  [data-platform="tools"] .visibility-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  [data-platform="tools"] .tpl-grid,
+  [data-platform="tools"] .tools-grid {
+    grid-template-columns: 1fr;
+  }
+  [data-platform="tools"] .quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* The plan banner is a desktop row of two blocks. */
+  [data-platform="tools"] .current-plan-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+  }
+  [data-platform="tools"] .cpb-right {
+    text-align: left;
+    width: 100%;
+  }
+  [data-platform="tools"] .cpb-bar {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* A settings row is label-left / control-right on desktop. At 390px the
+     control is squeezed to a few dozen pixels, so the row becomes two lines. */
+  [data-platform="tools"] .s-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  [data-platform="tools"] .s-row .toggle-sw {
+    align-self: flex-start;
+  }
+  [data-platform="tools"] .api-row {
+    flex-wrap: wrap;
+  }
+
+  /* api-docs.html: the grid DOES collapse to one column here, but a grid item's
+     automatic minimum size is its max-content width, so a long unbroken code
+     sample sized the single column to 737px and dragged the page 367px wide
+     with it. min-width:0 lets the column shrink; the <pre> then scrolls itself
+     instead of scrolling the document. */
+  [data-platform="tools"] .layout,
+  [data-platform="tools"] .layout > * {
+    min-width: 0;
+  }
+  [data-platform="tools"] .layout {
+    padding: 20px 14px;
+  }
+
+  /* Same automatic-minimum-size trap, on the CANONICAL shell this time. The
+     design system collapses `.app-layout` to a single 1fr column at this
+     breakpoint but never gives its children a min-width, so on audiobook.html
+     the widest form control sized that column to 445px and the topbar and main
+     were both cut off by 55px inside a 390px page. Measured on audiobook; the
+     rule is on `.app-layout` because billing and settings share the shell and
+     are one wide table away from the same thing. */
+  [data-platform="tools"] .app-layout,
+  [data-platform="tools"] .app-layout > * {
+    min-width: 0;
+  }
+}
+
+
+/* ── 3. WIDE CONTENT SCROLLS ITSELF ─────────────────────────────────────────
+   Measured clipped — content wider than its box with overflow-x:hidden, so it
+   was unreachable rather than merely off-screen. A table does not have to fit
+   a phone; it has to be READABLE on one, which means it scrolls in its own
+   box and the page does not scroll sideways with it. */
+@media (max-width: 768px) {
+  [data-platform="tools"] .table-wrap,
+  [data-platform="tools"] .prompt-table,
+  [data-platform="tools"] .gao-hero,
+  [data-platform="tools"] .panel,
+  [data-platform="tools"] .comp-table,
+  [data-platform="tools"] .gr-llm-results {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* A 6-column table header needs a floor or the columns collapse into each
+     other; below that floor the container above scrolls. */
+  [data-platform="tools"] .pt-header,
+  [data-platform="tools"] .pt-row,
+  [data-platform="tools"] .comp-header,
+  [data-platform="tools"] .comp-row {
+    min-width: 620px;
+  }
+
+  /* Code and pre blocks: scroll, never widen the page. */
+  [data-platform="tools"] pre {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* Horizontal tab strips stay swipeable rather than wrapping into a block. */
+  [data-platform="tools"] .gao-tab,
+  [data-platform="tools"] .pr-tab,
+  [data-platform="tools"] .auth-tab,
+  [data-platform="tools"] .tab {
+    flex-shrink: 0;
+  }
+}
+
+
+/* ── 4. TOUCH TARGETS ───────────────────────────────────────────────────────
+   The design system applies a 44px floor at <=768px, but only to ITS OWN
+   button classes (.btn, .btn-sm, .page-btn, .theme-toggle, ...). Every screen
+   in this repo also ships bespoke controls that the master has never heard of,
+   and they measured 20-38px tall. This is the same rule, extended to the names
+   this repo actually uses.
+
+   min-height rather than height, so a control whose label wraps still grows.
+
+   Deliberately NOT included: inline links inside prose. WCAG 2.2 SC 2.5.8
+   exempts a target that sits in a sentence, and forcing 44px on every <a> in a
+   paragraph would double the leading of every body of text in the product.
+   Links that behave as controls (.sb-link, .auth-link, .tb-a, .skip-link) are
+   listed, links inside sentences are not. */
+@media (max-width: 768px) {
+  [data-platform="tools"] button,
+  [data-platform="tools"] select,
+  [data-platform="tools"] textarea,
+  [data-platform="tools"] input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  [data-platform="tools"] .sidebar-item,
+  [data-platform="tools"] .sb-item,
+  [data-platform="tools"] .sb-link,
+  [data-platform="tools"] .sn-item,
+  [data-platform="tools"] .settings-nav-item,
+  [data-platform="tools"] .bottom-nav-item,
+  [data-platform="tools"] .panel-action,
+  [data-platform="tools"] .lang-btn,
+  [data-platform="tools"] .lang-switch-btn,
+  [data-platform="tools"] .lang-toggle,
+  [data-platform="tools"] .th-btn,
+  [data-platform="tools"] .theme-toggle,
+  [data-platform="tools"] .auth-tab,
+  [data-platform="tools"] .auth-link,
+  [data-platform="tools"] .pr-tab,
+  [data-platform="tools"] .gao-tab,
+  [data-platform="tools"] .tab,
+  [data-platform="tools"] .w-chip,
+  [data-platform="tools"] .genlang-opt,
+  [data-platform="tools"] .copy-btn,
+  [data-platform="tools"] .cw-quick-btn,
+  [data-platform="tools"] .cw-send,
+  [data-platform="tools"] .cw-close,
+  [data-platform="tools"] .send-btn,
+  [data-platform="tools"] .run-btn,
+  [data-platform="tools"] .btn-go,
+  [data-platform="tools"] .tb-a,
+  [data-platform="tools"] .skip-link,
+  /* A <div> with an onclick is a control whatever its tag says. gao.html's
+     model pickers are divs and measured 32px tall. */
+  [data-platform="tools"] .llm-cb,
+  /* A row of destinations, not a sentence — so the SC 2.5.8 prose exemption
+     below does not cover these. Measured 20px tall. */
+  [data-platform="tools"] .footer-links a,
+  [data-platform="tools"] .mnav-toggle {
+    min-height: 44px;
+  }
+
+  /* Narrow controls: height was fixed by the rule above but the other axis was
+     still 37-42px. Three 44px language segments come to 132px, which fits the
+     narrowest row they appear in. */
+  [data-platform="tools"] .lang-btn,
+  [data-platform="tools"] .lang-switch-btn,
+  [data-platform="tools"] .genlang-opt,
+  [data-platform="tools"] .footer-links a {
+    min-width: 44px;
+  }
+
+  /* Square icon-only controls need the other axis too. A 44px-tall, 24px-wide
+     close button is still a miss. */
+  [data-platform="tools"] .theme-toggle,
+  [data-platform="tools"] .th-btn,
+  [data-platform="tools"] .cw-close,
+  [data-platform="tools"] .cw-send,
+  [data-platform="tools"] .send-btn,
+  [data-platform="tools"] .mnav-toggle {
+    min-width: 44px;
+  }
+
+  /* Several of these are display:block/inline-block with the label sitting at
+     the top once min-height grows the box. Centre it. */
+  [data-platform="tools"] .th-btn,
+  [data-platform="tools"] .theme-toggle,
+  [data-platform="tools"] .lang-btn,
+  [data-platform="tools"] .lang-switch-btn,
+  [data-platform="tools"] .auth-tab,
+  [data-platform="tools"] .tab,
+  [data-platform="tools"] .pr-tab,
+  [data-platform="tools"] .copy-btn,
+  [data-platform="tools"] .cw-quick-btn,
+  [data-platform="tools"] .genlang-opt,
+  [data-platform="tools"] .tb-a,
+  [data-platform="tools"] .auth-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* .sb-link is api-docs.html's SIDEBAR nav — a vertical list, one destination
+     per row. It belongs in the 44px rule above but NOT in the inline-flex list:
+     inline-flex made the three links in each section flow together on one line,
+     so "Introduction Authentication API Keys" read as a sentence instead of as
+     three separate things to tap. Block-level flex, left-aligned. */
+  [data-platform="tools"] .sb-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  /* Checkboxes and radios are exempt from the 44px box — a 44px checkbox is a
+     design defect, not an affordance — but 13px is genuinely too small to hit.
+     24px is SC 2.5.8's minimum on the nose, and is the size to write rather
+     than 22px-plus-the-label: the label is not always a <label>, so its hit
+     area is not something this rule can assume. */
+  [data-platform="tools"] input[type="checkbox"],
+  [data-platform="tools"] input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  /* iOS Safari zooms the page in when a focused field's text is under 16px.
+     That zoom is not reversible by pinching back on some versions, so it reads
+     as the layout breaking on tap. */
+  [data-platform="tools"] input,
+  [data-platform="tools"] select,
+  [data-platform="tools"] textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+
+/* ── 5. NOTHING SCROLLS SIDEWAYS ────────────────────────────────────────────
+   A flex or grid child's automatic minimum size is its content width, so one
+   long word, one wide input or one unbroken URL widens the whole row and takes
+   the page with it. This has bitten the ecosystem twice already (POS Run 84,
+   Duke Run 131), both times as an input in a flex row pushing its neighbours
+   off the screen. */
+@media (max-width: 768px) {
+  [data-platform="tools"] .form-row > *,
+  [data-platform="tools"] .api-row > *,
+  [data-platform="tools"] .f-group > *,
+  [data-platform="tools"] .s-info,
+  [data-platform="tools"] .u-info,
+  [data-platform="tools"] .main-area,
+  [data-platform="tools"] .page,
+  [data-platform="tools"] .page-body {
+    min-width: 0;
+  }
+
+  /* Inputs default to a ~170px intrinsic width that ignores its container. */
+  [data-platform="tools"] input[type="text"],
+  [data-platform="tools"] input[type="email"],
+  [data-platform="tools"] input[type="tel"],
+  [data-platform="tools"] input[type="password"],
+  [data-platform="tools"] input[type="search"],
+  [data-platform="tools"] input[type="url"],
+  [data-platform="tools"] input[type="number"],
+  [data-platform="tools"] input:not([type]),
+  [data-platform="tools"] select,
+  [data-platform="tools"] textarea {
+    max-width: 100%;
+  }
+
+  /* Long unbroken strings — API keys, URLs, generated slugs. */
+  [data-platform="tools"] .mono,
+  [data-platform="tools"] code,
+  [data-platform="tools"] .doc-title,
+  [data-platform="tools"] .u-name {
+    overflow-wrap: anywhere;
+  }
+
+  /* The floating assistant and its tooltip sat over the content on a phone.
+     Keep the button, drop the 370px speech bubble beside it. */
+  [data-platform="tools"] #ai-tooltip-app,
+  [data-platform="tools"] #ai-tooltip {
+    display: none;
+  }
+
+  /* A toast pinned 22px from the right edge of a 390px screen is a 320px box
+     with 48px of margin. Span the width instead. Only when it is actually
+     showing — see the resting-state fix in section 8. */
+  [data-platform="tools"] #toast.toast.show,
+  [data-platform="tools"] .toast.show {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  [data-platform="tools"] .metrics-grid,
+  [data-platform="tools"] .visibility-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  [data-platform="tools"] .page-body {
+    padding: 12px 10px;
+  }
+}
+
+
+/* ── 6. .tmob-* UTILITIES ───────────────────────────────────────────────────
+   Thirteen grids in this repo were written as `style="grid-template-columns:
+   360px 1fr"` directly on the element. An inline style attribute outranks every
+   rule in every stylesheet, so a media query CANNOT collapse them — pr-demo.html
+   overflowed by 84px for exactly this reason and no amount of CSS above would
+   have reached it.
+
+   These utilities keep the desktop value at the call site, where it is easy to
+   read, but move it into a custom property. A custom property is data, not a
+   declaration, so the media query below can override the property that USES it.
+   The markup becomes `class="tmob-split" style="--tmob-col:360px"`. */
+.tmob-split {
+  display: grid;
+  grid-template-columns: var(--tmob-col, 320px) 1fr;
+}
+.tmob-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--tmob-n, 3), 1fr);
+}
+.tmob-cards {
+  display: grid;
+  grid-template-columns: repeat(var(--tmob-n, 3), 1fr);
+}
+
+@media (max-width: 768px) {
+  [data-platform="tools"] .tmob-split {
+    grid-template-columns: 1fr;
+  }
+  /* Compact number tiles stay two-up — they read fine at ~180px and a single
+     column of them is a very long scroll for very little information. */
+  [data-platform="tools"] .tmob-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  /* Cards carrying prose (pricing tiers with feature lists) go one-up. */
+  [data-platform="tools"] .tmob-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ── 7. THE HAMBURGER ───────────────────────────────────────────────────────
+   Base state is hidden; section 1 shows it at <=768px. Declared outside the
+   media query so the element is never a bare unstyled <button> on desktop. */
+[data-platform="tools"] .mnav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm, 8px);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background .15s, border-color .15s;
+}
+[data-platform="tools"] .mnav-toggle:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-glow);
+}
+[data-platform="tools"] .mnav-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+[data-platform="tools"] .mnav-toggle svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+/* Shows the hamburger. Must stay AFTER the `display:none` above — same
+   specificity, and a media query contributes none of its own. */
+@media (max-width: 768px) {
+  [data-platform="tools"] .mnav-toggle {
+    display: inline-flex;
+  }
+}
+
+/* gao.html's topbar sits on --brand-2, a dark surface, so the toggle there
+   borrows the topbar's own text colour rather than the page's. */
+[data-platform="tools"] .topbar .mnav-toggle {
+  border-color: var(--border-2);
+}
+
+/* Scrim is inert until section 1 turns it on, and never exists on desktop. */
+[data-platform="tools"] .mnav-scrim {
+  display: none;
+}
+@media (max-width: 768px) {
+  [data-platform="tools"] .mnav-scrim {
+    display: block;
+  }
+}
+
+
+/* ── 8. THE LEGACY TOAST NEVER RESTS ────────────────────────────────────────
+   Found while measuring the bottom edge of app.html on a phone, and it is not
+   a mobile bug — it is on every width of all TWELVE pages here that carry the
+   legacy `<div id="toast" class="toast">` singleton (ads, aichat, app,
+   audiobook, commerce, content, gao, mail, sales, seller, seo, social).
+
+   Those pages each declare their own resting state:
+
+       .toast      { opacity: 0; transform: translateY(70px) }
+       .toast.show { opacity: 1; transform: translateY(0)    }
+
+   and the design system, which loads first, declares:
+
+       .toast { animation: mds-toast-in .28s ...  both;
+                pointer-events: all; }
+       @keyframes mds-toast-in { to { opacity: 1; transform: ... scale(1) } }
+
+   Source order says the page wins, and it does not. An animation's values are
+   applied in the ANIMATION ORIGIN, which outranks every normal author
+   declaration no matter how specific or how late — and `fill-mode: both` keeps
+   the final keyframe applied forever after the 0.28s run. So `opacity: 0`
+   never takes effect: an empty dark pill sits at the bottom of the screen at
+   all times, and because the master also sets `pointer-events: all`, it
+   quietly eats taps in that corner.
+
+   Measured on app.html at 390px: opacity 1, transform none, 42px wide with no
+   text in it — identical with this stylesheet disabled, so it predates this
+   file. It only became obvious here because section 5 spans a showing toast
+   across the viewport, which would have turned a 42px artefact into a bar
+   across the whole bottom edge.
+
+   The fix belongs in this file and not in the master: the master's own toasts
+   (built by js/modus-components.js as `.toast.toast-success` inside
+   `#mds-toast-region`) DO want that entrance animation, and removing it there
+   would break every platform. This targets the legacy singleton by id, which
+   the component-built toasts never have. (1,2,0) beats the master's (0,1,0)
+   regardless of order, and the animation is switched off rather than
+   overridden because nothing in the author origin can outrank it.
+
+   Not scoped to a media query — the tap-swallowing is a desktop bug too. */
+[data-platform="tools"] #toast.toast:not(.show) {
+  animation: none;
+  opacity: 0;
+  transform: translateY(70px);
+  pointer-events: none;
+}
+
+
+/* ── 9. LATE FINDINGS FROM THE RENDERED PAGE ────────────────────────────────
+   Things the numeric probe passed but that only show up when you look at the
+   result: nothing overflows, nothing is cut off, and it is still unreadable. */
+@media (max-width: 768px) {
+  /* gao.html's hero stats are a 4-across flex row. It fits at 390px in the
+     sense that it does not overflow — each column is ~80px, so "Citations
+     found not measured yet" sets as five stacked words and the row grows to
+     the height of the longest label. Two columns give each label a line. */
+  [data-platform="tools"] .gao-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
+  }
+}

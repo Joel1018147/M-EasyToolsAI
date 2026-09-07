@@ -261,6 +261,7 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
+<link rel="stylesheet" href="/css/tools-mobile.css">
 </head>
 <body>
 
@@ -391,7 +392,7 @@
         </div>
       </div>
       <div class="section-body" id="section-subscriptions">
-        <div id="sub-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+        <div id="sub-stats" class="tmob-grid" style="--tmob-n:3;gap:12px;margin-bottom:16px">
           <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value" id="sub-stat-active">—</div></div>
           <div class="stat-card"><div class="stat-label">Trial</div><div class="stat-value" id="sub-stat-trial">—</div></div>
           <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="sub-stat-revenue">—</div></div>
@@ -912,7 +913,7 @@ async function loadPrDistributions() {
     const published   = dists.filter(d => d.status === 'published').length;
     document.getElementById('prdist-count').textContent = dists.length + ' total';
 
-    const statsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+    const statsHtml = `<div class="tmob-grid" style="--tmob-n:4;gap:12px;margin-bottom:16px">
       <div class="stat-card"><div class="stat-label">Distributions</div><div class="stat-value">${dists.length}</div></div>
       <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value">${pending}</div></div>
       <div class="stat-card"><div class="stat-label">Emails Sent</div><div class="stat-value">${totalEmails.toLocaleString()}</div></div>

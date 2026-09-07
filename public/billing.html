@@ -2,7 +2,7 @@
 <html lang="en" data-platform="tools" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Billing — M-EasyTools AI+</title>
 <link rel="stylesheet" href="/css/modus-design-system.css">
 <link rel="stylesheet" href="/css/r2-tokens.css">
@@ -110,6 +110,7 @@
   #status-card { max-width: 100%; }
 }
 </style>
+<link rel="stylesheet" href="/css/tools-mobile.css">
 </head>
 
 <body>
@@ -294,6 +295,13 @@
   </main><!-- /.app-main -->
 </div><!-- /.app-layout -->
 
+<nav class="app-bottom-nav">
+<div class="bottom-nav-inner">
+<a class="bottom-nav-item" href="/app"><span class="bottom-nav-item-icon">▦</span><span data-i18n="nav.bottom.home">Home</span></a>
+<a class="bottom-nav-item active" href="/billing" aria-current="page"><span class="bottom-nav-item-icon">▤</span><span data-i18n="nav.sidebar.billing">Billing</span></a>
+<a class="bottom-nav-item" href="/settings"><span class="bottom-nav-item-icon">⚙</span><span data-i18n="nav.sidebar.settings">Settings</span></a>
+</div>
+</nav>
 <script>
 /* ════════════════════════════════════════════════════════════════════
    BILLING PAGE — M-EasyTools AI+

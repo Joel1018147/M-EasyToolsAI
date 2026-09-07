@@ -41,6 +41,7 @@
   .ab-grid{grid-template-columns:1fr;gap:14px}
 }
 </style>
+<link rel="stylesheet" href="/css/tools-mobile.css">
 </head>
 <body>
 <div class="app-layout">
@@ -128,6 +129,13 @@
 
 <div class="toast" id="toast" style="display:none;position:fixed;bottom:22px;right:22px;z-index:9999;max-width:320px"></div>
 
+<nav class="app-bottom-nav">
+<div class="bottom-nav-inner">
+<a class="bottom-nav-item" href="/app"><span class="bottom-nav-item-icon">▦</span><span data-i18n="nav.bottom.home">Home</span></a>
+<a class="bottom-nav-item active" href="/audiobook" aria-current="page"><span class="bottom-nav-item-icon">🎙</span><span>Audiobook</span></a>
+<a class="bottom-nav-item" href="/settings"><span class="bottom-nav-item-icon">⚙</span><span data-i18n="nav.sidebar.settings">Settings</span></a>
+</div>
+</nav>
 <script>
 /* ═══════════════════════════════════════════════
    M-EasyAudiobook AI+ Suite — 6 tools.

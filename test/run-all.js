@@ -107,6 +107,7 @@ const EXPECTED_LANE_SUITES = {
   'r2-visual-contract.js': 'Lane E · Visual revamp (Visual Bar)',
   'social-image-contract.js': 'The image option on the Social Media Post tool',
   'imagegen-panel-contract.js': 'The drop-in image panel — Contract A, executed in a fake DOM',
+  'mobile-contract.js': 'Mobile layer — stylesheet wiring, zoom, inline grids, bottom-nav routes',
 };
 
 let failed = 0;

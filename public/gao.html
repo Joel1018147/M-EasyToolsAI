@@ -118,6 +118,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .pt-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 120px;gap:0;background:color-mix(in srgb, var(--accent-contrast) 2%, transparent);border-bottom:1px solid var(--border);padding:10px 16px}
 .pt-col{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .pt-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 120px;gap:0;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;cursor:pointer}
+/* The prompt table renders in two track layouts. The narrow one used to be an
+   inline style attribute on every header and every row, which no media query
+   can reach — see test/mobile-contract.js. As a class it is overridable. */
+.pt-header.pt-compact,.pt-row.pt-compact{grid-template-columns:1fr 1fr 1fr 1fr 1fr 100px}
 .pt-row:last-child{border-bottom:none}
 .pt-row:hover{background:color-mix(in srgb, var(--accent-contrast) 2%, transparent)}
 .pt-prompt{font-size:13px;font-weight:500;color:var(--text)}
@@ -260,6 +264,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .toast.success{border-color:color-mix(in srgb, var(--green) 30%, transparent);color:var(--green-text)}
 .toast.error{border-color:color-mix(in srgb, var(--red) 30%, transparent);color:var(--red-text)}
 </style>
+<link rel="stylesheet" href="/css/tools-mobile.css">
+<script src="/js/mobile-nav.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -676,7 +682,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+      <div class="tmob-grid" style="--tmob-n:3;gap:14px;margin-bottom:24px">
         <div class="vis-card" style="--vc-color:var(--green-text)">
           <div class="vis-platform">📈 Best Score Ever</div>
           <div class="vis-score" id="hist-best">--<span>%</span></div>
@@ -696,7 +702,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
       <!-- History table -->
       <div class="prompt-table">
-        <div class="pt-header" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 100px">
+        <div class="pt-header pt-compact">
           <div class="pt-col">Brand</div>
           <div class="pt-col">Date</div>
           <div class="pt-col">Avg Score</div>
@@ -1217,7 +1223,7 @@ function renderHistory() {
   tbody.innerHTML = history.map((h,i)=>{
     const date = new Date(h.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'});
     const color = h.avg>=50?'var(--green-text)':h.avg>=30?'var(--amber-text)':'var(--red-text)';
-    return `<div class="pt-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr 100px">
+    return `<div class="pt-row pt-compact">
       <div class="pt-prompt">${h.brand}</div>
       <div style="font-size:12px;color:var(--text-2)">${date}</div>
       <div class="pt-score" style="color:${color}">${h.avg}%<span style="font-size:10px;color:var(--muted);display:block">${h.answered ? `from ${h.answered} of ${h.engines} engines` : 'denominator unknown'}</span></div>
