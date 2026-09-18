@@ -136,12 +136,29 @@ const MUTATIONS = [
   ['M6  store the raw prompt while sending the composed one', () =>
     /* `prompt: composed.prompt,` appears TWICE — once in the row that gets
        written and once in the call that gets made — and mutating the wrong
-       one tests the opposite property. The anchor carries the comment line
-       above the first, so it can only match there. */
-    mutate(INDEX, 'that produced the image describes something that did not happen.\n'
-                + '        prompt: composed.prompt,',
-                  'that produced the image describes something that did not happen.\n'
-                + '        prompt: rawPrompt,')],
+       one tests the opposite property, so the anchor has to pin down WHICH.
+
+       RE-ANCHORED 2026-09-18. It used to carry the COMMENT LINE above the
+       first site ("…describes something that did not happen."), and commit
+       80c50d5 rewrote that comment — correctly, it had gone stale about the
+       new provider — which silently killed this plant. The harness reported
+       ANCHOR MISS and counted it NOT CAUGHT, exactly as it should, but the
+       full suite was never re-run to completion after that commit so the red
+       shipped. Recurring-bugs #34: a correct product fix rots an older guard
+       and its plant.
+
+       The anchor is now three consecutive STATEMENTS rather than prose. Both
+       sites share the first two lines; only the row-building one is followed
+       by `lang,`, and the two sites are indented differently anyway. Prose
+       above a line is the most editable text in a file and the worst possible
+       thing to anchor on — a comment is supposed to be rewritten when it stops
+       being true. */
+    mutate(INDEX, '        prompt: composed.prompt,\n'
+                + '        negativePrompt: rawNegative || null,\n'
+                + '        lang,',
+                  '        prompt: rawPrompt,\n'
+                + '        negativePrompt: rawNegative || null,\n'
+                + '        lang,')],
 
   ['M7  stop recording WHICH kind shaped the image', () =>
     mutate(INDEX, '        style: styled.styleRef,', '        style: null,')],
