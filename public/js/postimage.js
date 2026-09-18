@@ -85,13 +85,20 @@
      which of whatever came back each platform prefers, and a preference that
      is not in the catalogue is dropped rather than forced, so the server can
      add or remove a size without this map being able to send an illegal one. */
+  /* Values updated 2026-09-18 for the aspect-ratio vocabulary the DEFAULT
+     provider (nanobanana) actually publishes ('16:9' etc, not DashScope's
+     '1664*928' pixel form). The guard above still holds either way — a
+     preference the server's live catalogue does not offer is DROPPED, not
+     forced — so this map degrading gracefully to "no preference" was never
+     the risk; silently losing the per-platform framing (TikTok full-screen,
+     LinkedIn landscape) to every request falling through to the default was. */
   var PLATFORM_ASPECT = {
-    'Instagram': '1328*1328',     // square: the feed, and it crops safely to a story
-    'TikTok': '928*1664',         // 9:16, full screen
-    'LinkedIn': '1664*928',       // landscape reads widest in a scrolling feed
-    'X (Twitter)': '1664*928',
-    'Facebook': '1664*928',
-    'All platforms': '1328*1328'  // square is the one that survives every crop
+    'Instagram': '1:1',   // square: the feed, and it crops safely to a story
+    'TikTok': '9:16',      // full screen
+    'LinkedIn': '16:9',    // landscape reads widest in a scrolling feed
+    'X (Twitter)': '16:9',
+    'Facebook': '16:9',
+    'All platforms': '1:1' // square is the one that survives every crop
   };
 
   /* Which KIND of image a social post starts as.

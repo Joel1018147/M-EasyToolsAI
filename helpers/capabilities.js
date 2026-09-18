@@ -78,8 +78,16 @@ const CHECKS = [
   },
   {
     key: 'image_generation',
-    label: 'Image generation (Alibaba Model Studio / Qwen-Image)',
-    vars: ['DASHSCOPE_API_KEY'],
+    label: 'Image generation (Google Nano Banana 2 Lite, via fal.ai)',
+    // CHANGED 2026-09-18: the DEFAULT provider is now nanobanana (FAL_API_KEY),
+    // not dashscope (DASHSCOPE_API_KEY) — see lib/image/provider.js. This
+    // check is hardcoded to the DEFAULT on purpose, matching every other row
+    // in CHECKS (none of them introspect a registry either); if
+    // DEFAULT_PROVIDER changes again, this row's `vars` changes with it.
+    // DashScope stays registered as a rollback path and its own key, if set,
+    // is simply unreported here — the same as any capability this file does
+    // not enumerate. See docs/BUILD_BRIEF_NANOBANANA_SWAP.md.
+    vars: ['FAL_API_KEY'],
     // required:false — 'optional', not 'broken'.
     //
     // This is the distinction this whole file exists for. Image generation is

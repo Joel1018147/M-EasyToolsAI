@@ -118,8 +118,8 @@ const MUTATIONS = [
     mutate(POST, 'if (token !== run) return;\n      if (res.ok) paint',
                  'if (false) return;\n      if (res.ok) paint')],
 
-  ['M6  offer an aspect lib/image/sizes.js rejects', () =>
-    mutate(POST, "'Instagram': '1328*1328',", "'Instagram': '1024*1024',")],
+  ['M6  offer an aspect the active provider rejects', () =>
+    mutate(POST, "'Instagram': '1:1',", "'Instagram': '1024*1024',")],
 
   ['M7  spend a generation on an empty description', () =>
     mutate(POST, 'if (!req.prompt) {', 'if (false) {')],

@@ -57,9 +57,11 @@ const PNG_BYTES = Buffer.concat([
   Buffer.alloc(512, 0x2a),
 ]);
 
-const PROVIDER_IMAGE_URL =
-  'https://dashscope-result-sgp.oss-ap-southeast-1.aliyuncs.com/1d/generated.png' +
-  '?Expires=1787896093&OSSAccessKeyId=SECRET&Signature=abcdef%2Bgh';
+/* No query-string expiry: unlike DashScope's signed OSS URL, fal.ai's media
+   URL for this model carries no documented Expires parameter — see
+   providers/nanobanana.js's header. The fixture below is fictitious; no
+   claim is made about real fal.ai infrastructure. */
+const PROVIDER_IMAGE_URL = 'https://fal-media.example/files/panda/aBcDeFgHiJ_generated.png';
 
 /**
  * A user row shaped like this repo's `users` table, WITH EVERY BRAND COLUMN
@@ -204,17 +206,14 @@ function fakeResponse({ status = 200, body = '', bytes = null, headers = {} }) {
 
 const GOOD_GENERATION_BODY = JSON.stringify({
   request_id: 'req-abc-123',
-  output: {
-    choices: [{
-      finish_reason: 'stop',
-      message: {
-        role: 'assistant',
-        // A text part FIRST, on purpose: content[0].image is an assumption
-        // that costs a paid generation the day the vendor reorders.
-        content: [{ text: 'Here is your image.' }, { image: PROVIDER_IMAGE_URL }],
-      },
-    }],
-  },
+  // An entry with no `url` FIRST, on purpose: images[0] is an assumption
+  // that costs a paid generation the day the vendor reorders — see
+  // providers/nanobanana.js's extractImageUrl, which SEARCHES the array.
+  images: [
+    { content_type: 'image/png', file_name: 'ignored.png' },
+    { url: PROVIDER_IMAGE_URL, content_type: 'image/png', file_name: 'output.png', width: 1024, height: 1024 },
+  ],
+  description: '',
 });
 
 /**
@@ -394,8 +393,15 @@ async function main() {
     key: process.env.DASHSCOPE_API_KEY,
     base: process.env.DASHSCOPE_BASE_URL,
     model: process.env.QWEN_IMAGE_MODEL,
+    falKey: process.env.FAL_API_KEY,
+    falBase: process.env.FAL_BASE_URL,
+    falModel: process.env.FAL_MODEL,
   };
+  // DASHSCOPE_API_KEY stays set too: dashscope.js remains registered as an
+  // explicit, non-default provider (§2c below), and this suite's default
+  // path now exercises nanobanana via FAL_API_KEY.
   process.env.DASHSCOPE_API_KEY = 'test-key-never-sent-anywhere';
+  process.env.FAL_API_KEY = 'test-key-never-sent-anywhere';
 
   const image = require('../lib/image');
   const { sizes, styles, moderation, brand, caps, rehost } = image;
@@ -483,7 +489,7 @@ async function main() {
     const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
     const res = await post(srv.base, '/api/images/generate', {
       prompt: 'A warm photo of a flat white on a marble counter',
-      size: '1328*1328',
+      size: '16:9',
       lang: 'en',
     });
 
@@ -495,22 +501,19 @@ async function main() {
     // ── the exact wire shape, asserted against the verified contract ────
     const gen = fetchImpl.calls.find((c) => c.kind === 'generate');
     check(!!gen, 'the provider was called');
-    check(gen.url === 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
-      'the endpoint is the Singapore international host + the multimodal-generation path');
-    check(gen.headers.Authorization === 'Bearer test-key-never-sent-anywhere',
-      'the key travels as a Bearer token');
-    check(gen.body.model === 'qwen-image-plus', 'the model default is qwen-image-plus');
-    assert.deepStrictEqual(
-      gen.body.input,
-      { messages: [{ role: 'user', content: [{ text: 'A warm photo of a flat white on a marble counter' }] }] }
-    );
-    ok('input.messages[].content[] carries the prompt as a { text } part');
-    check(gen.body.parameters.size === '1328*1328', 'parameters.size uses the asterisk form');
-    check(gen.body.parameters.n === 1 && gen.body.parameters.watermark === false &&
-          gen.body.parameters.prompt_extend === false,
-      'parameters carry n:1, watermark:false, prompt_extend:false');
-    check(!('negative_prompt' in gen.body.parameters),
-      'negative_prompt is omitted entirely when none was supplied');
+    check(gen.url === 'https://fal.run/google/nano-banana-2-lite',
+      'the endpoint is fal.ai\'s sync host + the nano-banana-2-lite model path');
+    check(gen.headers.Authorization === 'Key test-key-never-sent-anywhere',
+      'the key travels as a fal.ai "Key" token, not a Bearer token');
+    check(gen.body.prompt === 'A warm photo of a flat white on a marble counter',
+      'the prompt is the top-level `prompt` field — this vendor has no input.messages[] envelope');
+    check(gen.body.aspect_ratio === '16:9', 'aspect_ratio carries the requested shape, not a pixel size');
+    check(gen.body.num_images === 1 && gen.body.output_format === 'png',
+      'the body carries num_images:1 and output_format:png');
+    check(!('negative_prompt' in gen.body),
+      'this vendor has no negative_prompt field at all — one is never invented on the wire body');
+    check(!('sync_mode' in gen.body),
+      'sync_mode is never set — a data: URI response would break rehost.js\'s https-only rule');
 
     // ── ORDER: cap check, then insert, then provider, then download ─────
     const order = events.map((e) => e.op);
@@ -556,7 +559,7 @@ async function main() {
 
     for (const [label, payload] of [['POST /generate', gen.text], ['GET /:id', one.text], ['GET /', many.text]]) {
       check(!payload.includes('source_url'), `${label} response carries no source_url field`);
-      check(!payload.includes('dashscope-result-sgp'), `${label} response carries no provider host`);
+      check(!payload.includes('fal-media.example'), `${label} response carries no provider host`);
       check(!payload.includes('OSSAccessKeyId') && !payload.includes('Signature='),
         `${label} response leaks no signed-URL credentials`);
     }
@@ -567,8 +570,10 @@ async function main() {
     // It IS stored, for audit — the requirement is "retained, never rendered".
     const row = pool.store.get(id);
     check(row.source_url === PROVIDER_IMAGE_URL, 'source_url IS persisted, for audit');
-    check(row.source_url_expires_at instanceof Date,
-      'and its expiry is recorded from the URL\'s own Expires parameter');
+    check(row.source_url_expires_at === null,
+      'and its expiry is honestly recorded as UNKNOWN — fal.ai documents no Expires-style ' +
+      'parameter on this media URL, and providers/nanobanana.js does not invent one ' +
+      '(contrast dashscope.js, still covered directly in §12)');
 
     // The allowlist that makes this structural rather than a habit.
     check(!image.PUBLIC_COLUMNS.includes('source_url') &&
@@ -596,7 +601,7 @@ async function main() {
     check(row.content === null, 'and it holds no bytes');
     check(row.source_url === PROVIDER_IMAGE_URL, 'source_url is kept for audit even on failure');
     check(res.json.billed === true, 'the response states plainly that the generation WAS billed');
-    check(!res.text.includes('dashscope-result-sgp'),
+    check(!res.text.includes('fal-media.example'),
       'and the dead URL is still not handed to the caller');
 
     // The file route cannot serve it either.
@@ -748,7 +753,7 @@ async function main() {
       const fetchImpl = makeFetch({ events });
       const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
       const res = await post(srv.base, '/api/images/generate', { prompt: USER_PROMPT });
-      const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.input.messages[0].content[0].text;
+      const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.prompt;
       check(sent === USER_PROMPT,
         'with no opt-in the prompt sent to the provider is BYTE-IDENTICAL to the user\'s prompt');
       check(!sent.includes(user.brand_name) && !sent.includes(user.brand_desc) && !sent.includes(user.brand_tone),
@@ -821,7 +826,7 @@ async function main() {
       const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
       const res = await post(srv.base, '/api/images/generate',
         { prompt: USER_PROMPT, use_brand_asset: true, brand_asset_ref: 'brand_desc' });
-      const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.input.messages[0].content[0].text;
+      const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.prompt;
       check(res.status === 201 && sent.includes(user.brand_desc),
         'an explicit opt-in DOES send the named asset');
       check(res.json.image.used_brand_asset === true && res.json.image.brand_asset_ref === 'brand_desc',
@@ -897,7 +902,7 @@ async function main() {
       const fetchImpl = makeFetch({ events });
       const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
       const res = await post(srv.base, '/api/images/generate', body);
-      const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.input.messages[0].content[0].text;
+      const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.prompt;
       check(res.status === 201 && sent === USER_PROMPT,
         `${'style' in body ? 'naming the add-nothing kind' : 'naming no kind'} sends the prompt BYTE-IDENTICAL`);
       await srv.close();
@@ -914,7 +919,7 @@ async function main() {
         const fetchImpl = makeFetch({ events });
         const srv = await makeServer({ pool, fetchImpl, user, subscription: { status: 'trial' } });
         const res = await post(srv.base, '/api/images/generate', { prompt: USER_PROMPT, style: s.ref });
-        const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.input.messages[0].content[0].text;
+        const sent = fetchImpl.calls.find((c) => c.kind === 'generate').body.prompt;
         check(res.status === 201 && sent.includes(USER_PROMPT) && sent.includes(s.phrase),
           `"${s.label}" sends the user's words AND the exact sentence /options publishes for it`);
         check(res.json.image.prompt === sent,
@@ -1019,16 +1024,27 @@ async function main() {
 
       const plain = await post(srv.base, '/api/images/generate', { prompt: USER_PROMPT });
       const plainBody = fetchImpl.calls.find((c) => c.kind === 'generate').body;
-      check(plain.status === 201 && !('negative_prompt' in plainBody.parameters),
-        'no negative_prompt is invented for a request that did not send one');
+      check(plain.status === 201 && !('negative_prompt' in plainBody) && plainBody.prompt === USER_PROMPT,
+        'no negative_prompt is invented for a request that did not send one, and the wire prompt is untouched');
 
+      // nanobanana (Google Nano Banana 2 Lite) has NO native negative-prompt
+      // parameter — see providers/nanobanana.js's header §1 — so what the
+      // USER typed is folded into the visible prompt text as an "Avoid: …"
+      // clause rather than silently dropped (RULE 6a). The RAW negative
+      // prompt is still recorded verbatim on its own column, below.
       const withNeg = await post(srv.base, '/api/images/generate',
         { prompt: USER_PROMPT, negative_prompt: 'text, lettering, watermark' });
       const negBody = fetchImpl.calls.filter((c) => c.kind === 'generate').pop().body;
-      check(withNeg.status === 201 && negBody.parameters.negative_prompt === 'text, lettering, watermark',
-        'a negative prompt the user typed reaches the provider verbatim');
+      check(withNeg.status === 201 && !('negative_prompt' in negBody),
+        'this vendor never receives a negative_prompt FIELD — it has none');
+      check(negBody.prompt === USER_PROMPT + '\n\nAvoid: text, lettering, watermark',
+        'instead, the negative prompt is folded into the visible prompt text as an "Avoid: …" clause');
       check(withNeg.json.image.negative_prompt === 'text, lettering, watermark',
-        'and is recorded on the row beside the prompt it qualifies');
+        'and the RAW negative prompt is still recorded verbatim on its own column');
+      check(withNeg.json.image.prompt === USER_PROMPT,
+        'the stored `prompt` column is NOT the fold — it stays the composed prompt (style + brand), ' +
+        'matching what every other provider stores; the fold is a nanobanana wire-format detail, ' +
+        'never a change to what the audit row calls "the prompt"');
       await srv.close();
     }
   });
@@ -1155,34 +1171,34 @@ async function main() {
     for (const key of Object.keys(require.cache)) {
       if (key.includes(path.join('lib', 'image'))) delete require.cache[key];
     }
-    delete process.env.DASHSCOPE_API_KEY;
-    delete process.env.QWEN_IMAGE_MODEL;
-    delete process.env.DASHSCOPE_BASE_URL;
+    delete process.env.FAL_API_KEY;
+    delete process.env.FAL_MODEL;
+    delete process.env.FAL_BASE_URL;
 
     const fresh = require('../lib/image');
     const providerBefore = fresh.provider.get();
     check(providerBefore.isConfigured() === false,
-      'with DASHSCOPE_API_KEY unset the provider reports itself unconfigured');
+      'with FAL_API_KEY unset the DEFAULT provider (nanobanana) reports itself unconfigured');
 
     // has() semantics: EXISTS is not HAS A VALUE.
-    process.env.DASHSCOPE_API_KEY = '   ';
+    process.env.FAL_API_KEY = '   ';
     check(fresh.provider.get().isConfigured() === false,
       'a variable that is set to whitespace is NOT configured (helpers/capabilities.js has() semantics)');
-    assert.deepStrictEqual(fresh.provider.get().missingVars(), ['DASHSCOPE_API_KEY']);
+    assert.deepStrictEqual(fresh.provider.get().missingVars(), ['FAL_API_KEY']);
     ok('and the diagnostic reports the NAME only, never a value');
 
     // Now set them, AFTER import. A call-time read picks them up.
-    process.env.DASHSCOPE_API_KEY = 'set-after-import';
-    process.env.QWEN_IMAGE_MODEL = 'qwen-image-max';
-    process.env.DASHSCOPE_BASE_URL = 'https://ws-123.ap-southeast-1.maas.aliyuncs.com/';
+    process.env.FAL_API_KEY = 'set-after-import';
+    process.env.FAL_MODEL = 'google/nano-banana-2';
+    process.env.FAL_BASE_URL = 'https://queue.fal.run/';
     const after = fresh.provider.get();
     check(after.isConfigured() === true, 'setting the key after import takes effect immediately');
-    check(after.model() === 'qwen-image-max', 'QWEN_IMAGE_MODEL is read at call time');
-    check(after.endpoint() === 'https://ws-123.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
-      'DASHSCOPE_BASE_URL is read at call time, so a workspace-scoped migration is a variable change, not a code push');
+    check(after.model() === 'google/nano-banana-2', 'FAL_MODEL is read at call time');
+    check(after.endpoint() === 'https://queue.fal.run/google/nano-banana-2',
+      'FAL_BASE_URL is read at call time, so switching to fal.ai\'s queue host is a variable change, not a code push');
 
     // An unconfigured deployment answers honestly rather than failing on click.
-    delete process.env.DASHSCOPE_API_KEY;
+    delete process.env.FAL_API_KEY;
     const events = [];
     const pool = makePool({ events });
     const fetchImpl = makeFetch({ events });
@@ -1190,14 +1206,14 @@ async function main() {
     const res = await post(srv.base, '/api/images/generate', { prompt: 'A cup of kopi' });
     check(res.status === 503 && res.json.error === 'image_generation_unavailable',
       'an unconfigured deployment answers 503 with the reason, matching capabilities.js severity "optional"');
-    assert.deepStrictEqual(res.json.missing, ['DASHSCOPE_API_KEY']);
+    assert.deepStrictEqual(res.json.missing, ['FAL_API_KEY']);
     ok('naming the missing variable, never its value');
     check(fetchImpl.calls.length === 0, 'and reaches no provider');
     await srv.close();
 
-    process.env.DASHSCOPE_API_KEY = 'test-key-never-sent-anywhere';
-    delete process.env.QWEN_IMAGE_MODEL;
-    delete process.env.DASHSCOPE_BASE_URL;
+    process.env.FAL_API_KEY = 'test-key-never-sent-anywhere';
+    delete process.env.FAL_MODEL;
+    delete process.env.FAL_BASE_URL;
   });
 
   /* ── 12. provider abstraction is real ───────────────────────────────── */
@@ -1214,21 +1230,41 @@ async function main() {
     for (const method of ['isConfigured', 'missingVars', 'legalSizes', 'defaultSize', 'model', 'endpoint', 'buildBody', 'generate']) {
       check(typeof p[method] === 'function', `the provider interface declares ${method}()`);
     }
-    check(p.name === 'dashscope' && fresh.provider.names().includes('dashscope'),
+    check(p.name === 'nanobanana' && fresh.provider.names().includes('nanobanana'),
       'the registry key matches the value written to image_generations.provider');
+    check(fresh.provider.names().includes('dashscope'),
+      'dashscope remains a REGISTERED, non-default provider — a same-day rollback path, not deleted code');
     let threw = false;
     try { fresh.provider.get('fal'); } catch (err) { threw = err.code === 'unknown_provider'; }
     check(threw, 'an unknown provider name THROWS rather than silently routing to the default');
 
-    // The response parser searches the content array rather than indexing it.
+    // dashscope.js's own response parser, tested directly — still correct,
+    // still registered, just no longer what a default request exercises.
     const dashscope = require('../lib/image/providers/dashscope');
     const reordered = { output: { choices: [{ message: { content: [{ text: 'x' }, { image: 'https://a/b.png' }] } }] } };
     check(dashscope.extractImageUrl(reordered).url === 'https://a/b.png',
-      'the URL is found by SEARCHING content[], so a leading text part does not cost a paid generation');
+      'dashscope: the URL is found by SEARCHING content[], so a leading text part does not cost a paid generation');
     check(dashscope.extractImageUrl({ output: { choices: [] } }).url === null,
-      'and an empty response yields null with a note, not an exception');
-    check(dashscope.extractExpiry(PROVIDER_IMAGE_URL) instanceof Date,
-      "the expiry is read from the signed URL's own Expires parameter");
+      'dashscope: an empty response yields null with a note, not an exception');
+    check(dashscope.extractExpiry('https://x/y.png?Expires=1787896093&OSSAccessKeyId=SECRET&Signature=abc') instanceof Date,
+      "dashscope: the expiry is read from the signed URL's own Expires parameter");
+
+    // nanobanana.js's own response parser — the DEFAULT provider's.
+    const nanobanana = require('../lib/image/providers/nanobanana');
+    const reorderedNB = { images: [{ content_type: 'image/png' }, { url: 'https://a/b.png' }], description: '' };
+    check(nanobanana.extractImageUrl(reorderedNB).url === 'https://a/b.png',
+      'nanobanana: the URL is found by SEARCHING images[], not by indexing images[0]');
+    check(nanobanana.extractImageUrl({ images: [] }).url === null,
+      'nanobanana: an empty images[] yields null with a note, not an exception');
+    check(nanobanana.extractImageUrl({}).url === null,
+      'nanobanana: a response with no images[] at all yields null, not an exception');
+    check(nanobanana.extractExpiry('https://a/b.png') === null,
+      'nanobanana: the expiry is honestly null — this vendor documents no expiry to parse');
+    check(nanobanana.withAvoidClause('A cup of kopi', 'watermark') === 'A cup of kopi\n\nAvoid: watermark',
+      'nanobanana: the negative-prompt fold is exactly "<prompt>\\n\\nAvoid: <negative>"');
+    check(nanobanana.withAvoidClause('A cup of kopi', '') === 'A cup of kopi' &&
+          nanobanana.withAvoidClause('A cup of kopi', undefined) === 'A cup of kopi',
+      'nanobanana: an empty or absent negative prompt leaves the prompt byte-identical');
   });
 
   /* ── 13. provider failures are classified by whether they cost money ── */
@@ -1268,6 +1304,12 @@ async function main() {
   else process.env.DASHSCOPE_BASE_URL = savedEnv.base;
   if (savedEnv.model === undefined) delete process.env.QWEN_IMAGE_MODEL;
   else process.env.QWEN_IMAGE_MODEL = savedEnv.model;
+  if (savedEnv.falKey === undefined) delete process.env.FAL_API_KEY;
+  else process.env.FAL_API_KEY = savedEnv.falKey;
+  if (savedEnv.falBase === undefined) delete process.env.FAL_BASE_URL;
+  else process.env.FAL_BASE_URL = savedEnv.falBase;
+  if (savedEnv.falModel === undefined) delete process.env.FAL_MODEL;
+  else process.env.FAL_MODEL = savedEnv.falModel;
 
   console.log('');
   if (failures) {

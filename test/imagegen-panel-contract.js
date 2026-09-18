@@ -36,7 +36,10 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const IGEN_SRC = fs.readFileSync(path.join(ROOT, 'public/js/imagegen.js'), 'utf8');
 const styles = require('../lib/image/styles');
-const sizes = require('../lib/image/sizes');
+const provider = require('../lib/image/provider');
+// The ACTIVE DEFAULT provider's own catalogue — see the identical note in
+// test/social-image-contract.js.
+const sizes = provider.get();
 
 let checks = 0;
 let failures = 0;
@@ -180,12 +183,12 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
    that no deployment returns. */
 const OPTIONS_BODY = {
   ok: true,
-  provider: 'dashscope',
+  provider: sizes.name,
   configured: true,
   missing: [],
-  model: 'qwen-image-plus',
-  sizes: sizes.catalogue(),
-  defaultSize: sizes.DEFAULT_SIZE,
+  model: sizes.model(),
+  sizes: sizes.sizeCatalogue(),
+  defaultSize: sizes.defaultSize(),
   styles: styles.catalogue(),
   defaultStyle: styles.DEFAULT_STYLE,
   brandAssets: ['brand_name', 'brand_desc', 'brand_tone'],
@@ -197,7 +200,7 @@ const STORED_IMAGE = {
   id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
   status: 'stored',
   url: '/api/images/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/file',
-  size: '1328*1328',
+  size: sizes.defaultSize(),
   usage: { remaining: { day: 41, month: 512 } },
 };
 
@@ -362,7 +365,7 @@ async function main() {
   {
     const box = makeSandbox({
       '/api/images/options': async () => ({
-        status: 200, body: { ...OPTIONS_BODY, configured: false, missing: ['DASHSCOPE_API_KEY'] },
+        status: 200, body: { ...OPTIONS_BODY, configured: false, missing: ['FAL_API_KEY'] },
       }),
       '/api/images/generate': async () => ({ status: 503, body: { ok: false, message: 'nope' } }),
     });

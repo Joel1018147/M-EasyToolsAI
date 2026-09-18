@@ -43,7 +43,13 @@ const path = require('path');
 const vm = require('vm');
 
 const APP = path.join(__dirname, '..');
-const sizes = require('../lib/image/sizes');
+const provider = require('../lib/image/provider');
+// The ACTIVE DEFAULT provider's own catalogue — not a hardcoded module.
+// Before 2026-09-18 this imported ../lib/image/sizes directly, which is
+// DashScope's file specifically; that stopped being what a real request
+// gets back the day the default provider changed, and a fixture built from
+// the wrong module is exactly the kind of drift RULE 3 exists to catch.
+const sizes = provider.get();
 const styles = require('../lib/image/styles');
 const read = (rel) => fs.readFileSync(path.join(APP, rel), 'utf8');
 
@@ -133,7 +139,7 @@ const mapped = (() => {
 })();
 ok('it maps every platform to something', mapped.length >= 5, mapped.length);
 {
-  const illegal = mapped.filter((e) => !sizes.LEGAL_SIZES.includes(e.size));
+  const illegal = mapped.filter((e) => !sizes.legalSizes().includes(e.size));
   ok('every aspect it can send is one the server will accept',
      illegal.length === 0, illegal.map((e) => e.platform + '→' + e.size).join(', '));
 }
@@ -301,14 +307,14 @@ function makeSandbox(page, routes) {
 
 const OPTIONS_OK = {
   status: 200,
-  body: { ok: true, provider: 'dashscope', configured: true, missing: [], model: 'qwen-image',
-          sizes: sizes.catalogue(), defaultSize: '1328*1328',
+  body: { ok: true, provider: sizes.name, configured: true, missing: [], model: sizes.model(),
+          sizes: sizes.sizeCatalogue(), defaultSize: sizes.defaultSize(),
           styles: styles.catalogue(), defaultStyle: styles.DEFAULT_STYLE,
           brandAssets: [], maxPromptChars: 2000 },
 };
 const storedImage = (over) => Object.assign({
   id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-  status: 'stored', size: '1664*928',
+  status: 'stored', size: sizes.defaultSize(),
   url: '/api/images/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/file',
   usage: { remaining: { day: 4, month: 41 } },
 }, over || {});
@@ -368,7 +374,7 @@ async function battery(page) {
   /* 4. a control that cannot work says so up front */
   {
     const unconfigured = { status: 200,
-      body: Object.assign({}, OPTIONS_OK.body, { configured: false, missing: ['DASHSCOPE_API_KEY'] }) };
+      body: Object.assign({}, OPTIONS_OK.body, { configured: false, missing: ['FAL_API_KEY'] }) };
     const box = makeSandbox(page, { '/api/images/options': async () => unconfigured });
     await openSocial(box);
     const c = box.controls();
@@ -491,18 +497,18 @@ async function battery(page) {
     await openSocial(box);
     const c = switchOn(box);
     ok('the size list came from the server catalogue, not a copy on the page',
-       c.size.options.length === sizes.LEGAL_SIZES.length, c.size.options.length + ' options');
-    ok('LinkedIn gets landscape', c.size.value === '1664*928', c.size.value);
+       c.size.options.length === sizes.legalSizes().length, c.size.options.length + ' options');
+    ok('LinkedIn gets landscape', c.size.value === '16:9', c.size.value);
 
     box.dom['ff-platform'].value = 'TikTok';
     box.dom['ff-platform'].fire('change');
-    ok('TikTok gets full-screen portrait', c.size.value === '928*1664', c.size.value);
+    ok('TikTok gets full-screen portrait', c.size.value === '9:16', c.size.value);
 
-    c.size.value = '1328*1328';
+    c.size.value = '1:1';
     c.size.fire('change');
     box.dom['ff-platform'].value = 'Instagram';
     box.dom['ff-platform'].fire('change');
-    ok('once chosen, the aspect is never changed under the user', c.size.value === '1328*1328', c.size.value);
+    ok('once chosen, the aspect is never changed under the user', c.size.value === '1:1', c.size.value);
   }
 
   /* 7. READ = SENT */
@@ -526,7 +532,7 @@ async function battery(page) {
        sent && !('negative_prompt' in sent.body), sent && JSON.stringify(sent.body));
     ok('no brand asset travels without a consent surface',
        sent && !sent.body.use_brand_asset && !sent.body.brand_asset_ref);
-    ok('the selected aspect is sent', sent && sent.body.size === '1664*928', sent && sent.body.size);
+    ok('the selected aspect is sent', sent && sent.body.size === '16:9', sent && sent.body.size);
     ok("the run's output language is recorded against the row", sent && sent.body.lang === 'ms');
   }
 

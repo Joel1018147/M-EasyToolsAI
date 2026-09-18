@@ -39,6 +39,7 @@ const APP = path.join(__dirname, '..');
 const STYLES = path.join(APP, 'lib/image/styles.js');
 const INDEX = path.join(APP, 'lib/image/index.js');
 const DASH = path.join(APP, 'lib/image/providers/dashscope.js');
+const NANOBANANA = path.join(APP, 'lib/image/providers/nanobanana.js');
 const IGEN = path.join(APP, 'public/js/imagegen.js');
 const POST = path.join(APP, 'public/js/postimage.js');
 /* THREE suites, because the feature has three surfaces and each can be broken
@@ -51,7 +52,7 @@ const SERVER_SUITE = path.join(__dirname, 'image-contract.js');
 const PANEL_SUITE = path.join(__dirname, 'imagegen-panel-contract.js');
 const SOCIAL_SUITE = path.join(__dirname, 'social-image-contract.js');
 
-const TARGETS = [STYLES, INDEX, DASH, IGEN, POST];
+const TARGETS = [STYLES, INDEX, DASH, NANOBANANA, IGEN, POST];
 const md5 = (f) => crypto.createHash('md5').update(fs.readFileSync(f)).digest('hex');
 const backup = (f) => `${f}.mutstyle.bak`;
 
@@ -149,8 +150,13 @@ const MUTATIONS = [
     mutate(IGEN, "el('option', null, 'Default — nothing added')", "el('option', null, 'Watercolour')")],
 
   ['M9  drop the visible negative prompt on the way to the provider', () =>
-    mutate(DASH, "if (typeof negativePrompt === 'string' && negativePrompt.trim() !== '') {",
-                 'if (false) {')],
+    // Targets nanobanana.js — the DEFAULT provider as of 2026-09-18 — rather
+    // than dashscope.js, which this suite's default pipeline no longer
+    // exercises. dashscope.js's OWN equivalent guard is covered directly by
+    // test/image-contract.js §12 (extractImageUrl et al.), not by mutation
+    // here, matching the "registered but not default" status of that file.
+    mutate(NANOBANANA, "return prompt + '\\n\\nAvoid: ' + negativePrompt.trim();",
+                       'return prompt;')],
 
   /* ── the panel half ────────────────────────────────────────────────────
      These four leave the server perfect. Each one is a panel that appends,
