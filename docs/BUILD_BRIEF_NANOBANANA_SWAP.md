@@ -253,6 +253,11 @@ three fixes — none touch mutation targets).
 
 ## 8 · STAGE-1 LIVE GATE, 2026-09-18 — RUN AGAINST PRODUCTION, **FAILED**
 
+**SUPERSEDED BY §9.** This attempt failed at fal.ai's credit balance. Joel
+topped up and the gate was re-run the same day and PASSED — a real 1024x1024
+image. Everything below is kept because the diagnosis is still the record of
+how a valid key on a locked account was told apart from a bad key.
+
 This section supersedes §2's "none of these four were checked end-to-end" and
 §5's "no live Railway deploy in this session". Both are now false: the code is
 deployed, configured and live. What is still true is that **no image has been
@@ -341,3 +346,57 @@ behind `requireAuth`. `users.id = 6`,
 `nanobanana-gate-1789721735524@modus-probe.invalid`, role `user`, plan `free`.
 It owns the one `failed` image row above and nothing else. Not deleted:
 removing a row from `users` on production is Joel's call.
+
+## 9 · STAGE-1 LIVE GATE, RE-RUN 2026-09-18 AFTER THE TOP-UP — **PASSES**
+
+§8 failed at fal.ai's credit balance. Joel topped up. Same call, same prompt:
+
+```
+POST /api/images/generate  ->  201 in 4,792 ms
+row: status stored · provider nanobanana · model google/nano-banana-2-lite
+     size 1:1 · content_type image/png · byte_size 233,771
+     sha256 1263f6949283c9be7cfa50621e3faf63172813c412c5137a4c73f7782c67af47
+GET /api/images/:id/file   ->  200, 233,771 bytes, Content-Type image/png,
+     X-Content-Type-Options nosniff, ETag = the sha256
+     PNG magic bytes 89504e470d0a1a0a · IHDR 1024x1024
+     sha256 of the bytes received == the sha256 on the row
+```
+
+The file was opened and looked at, not just counted: a photographic ripe
+banana on a white studio background. **A real, viewable image.**
+
+### §2 claims — final status
+
+| # | Claim | Status |
+|---|-------|--------|
+| 1 | endpoint + `Authorization: Key` + body field names | **CONFIRMED.** A 201 means fal.ai accepted `prompt` / `aspect_ratio` / `num_images` / `output_format` under exactly those names, and `images[]` carried a real `url` that the search-not-index parser found. |
+| 2 | fal.ai does not bill a non-2xx | **STILL OPEN.** No 4xx validation error was triggered. Finding out costs a real request and nothing depends on the answer today. |
+| 3 | the error body parses into something a user can read | **CONFIRMED** in §8. |
+| 4 | ~4s latency, so the no-queue synchronous design holds | **CONFIRMED.** 4.79 s for the whole request — moderation, the provider call, the re-host download and the BYTEA write. `DEFAULT_TIMEOUT_MS = 60_000` is generous and no job runner is needed. |
+| 5 | prompt length at the worst case | **STILL OPEN.** This generation used a short prompt and no negative prompt. |
+
+### Stage 2 is now unblocked but was NOT started
+
+The gate it waited on has passed, so removing DashScope is now earned. It was
+not done in the same run: Joel's next message redirected to a different bug,
+and deleting the only rollback path is not something to slip into a bug-fix
+run unannounced. `lib/image/providers/dashscope.js`, `lib/image/sizes.js`, the
+registry entry, `.env.example`'s DashScope block and §12's DashScope-specific
+tests are all still in place, and `DASHSCOPE_API_KEY` is still set on Railway.
+
+The RULE 6 fact from §8 still governs whenever it happens: production holds
+three `status='stored'` rows with `provider='dashscope'` that must stay
+readable after the module is deleted.
+
+### One thing found while here, unrelated to the provider
+
+`npm test` had been RED on `main` since `80c50d5`. That commit's Phase-5
+comment rewrite in `lib/image/index.js` — correct in itself — rotted
+`mutate-image-style.js` M6's plant anchor, which was pinned to the comment
+text. The harness reported ANCHOR MISS and counted it NOT CAUGHT, exactly as
+designed; what failed was that Run 162's full-suite re-run hit a 120s call
+limit and never completed, so the brief and the RUN_LOG both recorded a
+pre-Phase-5 "17/17 caught" as though it were post. Re-anchored on statements
+rather than prose (recurring-bugs #34). Full suite now green: 30 suites,
+`image-contract` 251, `imagegen-panel` 34, `social-image` 138, both image
+mutation harnesses 17/17 with the restored tree green.
