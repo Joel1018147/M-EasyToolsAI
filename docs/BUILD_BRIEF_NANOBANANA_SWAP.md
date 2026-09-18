@@ -34,6 +34,12 @@ client, the docs, and the test suite that exercises the DEFAULT path.
 | 3 | fal.ai's actual error-response body on a validation failure is close enough to `{code,message}` / `{error:{type,message}}` / `{detail}` that a user sees something useful, not "— " with nothing after it. | Trigger a real 4xx and read the raw body. | Extend `nanobanana.js`'s error-body parsing (the `if (trimmed.startsWith('{'))` block) to the real shape; do not touch the billed/not-billed classification while doing it. |
 | 4 | This model's generation truly completes fast enough (fal.ai's own docs say ~4s) that the existing no-queue, synchronous, in-request design (`lib/image/index.js`'s whole pipeline, `DEFAULT_TIMEOUT_MS = 60_000` in `nanobanana.js`) remains correct and nothing needs a job runner this repo does not have. | Time a handful of real generations. | If it is materially slower under load, report to Joel before building a queue — this repo has none, by design (Engineering Bar), and that is a decision for him, not a silent workaround. |
 
+**SUPERSEDED IN PART — see §8.** The swap is now deployed, configured and
+live, and ONE real generation was fired against production on 2026-09-18. It
+FAILED, at fal.ai's account balance rather than in this code. Claim 3 is
+CONFIRMED, claim 1 is PARTIALLY confirmed, claims 2/4/5 remain open. Read §8
+before trusting anything below this line.
+
 None of these four were checked end-to-end in this run — there is no live
 `FAL_API_KEY` in this environment, and outbound network from this sandbox may
 not reach fal.ai's endpoint even if there were one. Everything below is built
@@ -243,3 +249,95 @@ Tests green after all three fixes: `image-contract.js` 251/251,
 `imagegen-panel-contract.js` 34/34, `social-image-contract.js` 138/138,
 both mutation harnesses 17/17 caught + restored clean (unaffected by these
 three fixes — none touch mutation targets).
+
+
+## 8 · STAGE-1 LIVE GATE, 2026-09-18 — RUN AGAINST PRODUCTION, **FAILED**
+
+This section supersedes §2's "none of these four were checked end-to-end" and
+§5's "no live Railway deploy in this session". Both are now false: the code is
+deployed, configured and live. What is still true is that **no image has been
+generated**, for a reason that is not in this repo.
+
+`Modus-Agent-OS/RUN_LOG.md` Run 162b carries the same material in log form.
+
+### What is now measured
+
+| | |
+|---|---|
+| Commits on `origin/main` | `12aee58`, `80c50d5` — pushed this session (`d3a6cdd..80c50d5`); they were sitting local-only |
+| Railway deploy | `445453ae`, commit `80c50d5`, `deploymentStopped: false`, instance RUNNING. Gate 1 clean |
+| `FAL_API_KEY` on Railway | SET |
+| `FAL_BASE_URL` / `FAL_MODEL` | not set; code defaults cover both |
+| Live `GET /health/capabilities` | 200, `image_generation` `severity: "ok"`, `missing: []` |
+| Live `GET /api/images/options` | `configured: true`, `provider: "nanobanana"`, `model: "google/nano-banana-2-lite"`, `defaultSize: "1:1"`, sizes `16:9 / 4:3 / 1:1 / 3:4 / 9:16` |
+| ONE real `POST /api/images/generate` | **502 in 419 ms** — `provider_failed`, `providerStatus: 403`, `billed: false`, message `Image provider returned 403: User is locked. Reason: TOP_UP.` |
+| The `image_generations` row it wrote | `80dc3cb3-51fb-407c-be79-8bf0dbbdc791` · `status: failed` · `provider: nanobanana` · `model: google/nano-banana-2-lite` · `size: 1:1` · `content_type`/`byte_size` NULL · `moderation_status: allowed` · `error_text` carries the vendor sentence verbatim. Read out of the production database over `railway ssh`, not inferred from the HTTP body |
+
+### The cause, and why it is an observation rather than a guess
+
+`TOP_UP` is a fal.ai account-level lock for an exhausted credit balance. The
+key itself is VALID, and that was established rather than assumed: a request
+with **no** `Authorization` header and a request with a **deliberately bogus**
+key were both sent by hand to `https://fal.run/google/nano-banana-2-lite`, and
+both returned **401** with
+`{"detail":"Cannot access application \"github|110602490/nano-banana-lite\". Authentication is required to access this application."}`.
+Production got **403 with a billing reason** — the answer for a recognised key
+on a locked account. A wrong key produces 401 here; ours does not.
+
+That same by-hand 401 also proves two smaller things: the model slug
+`google/nano-banana-2-lite` resolves to a real fal.ai application (it did not
+404), and fal.ai really does use a bare `{"detail": "…"}` error body, which is
+one of the three shapes `nanobanana.js` parses.
+
+### §2 claims — status after this run
+
+| # | Claim | Status |
+|---|-------|--------|
+| 1 | endpoint + `Authorization: Key` + body field names | **PARTIALLY CONFIRMED.** Host, path, model slug and auth header shape are all correct — the request reached fal.ai, resolved to a real application and authenticated. The BODY's field names remain unverified: fal.ai refused on account state before validating the input. |
+| 2 | fal.ai does not bill a non-2xx | **STILL OPEN.** `billed: false` held for this 403, but an account lock is the one non-2xx nobody would bill for. It is no evidence about a 4xx validation error. |
+| 3 | the error body parses into something a user can read | **CONFIRMED.** The parsing produced `Image provider returned 403: User is locked. Reason: TOP_UP.` — a legible sentence naming the real cause, which is exactly what this claim was written to check, and the opposite of the `"— "`-with-nothing-after-it failure it feared. |
+| 4 | ~4s latency, so the no-queue synchronous design holds | **STILL OPEN.** Nothing was generated. The 419 ms round trip measures a refusal, not a generation. |
+| 5 | prompt length at the worst case | **STILL OPEN.** |
+
+### What this run DID exercise, and it passed
+
+The provider-failure path, end to end: a vendor refusal produced a 502 with
+`billed: false`, an honest `failed` row carrying the real vendor message in
+`error_text`, `moderation_status: allowed`, no bytes, and `url: null`. Nothing
+was swallowed, nothing was retried into a silent fallback, and nothing claimed
+success. That is the half of RULE 6 this failure was able to test.
+
+### RULE 6 fact that Stage 2 must respect
+
+Production's `image_generations` holds **three `status='stored'` rows with
+`provider='dashscope'`, `model='qwen-image-plus'`** (user_id 1, 2026-09-04 and
+2026-09-07, 1.6–2.3 MB, `size='1328*1328'`). They are real images a real
+account can still open today. Deleting `lib/image/providers/dashscope.js` must
+not make them unreadable or unrenderable. This is now a measured fact rather
+than a hypothesis, and it is the specific thing the removal's blinded review
+has to attack.
+
+### Stage 2 (removing DashScope) was NOT started
+
+Joel's instruction gated it on a real image, and there is none. The removal
+deletes the only rollback path — `DEFAULT_PROVIDER` is one constant and
+`provider: 'dashscope'` still works per request — and that path is worth more
+today than the dead weight costs. Nothing in `lib/image/`, `.env.example`,
+`helpers/capabilities.js` or `test/image-contract.js` was touched, and no
+Railway variable was changed or deleted.
+
+### Unblocking it
+
+One thing: top up the fal.ai account (https://fal.ai/dashboard/billing). The
+Railway key needs no change. Stage 1 then re-runs in a single call.
+
+### Swept in, unasked — declared per §6.4
+
+A throwaway account was registered on production through the public
+`/api/auth/register` route to hold a session for the gate — the same path
+`scripts/seed-demo.js` uses, and the only one available, since `DATABASE_URL`
+points at `postgres.railway.internal` and `POST /api/images/generate` sits
+behind `requireAuth`. `users.id = 6`,
+`nanobanana-gate-1789721735524@modus-probe.invalid`, role `user`, plan `free`.
+It owns the one `failed` image row above and nothing else. Not deleted:
+removing a row from `users` on production is Joel's call.
