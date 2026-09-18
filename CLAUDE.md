@@ -75,14 +75,36 @@ save/failure toasts fire backwards. Verified by static scan only, not a
 live-executing test — do not treat this as closed.
 
 ## Model fallback procedure
-Primary: qwen/qwen3.6-27b (Groq preview tier — chosen for EN/BM/ZH multilingual
-strength). If Groq rate-limits or pulls this model:
+Primary: qwen/qwen3.8-27b (Groq preview tier — chosen for EN/BM/ZH multilingual
+strength).
+
+**This procedure has now been exercised once, and it was not enough on its own.**
+Groq withdrew the previous primary, `qwen/qwen3.6-27b`, and because `GROQ_MODEL`
+was never set on Railway the code default governed — so every Groq call in
+production failed with ``The model `qwen/qwen3.6-27b` does not exist or you do
+not have access to it.``, surfaced to users as an error popup on the content
+tools (including the screen the image control sits on). Rolled to 3.8 on
+2026-09-18 after measuring 3.8 against this deployment's own key. Two things
+the roll needed that "set GROQ_MODEL and redeploy" would NOT have fixed:
+`supportsReasoningEffortNone()` was pinned to `/^qwen\/qwen3\.6/` and would have
+silently stopped sending the reasoning params, and the dead name needed adding
+to `DEPRECATED_MODELS` for external callers that hardcode it.
+`test/groq-model-contract.js` now fails the build if a dead model name survives
+anywhere a live caller or operator reads.
+
+If Groq rate-limits or pulls this model:
 1. Railway → this project → Variables → set GROQ_MODEL=openai/gpt-oss-120b
 2. Redeploy — no code change needed, the app reads GROQ_MODEL from env with
    the qwen model as code-level default.
 3. reasoning_effort/reasoning_format are only sent when the model matches the
    qwen gate — gpt-oss-120b will run without those params automatically,
    no manual toggle needed.
+4. **Measure gpt-oss-120b before relying on it.** Probed against this
+   deployment's key on 2026-09-18: it answers 200 and returns an EMPTY string
+   at a small `max_tokens`, because it reasons out of the budget before
+   emitting content. It is a real fallback, but it needs a larger budget — not
+   a drop-in swap, and a suite asserting "non-empty text" will go red for a
+   reason that is not a bug in this repo.
 
 The single source of truth for the model in this repo is
 **`helpers/groq.js (GROQ_MODEL)`**. Nothing else may read
@@ -111,12 +133,14 @@ and `normaliseModel()` only rewrites *known-dead* names — anything else is
 passed through untouched. So GROQ_MODEL does **not** override a model an
 external integration hardcodes. Two consequences:
 - Our own pages must never send a `model` field. `public/gao.html` used to
-  hardcode `qwen/qwen3.6-27b` and would have ignored a GROQ_MODEL switch; it now
+  hardcode the primary model and would have ignored a GROQ_MODEL switch; it now
   omits the field so the server default applies.
-- If qwen is pulled, external `/api/chat` callers pinning it will 400 until they
-  change their request, or until `qwen/qwen3.6-27b` is added to
-  `DEPRECATED_MODELS` so it maps onto the new default. That second step is a
-  code push — it is the one thing the env var cannot fix on its own.
+- If a model is pulled, external `/api/chat` callers pinning it get a hard
+  model_not_found until they change their request, or until the dead name is
+  added to `DEPRECATED_MODELS` so it maps onto the new default. That second step
+  is a code push — it is the one thing the env var cannot fix on its own.
+  **Done for `qwen/qwen3.6-27b` on 2026-09-18**, which is the first time this
+  paragraph was ever acted on rather than just read.
 
 ## Agentic Engineering Standards (ecosystem-wide, added 2026-08-03)
 

@@ -192,14 +192,16 @@ pre code{font-family:var(--r2-mono);font-size:var(--t-meta);color:var(--surface)
         <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>messages</td><td>array</td><td><span class="param-req">Required</span></td><td>Array of message objects with role and content</td></tr>
-          <tr><td>model</td><td>string</td><td><span class="param-opt">Optional</span></td><td>Groq model ID. Default: qwen/qwen3.6-27b</td></tr>
+          <tr><td>model</td><td>string</td><td><span class="param-opt">Optional</span></td><td>Groq model ID. Default: qwen/qwen3.8-27b</td></tr>
         </tbody>
       </table>
       <p class="note"><strong>Legacy model names are auto-mapped.</strong> Groq
       decommissioned <code>llama-3.3-70b-versatile</code>,
       <code>llama-3.1-8b-instant</code> and <code>llama3-70b-8192</code> on
-      16&nbsp;August&nbsp;2026. If your integration still sends one of those
-      names, we substitute <code>qwen/qwen3.6-27b</code> automatically so your
+      16&nbsp;August&nbsp;2026, and <code>qwen/qwen3.6-27b</code> — which was
+      this endpoint's default until 18&nbsp;September&nbsp;2026 — shortly
+      after. If your integration still sends any of those names, we substitute
+      <code>qwen/qwen3.8-27b</code> automatically so your
       requests keep working — no change required on your side. The
       <code>model</code> field in the response tells you which model actually
       ran. Update your integration when convenient; the mapping is a
@@ -217,7 +219,7 @@ pre code{font-family:var(--r2-mono);font-size:var(--t-meta);color:var(--surface)
       <pre><code>{
   "success": true,
   "message": "Here are 5 high-converting subject lines:\n1. ⚡ 60% Off Ends Tonight...",
-  "model": "qwen/qwen3.6-27b"
+  "model": "qwen/qwen3.8-27b"
 }</code></pre>
     </div>
   </div>

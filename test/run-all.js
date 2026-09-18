@@ -72,6 +72,21 @@ const LEGACY = [
   'mutate-gao.js',
   'mutate-social-image.js',
 
+  /* ── THE MODEL CONSTANT AND WHAT ROTS AROUND IT ─────────────────────────
+     Named explicitly, so absence is a failure, because the defect it covers
+     was live in production: Groq withdrew qwen/qwen3.6-27b, GROQ_MODEL was
+     never set on Railway so the code default governed, and every inference
+     call failed with a model_not_found that users met as an error popup.
+
+     The suite is here rather than in the discovered manifest for the same
+     reason billing-reachable-test.js is: a guard against a total outage
+     should not be able to go quiet by being deleted. Its harness follows it
+     immediately, because the check that matters most — that the reasoning
+     gate is not pinned to one minor version — is exactly the kind that passes
+     forever while sending nothing. */
+  'groq-model-contract.js',
+  'mutate-groq-model.js',
+
   /* The style picker's guards. §7b of image-contract.js grew seventy checks
      in one round, and seventy ticks over a catalogue is exactly the shape
      that can go quiet by the catalogue going empty. This breaks each of them
@@ -124,7 +139,7 @@ const ran = [];
    a clean, fully-committed branch, so at the moment that matters these always
    execute. */
 const MUTATION_HARNESSES = new Set(['mutate-fetch.js', 'mutate-gao.js', 'mutate-social-image.js',
-                                    'mutate-image-style.js']);
+                                    'mutate-image-style.js', 'mutate-groq-model.js']);
 const TREE_BEFORE = (() => {
   const r = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' });
   return r.status === 0 ? r.stdout : null;   // null = git unreadable, treated as dirty

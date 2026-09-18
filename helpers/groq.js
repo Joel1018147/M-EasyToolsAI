@@ -17,21 +17,30 @@
    process.env.GROQ_MODEL — one env var must still switch every call site.
 
    ── THE MODEL ─────────────────────────────────────────────────────────────
-   Groq serves qwen/qwen3.6-27b on its PREVIEW tier, so it can be rate-limited,
-   degraded or withdrawn with little notice. GROQ_MODEL overrides it without a
+   Groq serves these on its PREVIEW tier, so one can be rate-limited, degraded
+   or withdrawn with little notice. GROQ_MODEL overrides the default without a
    code change — set it on Railway and redeploy. Documented fallback:
    openai/gpt-oss-120b. See .env.example and CLAUDE.md.
 
-   Note the exact string: the `qwen/` provider prefix is required and the
-   version is 3.6, not 2.6. A near-miss variant is not a typo that degrades,
-   it is a hard model_not_found on every call.
+   ROLLED 2026-09-18, qwen/qwen3.6-27b -> qwen/qwen3.8-27b. Groq withdrew 3.6
+   and every call had been failing with `The model `qwen/qwen3.6-27b` does not
+   exist or you do not have access to it.` — which reached users as an error
+   popup on the content tools, including the screen the image control sits on.
+   3.8 was verified against THIS deployment's own key before the roll: a plain
+   completion and a completion carrying reasoning_effort/reasoning_format both
+   answered 200. The dead name is now in DEPRECATED_MODELS (below) so an
+   external integration pinning it is remapped rather than 404d.
+
+   Note the exact string: the `qwen/` provider prefix is required. A near-miss
+   variant is not a typo that degrades, it is a hard model_not_found on every
+   call — which is exactly how 3.6 failed once Groq pulled it.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 'use strict';
 
 // llama-3.1-8b-instant and llama-3.3-70b-versatile were decommissioned by Groq
 // on 2026-08-16; neither name may appear in new code.
-const DEFAULT_GROQ_MODEL = 'qwen/qwen3.6-27b';
+const DEFAULT_GROQ_MODEL = 'qwen/qwen3.8-27b';
 
 /** THE single reader of process.env.GROQ_MODEL in this repository. */
 const GROQ_MODEL = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
@@ -53,6 +62,10 @@ const DEPRECATED_MODELS = new Set([
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
   'llama3-70b-8192',
+  // Withdrawn by Groq before 2026-09-18. CLAUDE.md named adding it here as the
+  // one repair GROQ_MODEL cannot make on its own, because an external caller
+  // hardcodes the name in its own request body; this is that repair.
+  'qwen/qwen3.6-27b',
 ]);
 
 function normaliseModel(requested) {
@@ -60,13 +73,23 @@ function normaliseModel(requested) {
   return requested;
 }
 
-/* `reasoning_effort` / `reasoning_format` are supported by qwen/qwen3.6-* ONLY.
-   Sending them to any other model risks a 400 — and /api/chat accepts a
-   caller-supplied model, so the gate is checked against the model actually
-   being sent, never against the default. Ported verbatim from
-   Dragon-Ginseng-CS-AI. */
+/* `reasoning_effort` / `reasoning_format` are supported by the qwen3 family on
+   Groq and not by the other models this repo can be pointed at. Sending them
+   elsewhere risks a 400 — and /api/chat accepts a caller-supplied model, so the
+   gate is checked against the model actually being sent, never against the
+   default. Ported from Dragon-Ginseng-CS-AI.
+
+   WIDENED 2026-09-18 from /^qwen\/qwen3\.6/ to the whole qwen3 family. The
+   narrow form was pinned to one MINOR version, so the moment the model constant
+   rolled to 3.8 this gate stopped matching it and both params would have been
+   dropped from every call — silently, with no error to notice, because dropping
+   them is the legitimate behaviour for a non-qwen model. A version-pinned
+   predicate re-breaks on every roll by construction: it matched a spelling, not
+   the class (recurring-bugs #26). Both members this repo has actually run accept
+   the two params, and 3.8 was measured against the live key on the day of the
+   roll — a plain completion and one carrying both params each answered 200. */
 function supportsReasoningEffortNone(model) {
-  return /^qwen\/qwen3\.6/.test(model);
+  return /^qwen\/qwen3\./.test(model);
 }
 
 /**
