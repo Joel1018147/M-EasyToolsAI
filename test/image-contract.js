@@ -1220,7 +1220,7 @@ async function main() {
   await section('12 · the provider is behind an interface the route does not see through', async () => {
     const routeSrc = fs.readFileSync(ROUTE_FILE, 'utf8');
     const routeCode = stripComments(routeSrc);
-    for (const token of ['dashscope', 'DASHSCOPE', 'qwen', 'aliyuncs', 'Bearer']) {
+    for (const token of ['dashscope', 'DASHSCOPE', 'qwen', 'aliyuncs', 'Bearer', 'fal.run', 'nanobanana', 'banana', 'FAL_API_KEY', 'fal.ai']) {
       check(!routeCode.includes(token),
         `routes/images.js contains no "${token}" — a second provider needs no route change`);
     }

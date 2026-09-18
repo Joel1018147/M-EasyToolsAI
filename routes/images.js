@@ -116,8 +116,11 @@ router.get('/usage', async (req, res) => {
    Body:
      prompt            required, ≤2000 chars
      negative_prompt   optional, ≤500 chars — what to keep OUT of the image
-     size              optional; one of lib/image/sizes.js's five legal values
-                       — 1024*1024 IS REJECTED, locally, before any spend
+     size              optional; one of the ACTIVE provider's legal values —
+                       see GET /api/images/options's `sizes`/`defaultSize`.
+                       Different providers publish different vocabularies
+                       (lib/image/provider.js, sizeCatalogue()/resolveSize());
+                       an illegal value IS REJECTED, locally, before any spend
      style             optional; one of lib/image/styles.js's refs. The KIND
                        of image — photograph, flat vector, watercolour. Its
                        art-direction sentence is appended to the prompt, and

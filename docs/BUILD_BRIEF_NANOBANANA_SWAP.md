@@ -177,3 +177,69 @@ mutate-social-image.js` (all mutations caught, tree restored green), full
    showed `docs/gauntlet/GAUNTLET-CORE.md` already modified and an untracked
    `.claude/` — neither is part of this change and neither is touched or
    staged by it.
+
+
+## 7 · PHASE 5 — BLINDED REVIEW (general-purpose sub-agent, REFUTE brief)
+
+Reviewer was given the diff, this brief's §2 claims, and the relevant SOP
+rules (RULE 6/6a/6b, billed/not-billed classification, provider-neutrality
+contract) — NOT this brief's own narrative/rationale. It independently read
+the live repo (not just the diff) and ran every affected test file and both
+mutation harnesses itself rather than trusting the numbers above.
+
+**Findings, triaged:**
+
+1. **FIXED — vendor-neutrality guard did not cover the new default vendor.**
+   `test/image-contract.js` §12's static scan of `routes/images.js` checked
+   for `dashscope`/`qwen`/`aliyuncs`/`Bearer` tokens only — it would catch a
+   regression that reintroduced the OLD provider's name but would have said
+   nothing if a future change leaked `fal`/`nanobanana`/`FAL_API_KEY` into the
+   route file. No live bug (the route file itself was clean), but the guard
+   protecting the property this whole abstraction exists for did not follow
+   the default it just changed. Extended the token list to include
+   `'fal.run', 'nanobanana', 'banana', 'FAL_API_KEY', 'fal.ai'`. Re-ran:
+   251/251 (was 246; +5, one per new token).
+2. **FIXED — stale invariant comment in `lib/image/index.js`.** The
+   `baseFields` comment claimed "the prompt STORED is the prompt SENT" as a
+   universal fact. That's true for DashScope but false for nanobanana, which
+   folds the negative prompt into the wire prompt as an `Avoid:` clause
+   (`nanobanana.js`, `withAvoidClause`) — the codebase's OWN test
+   (`image-contract.js` §7(g)) already asserted the real, deliberate
+   behaviour, so the comment was contradicting an already-passing test, not
+   describing a bug. Rewrote the comment to state the actual per-provider
+   truth (RULE 3 — the artefact is the truth, the doc gets fixed to match).
+3. **FIXED — stale doc-comment in `routes/images.js`.** The `POST /generate`
+   doc-comment still pointed at `lib/image/sizes.js` (DashScope-only) as the
+   universal size source. Reworded to name the active provider's published
+   catalogue (`GET /options`) without naming any vendor, preserving the
+   property §12 checks for.
+4. **NOTED, not fixed — prompt-length risk introduced by the Avoid-clause
+   fold, absent from the original §2 claims table.** The composed prompt
+   (≤2000 chars, plus style/brand suffixes) plus a folded `Avoid: ` + negative
+   prompt (≤500 chars) can exceed 2000 characters in the worst case, and
+   fal.ai's actual accepted prompt length for this model is unverified (same
+   root cause as claims 1-3: no live key). Failure mode if the real vendor
+   limit is lower: a real user with a long prompt AND a real negative prompt
+   gets a clean 400 from fal.ai (not billed, per the existing non-2xx
+   convention) rather than any crash or silent truncation — fails safely, just
+   not obviously from reading the code alone. Added as claim 5 below rather
+   than coded around, since inventing a truncation policy without knowing
+   the real limit would itself be exactly the kind of unverified assumption
+   RULE 1 exists to prevent.
+5. No CONFIRMED functional defect. Reviewer independently re-ran
+   `rehost.js`'s https-only/magic-byte-sniff/25MB-cap claims, `capabilities.js`'s
+   `has()` semantics, lazy-construction discipline in both new files, and the
+   billed/not-billed flag's actual downstream consumers (`lib/image/index.js`'s
+   status mapping, `routes/images.js`'s error body, `caps.js`'s
+   `BILLABLE_STATUSES`) — all confirmed as claimed, none were dead contracts.
+
+**§2 CLAIMS — addendum:**
+
+| # | Claim | How to falsify | If false |
+|---|-------|----------------|----------|
+| 5 | fal.ai accepts the combined `prompt` (composed + style/brand + folded Avoid-clause) at the lengths this pipeline can actually produce (~2000-2500 chars worst case) without truncating or erroring in a way that surprises a real user. | Send one real generation with a long prompt AND a long negative prompt against a real key; read the actual response. | If fal.ai truncates silently rather than erroring, that is a NEW silent-fallback risk this design did not anticipate — report to Joel before adding any client-side truncation, since where to cut a user's own words is a product decision, not a technical one. |
+
+Tests green after all three fixes: `image-contract.js` 251/251,
+`imagegen-panel-contract.js` 34/34, `social-image-contract.js` 138/138,
+both mutation harnesses 17/17 caught + restored clean (unaffected by these
+three fixes — none touch mutation targets).
