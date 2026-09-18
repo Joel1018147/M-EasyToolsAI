@@ -160,12 +160,22 @@ console.log('\n§4 · no dead model is offered as the one to use');
 
 /* ── §4a · executable code ─────────────────────────────────────────────────
    Comments stripped, so a `// 3.6 was withdrawn` note survives and a live
-   `model: '<dead>'` does not. helpers/groq.js is excluded, and that is
-   definitional rather than an exemption: it is the file that OWNS
-   DEPRECATED_MODELS and is therefore required to name every dead model. A
-   registry of dead names cannot be forbidden from containing them. */
+   `model: '<dead>'` does not.
+
+   Three files are outside the scan, and all three are DEFINITIONAL rather than
+   an exemption list (recurring-bugs #13) — each one's job is to name dead
+   models, so forbidding it from naming them forbids it from existing:
+
+     helpers/groq.js            OWNS DEPRECATED_MODELS. A registry of dead
+                                names cannot be barred from containing them.
+     this suite                 ASSERTS against them, by name, above.
+     mutate-groq-model.js       PLANTS them, to prove these checks can fail.
+
+   Nothing else can join that list without also becoming a file whose purpose
+   is to enumerate dead models, which is the whole boundary. */
 const OWNS_THE_LIST = path.join('helpers', 'groq.js');
 const THIS_SUITE = path.join('test', 'groq-model-contract.js');
+const ITS_HARNESS = path.join('test', 'mutate-groq-model.js');
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -187,7 +197,7 @@ const jsSurfaces = walk(ROOT)
   .filter((f) => path.extname(f) === '.js')
   .filter((f) => {
     const rel = path.relative(ROOT, f);
-    return rel !== OWNS_THE_LIST && rel !== THIS_SUITE;
+    return rel !== OWNS_THE_LIST && rel !== THIS_SUITE && rel !== ITS_HARNESS;
   });
 
 check(jsSurfaces.length > 20,
