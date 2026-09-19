@@ -375,6 +375,29 @@
     min-height: 44px;
   }
 
+  /* THE LAST THREE, FOUND BY THE DEVICE FRAME RATHER THAN BY READING.
+
+     `.auth-remember` is the "Keep me signed in" row on the sign-in portal:
+     a 16px checkbox inside a 24px label, so the label rescues it from being a
+     16px target and leaves it a 24px one. Growing the LABEL is the fix — the
+     checkbox itself stays 16px and keeps the design system's look, because
+     what a thumb lands on is the row.
+
+     `.header a` is the "← Back" link on privacy.html and terms.html, which
+     are the two pages a visitor reaches from a legal footer, on a phone, and
+     that link is the only way back. 49x23. Both pages carry their own tiny
+     inline stylesheet with a `.header` flex row; the anchor is already a
+     flex item there, so a min-height lands without touching its display. */
+  [data-platform="tools"] .auth-remember,
+  [data-platform="tools"] .auth-legal,
+  [data-platform="tools"] .header > a {
+    min-height: 44px;
+  }
+  [data-platform="tools"] .header > a {
+    display: inline-flex;
+    align-items: center;
+  }
+
   /* Narrow controls: height was fixed by the rule above but the other axis was
      still 37-42px. Three 44px language segments come to 132px, which fits the
      narrowest row they appear in. */
@@ -679,3 +702,143 @@
     gap: 16px 20px;
   }
 }
+
+
+/* ── 10. THE HARDWARE INSETS ────────────────────────────────────────────────
+   THREE PAGES OPT INTO THE NOTCH AND NONE OF THEM COMPENSATED FOR IT.
+
+   `viewport-fit=cover` is an opt-in with an obligation attached. Without it a
+   browser lays the page out inside the safe rectangle: the viewport already
+   starts below the sensor housing and ends above the home indicator, every
+   `env(safe-area-inset-*)` resolves to 0, and no element can collide with
+   hardware however it is positioned. With it, the page is handed the whole
+   screen — and from that moment every pinned element owes the hardware an
+   inset of its own.
+
+       auth.html      viewport-fit=cover
+       billing.html   viewport-fit=cover
+       settings.html  viewport-fit=cover
+
+   `grep -r safe-area-inset public/css/modus-design-system.css` returns
+   nothing, so the design system has never had the other half. Measured in the
+   device frame at 393x852 with an iPhone 15's insets: `.app-bottom-nav` is
+   `position:fixed; bottom:0; height:60px` with no bottom padding, so its lower
+   34px — more than half of every label, and the part of the tap target a thumb
+   naturally lands on — sits behind the home indicator, which also owns the
+   swipe gesture in that strip. The other twenty-two pages in this repo are
+   unaffected and the checks say so: they never asked for the area.
+
+   WHY THE VALUES GO THROUGH CUSTOM PROPERTIES INSTEAD OF STRAIGHT INTO THE
+   DECLARATIONS. `env()` is supplied by the user agent and nothing in a page —
+   or in a harness framing that page — can set it, so a rule written directly
+   against `env()` is a rule that cannot be tested anywhere except on the
+   hardware. Routed through `--tmob-sa*`, the same declarations take a real
+   value the moment anything sets those four properties, which is exactly how
+   public/preview.html verifies this section: it writes the chosen device's
+   insets onto the framed document and measures what actually moves. A property
+   is data; `env()` is not. Same reasoning as `--tmob-col` in section 6.
+
+   NOT SCOPED TO A MEDIA QUERY, and that is not this file reaching for the
+   desktop. Every value below resolves to `0px` on any viewport with no insets,
+   which is every desktop browser and every phone that did not opt in — the
+   rules are inert there by arithmetic rather than by breakpoint. A landscape
+   phone is 852px wide and past the 768px breakpoint while still having a
+   notch on its left edge, so scoping these to `max-width` would switch the
+   compensation off on the one orientation where the side insets exist.
+   ──────────────────────────────────────────────────────────────────────── */
+@supports (padding: env(safe-area-inset-top)) {
+
+  [data-platform="tools"] {
+    --tmob-sat: env(safe-area-inset-top, 0px);
+    --tmob-sar: env(safe-area-inset-right, 0px);
+    --tmob-sab: env(safe-area-inset-bottom, 0px);
+    --tmob-sal: env(safe-area-inset-left, 0px);
+  }
+
+  /* The bottom nav. `height:auto` with `min-height` rather than a taller fixed
+     height: the bar has to grow by whatever the device asks for, and a second
+     hard-coded number here would be wrong on the next device. */
+  [data-platform="tools"] .app-bottom-nav {
+    height: auto;
+    min-height: 60px;
+    padding-bottom: var(--tmob-sab);
+    padding-left: var(--tmob-sal);
+    padding-right: var(--tmob-sar);
+  }
+
+  /* The topbar row grows by the top inset, and the topbar pads itself by the
+     same amount, so its contents land exactly where they did before while the
+     strip behind them extends under the sensor housing. Both halves are
+     required: padding alone inside a fixed-height grid row squashes the
+     contents instead of moving them. */
+  [data-platform="tools"] .app-layout {
+    grid-template-rows: calc(var(--topbar-h) + var(--tmob-sat)) 1fr;
+  }
+  [data-platform="tools"] .app-topbar {
+    height: calc(var(--topbar-h) + var(--tmob-sat));
+    padding-top: var(--tmob-sat);
+  }
+
+  /* A LANDSCAPE PHONE IS 852px WIDE AND STILL HAS A NOTCH. Past the 768px
+     breakpoint the shell is back in its desktop form — sidebar on the left,
+     topbar across the top — on a device whose sensor housing is now on the
+     left edge and whose home indicator is still at the bottom. Rotating an
+     iPhone 15 to landscape puts a 59px inset on whichever side the housing
+     lands and leaves every sidebar label behind it. This is the case a
+     max-width media query would switch the compensation OFF for, which is why
+     section 10 is unscoped.
+
+     The sidebar takes the left inset and the shell takes the right, so a
+     control pinned to the top-right corner of the topbar clears the housing in
+     the other rotation too. */
+  [data-platform="tools"] .app-sidebar {
+    padding-left: var(--tmob-sal);
+  }
+  [data-platform="tools"] .app-layout {
+    padding-right: var(--tmob-sar);
+  }
+
+  /* The scrolling pane clears the side insets. The master's own padding is
+     kept at the call site as the first term so this stays additive — replacing
+     it with a single value would silently change the desktop gutter. */
+  [data-platform="tools"] .app-main {
+    padding-left: calc(24px + var(--tmob-sal));
+    padding-right: calc(24px + var(--tmob-sar));
+  }
+
+  /* And the portal itself moves in by the insets, at its OUTERMOST box.
+
+     The obvious place was `.auth-panel`'s own padding, and it is a trap: the
+     master declares that padding three times (40px, then 64px at 1024, then
+     56px at 640) and a single (0,2,0) rule here outranks all three at once, so
+     one number would have replaced a responsive ramp. Restating the ramp with
+     the inset added to each step would put the master's three numbers in a
+     second file to drift out of sync. Padding the container adds the inset
+     once, keeps every number where it already lives, and is correct at every
+     width.
+
+     The min-height has to come down by the same amount or the panel's own
+     `min-height:100dvh` stacks on top of the padding and gives a page that
+     used to fit exactly a scrollbar worth of overflow. */
+  [data-platform="tools"] .auth-split {
+    padding: var(--tmob-sat) var(--tmob-sar) var(--tmob-sab) var(--tmob-sal);
+  }
+  [data-platform="tools"] .auth-panel {
+    min-height: calc(100dvh - var(--tmob-sat) - var(--tmob-sab));
+  }
+}
+
+@media (max-width: 768px) {
+  /* The master sets `.app-main { padding-bottom: 72px }` inside its own
+     max-width block to clear the 60px bottom nav — 12px of it is the gap. The
+     nav is now taller by the bottom inset, so the clearance has to grow with
+     it or the last row of content ends up underneath the bar. This one IS
+     scoped, because the padding it extends only exists below the breakpoint. */
+  [data-platform="tools"] .app-main {
+    padding-left: calc(16px + var(--tmob-sal, 0px));
+    padding-right: calc(16px + var(--tmob-sar, 0px));
+    padding-bottom: calc(72px + var(--tmob-sab, 0px));
+  }
+}
+
+

@@ -130,9 +130,23 @@ const read = (f) => fs.readFileSync(path.join(PUB, f), 'utf8');
      wins. Shipped the wrong way round, the hamburger never appeared and the
      drawer had no opener — the CSS was correct and the product had no nav. */
   const hide = css.indexOf('.mnav-toggle {\n  display: none;');
-  const show = css.lastIndexOf('display: inline-flex;');
+  /* ANCHORED ON THE RULE, NOT ON A TOKEN THAT HAPPENED TO BE LAST IN THE FILE.
+
+     This was `css.lastIndexOf('display: inline-flex;')`, which was true the day
+     it was written because the mnav show-rule was the last such declaration in
+     the file. It stopped being true: section 4 now gives `.header > a`
+     inline-flex further down, and the check went on passing while measuring the
+     distance between the hamburger's hide-rule and an unrelated rule about a
+     back link. It would have kept passing with the show-rule deleted outright —
+     a guard that followed the file instead of the thing it guards. Both
+     positions are now found by matching the `.mnav-toggle` rule itself. */
+  const showRe = /\.mnav-toggle\s*\{[^}]*display:\s*inline-flex/g;
+  let show = -1, m;
+  while ((m = showRe.exec(css))) if (m.index !== hide) show = m.index;
   ok('the .mnav-toggle show-rule is written after the hide-rule (equal specificity)',
-     hide !== -1 && show > hide, 'hide@' + hide + ' show@' + show);
+     hide !== -1 && show > hide,
+     'hide@' + hide + ' show@' + show +
+     (show === -1 ? ' — no .mnav-toggle rule sets display:inline-flex at all' : ''));
 }
 
 /* ── 7. THE BOTTOM NAV POINTS AT ROUTES THAT EXIST ──────────────────────────

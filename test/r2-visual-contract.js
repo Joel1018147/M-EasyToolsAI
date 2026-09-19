@@ -69,6 +69,16 @@ const OUT_OF_SCOPE = {
     + 'document that redirects on first paint is cost with no render.',
   'mai.html': 'Lane A owns it (GAUNTLET.md lane split). Lane E must not edit it.',
   'docintel.html': 'Lane B owns it. Same reason.',
+  'preview.html': 'the interactive device frame — instrumentation, not a product '
+    + 'surface. It is served at /preview, carries noindex, and nothing in the '
+    + 'product links to it. Its chrome takes the design tokens like any other '
+    + 'page, but most of its raw colours describe PHYSICAL OBJECTS rather than '
+    + 'brand: a phone bezel, the black of a sensor housing, and the three '
+    + 'window-control dots of a desktop browser. Those are not theme choices '
+    + 'and tokenising them would make the frame stop looking like a device, '
+    + 'which is the only thing it is for. The one accent literal left in it is '
+    + 'in a rule injected into the FRAMED document, where var(--accent) does '
+    + 'not resolve on the generated landing pages — see the comment there.',
 };
 
 // The platform accent, in every spelling it could be pasted in. These are the

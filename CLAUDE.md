@@ -167,3 +167,39 @@ external integration hardcodes. Two consequences:
    Modus-Agent-OS/skills/recurring-bugs-checklist.md, which is canonical) both
    pass. Gate 0, the pre-deploy env-var diff, runs before all three. See
    Modus-Agent-OS/skills/three-stage-deploy-gate.md.
+
+## The device frame — `/preview`
+
+Public, `noindex`, and not linked from the product. It frames any route of this
+app in a real `<iframe>` at a chosen device's CSS-pixel size, so
+`@media (max-width: 768px)` resolves *inside it* and the mobile layer can be
+measured instead of eyeballed from a shrunken desktop render. "Scan all" walks
+every route at the current size and tabulates the findings.
+
+It grants nothing: every frame is a same-origin request the visitor's own
+browser makes with their own cookies, so `requireAuth`, `checkSub`,
+`checkModule` and the `PRIVATE_PAGES` block all answer it exactly as they answer
+a typed URL. It is a viewer, not a proxy.
+
+**The part that is easy to break silently.** Nothing in a page can set
+`env(safe-area-inset-*)` — the user agent supplies it — so a rule written
+directly against `env()` cannot be tested anywhere but on the hardware.
+`css/tools-mobile.css` §10 routes all four insets through `--tmob-sat/sar/sab/sal`
+and the frame writes the device's real numbers onto those same four properties
+before it measures. **The names are a contract between two files, and breaking
+it looks like a passing test**: rename one side and the frame writes a property
+nothing reads, every check stays green, and green then means "the layout did not
+move" rather than "the layout is correct". `test/device-frame-contract.js` pins
+the names and the direction on both sides; `test/mutate-device-frame.js` breaks
+each of them and requires the suite to notice.
+
+§10 only ever fires on a page that sets `viewport-fit=cover` — `auth.html`,
+`billing.html`, `settings.html`. Everywhere else the browser insets the viewport
+itself and the section is inert by arithmetic, which is why it is `@supports`
+and not a media query: a landscape phone is 852px wide, past the breakpoint, and
+still has a notch on its side edge.
+
+Playwright is not a dependency here, so the browser-side sweep is driven from a
+scratch script against `window.__DEVICE_FRAME__.measure()` — the same function
+the panel calls, deliberately, so a figure in a report and a figure in the panel
+cannot disagree.

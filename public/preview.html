@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html data-platform="tools" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Device Frame — M-EasyTools AI+</title>
+<meta name="robots" content="noindex, nofollow">
+
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  INTERACTIVE DEVICE FRAME
+  ───────────────────────────────────────────────────────────────────────────
+  WHY THIS IS AN IFRAME AND NOT A SCALED SCREENSHOT.
+
+  A scaled-down desktop render is the thing that made the mobile defects on
+  this platform invisible for so long: it shows what a 1440px viewport looks
+  like when it is small, which is a different picture from what a 390px
+  viewport does. An iframe sized to 390 CSS pixels has its OWN viewport, so
+  `@media (max-width: 768px)` fires inside it for real, `100vw` means 390, and
+  the `[data-platform="tools"]` mobile layer applies exactly as it will on a
+  phone. The visual scale on this page is applied to the frame AFTER layout —
+  the page inside never learns about it.
+
+  WHAT THIS CAN THEREFORE PROVE, AND WHAT IT CANNOT.
+
+  Can:  layout at a width. Overflow, clipping, wrapping, breakpoint selection,
+        computed sizes of tap targets, stacking of fixed elements. These are
+        real measurements taken from a real layout at a real viewport width.
+
+  Cannot: devicePixelRatio (an iframe inherits the host's; the DPR shown in the
+        readout is metadata about the device, not a property of this render),
+        `env(safe-area-inset-*)` (the UA supplies those and nothing in a page
+        can fake them — the notch drawn here is an OVERLAY, and the collision
+        check below measures against its rectangle, not against `env()`), and
+        touch/pointer media features.
+
+  Every one of those limits is printed in the panel, because a harness that
+  quietly reports "clean" for a thing it never measured is worse than no
+  harness — see the ecosystem note on verification that lies.
+
+  ACCESS. This page is deliberately reachable by everyone, in every
+  environment. It is a viewer, not a proxy: every frame is a same-origin
+  <iframe>, so the browser makes the request with the visitor's OWN cookies and
+  every existing guard applies unchanged inside it. A signed-out visitor
+  framing /settings sees the login page, exactly as they would by typing the
+  URL. Nothing here reads a session, forwards a credential, or fetches on a
+  visitor's behalf. The gate in front of /mai.html and /docintel.html (see
+  PRIVATE_PAGES in server.js) still answers those frames with a redirect.
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/modus-design-system.css">
+<link rel="stylesheet" href="/css/tools-mobile.css">
+
+<style>
+/* ── Harness chrome. Everything is prefixed `df-` so nothing here can collide
+      with the design system or with a framed page's own class names. ────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;              /* the stage scrolls, the page does not */
+}
+body {
+  font-family: var(--font);
+  background: var(--bg-soft);
+  color: var(--text);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  /* `minmax(0, 1fr)`, not the implicit `auto`. An auto track sizes to the
+     widest item's MIN-CONTENT, and a nowrap toolbar's min-content is the sum of
+     its buttons — so at 1440 the toolbar made the whole page 1500-odd pixels
+     wide, both rows with it, and the report panel's right edge went off the
+     screen with html{overflow:hidden} to make sure it could never be scrolled
+     back. The toolbar is the one allowed to run out of room, not the layout. */
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.df-bar {
+  display: flex;
+  /* ONE ROW, and the selects give up the space rather than the bar wrapping.
+     A wrapped toolbar is not just untidy here: it takes ~45px off the stage,
+     which changes the fit scale, which moves the frame — so the tidiest
+     arrangement of the controls decides how big the thing being measured
+     looks. The two selects are the only elastic items and they truncate
+     gracefully; every button keeps its size. Below 900px the phone layout
+     takes over and wrapping is allowed again. */
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  /* Its own overflow, so a window too narrow for every control scrolls the
+     TOOLBAR and not the page — nothing becomes unreachable. */
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 20;
+}
+.df-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.df-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+.df-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.df-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.df-bar select,
+.df-bar input[type="number"] {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  min-width: 0;                  /* a flex/grid child defaults to auto and will
+                                    refuse to shrink below its content — the
+                                    defect this harness exists to catch */
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  max-width: 100%;
+}
+.df-bar select { flex: 0 1 auto; max-width: 220px; min-width: 88px; }
+.df-bar input[type="number"] { width: 74px; }
+
+.df-btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 12px;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
+}
+.df-btn:hover { background: var(--surface-2); border-color: var(--border-2); }
+.df-btn[aria-pressed="true"] {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.df-btn.df-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.df-btn.df-primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.df-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Icon-only controls. 34px is under the 44px touch floor, which is correct
+   here and nowhere else: this is a pointer toolbar on a build tool, and a row
+   of 44px buttons would push the stage down on exactly the screens where the
+   stage is the point. The harness's own phone layout below gives them the
+   floor back. */
+.df-btn.df-icon {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.df-spacer { flex: 1 1 auto; min-width: 0; }
+
+/* The toolbar wrapped to a second row at 1600px, which eats stage height and
+   moves the fit under the frame's feet. The field labels are the first thing
+   to go: the two selects are self-describing and their titles carry the rest. */
+@media (max-width: 1560px) {
+  .df-label { display: none; }
+  .df-brand { font-size: 0; gap: 0; }
+  .df-brand .df-dot { width: 12px; height: 12px; }
+}
+
+.df-readout {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+/* ── Body split: stage + panel ───────────────────────────────────────────── */
+.df-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--df-panel, 360px);
+  min-height: 0;
+  min-width: 0;
+}
+.df-body[data-panel="closed"] { grid-template-columns: minmax(0, 1fr) 0; }
+
+/* ── Stage ───────────────────────────────────────────────────────────────── */
+.df-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background:
+    radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--bg-soft);
+}
+.df-stage[data-fill="true"] { padding: 0; place-items: stretch; }
+
+/* The scale wrapper. It holds the SCALED FOOTPRINT as its layout box while the
+   device inside keeps its true pixel box — so the stage scrolls by what you can
+   see, and the iframe still gets a real viewport of the device's own width.
+
+   THE TRANSFORM IS ON THE DEVICE, NOT ON THIS ELEMENT, AND THE ORIGIN IS
+   top left. Both halves matter and both were wrong first time round. Scaling
+   the wrapper while also overriding its width and height sets a box and then
+   shrinks the thing that defines it, and `transform-origin: center` then
+   centres the shrunken render on the original box — so at 85% the frame sat
+   down and to the right of where the layout said it was and ran off the stage
+   on two edges, at a scale the readout was correctly reporting as "fits". */
+.df-scaler {
+  position: relative;
+}
+.df-device {
+  transform-origin: top left;
+  transition: transform var(--motion-base) var(--ease-out);
+  will-change: transform;
+  /* `max-content`, and this is load-bearing. applyScale() sets the wrapper's
+     width to the SCALED footprint, which is narrower than the device — and an
+     ordinary block child then shrinks to that width, so the next measurement
+     is smaller, and the next scale smaller again. A 1440px laptop settled at
+     239px of layout box while the readout truthfully reported 85%, because 85%
+     of 239 really is what it drew. Sizing the device to its own content breaks
+     the loop: the wrapper can be any width it likes and the device stays the
+     size of the screen it contains. */
+  width: max-content;
+}
+
+/* ── Device shell ────────────────────────────────────────────────────────── */
+.df-device {
+  position: relative;
+  background: #101318;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.30), 0 10px 24px rgba(0,0,0,0.18);
+}
+.df-device[data-kind="phone"],
+.df-device[data-kind="tablet"] {
+  border-radius: var(--df-bezel-r, 44px);
+  padding: var(--df-bezel, 12px);
+}
+.df-device[data-kind="phone"]::after,
+.df-device[data-kind="tablet"]::after {
+  /* the glass edge — a 1px inner highlight, not a border, so it cannot add to
+     the element's box and shift the viewport width by two pixels */
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: calc(var(--df-bezel-r, 44px) - 4px);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+  pointer-events: none;
+}
+.df-device[data-kind="browser"] {
+  border-radius: 12px 12px 8px 8px;
+  padding: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+}
+
+/* Browser chrome */
+.df-chrome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  border-radius: 11px 11px 0 0;
+}
+.df-lights { display: flex; gap: 6px; flex: none; }
+.df-lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+.df-lights i:nth-child(1) { background: #ff5f57; }
+.df-lights i:nth-child(2) { background: #febc2e; }
+.df-lights i:nth-child(3) { background: #28c840; }
+.df-url {
+  flex: 1 1 auto;
+  min-width: 0;                  /* without this the URL text sets the browser
+                                    chrome's width and the frame grows */
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Screen */
+.df-screen {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border-radius: var(--df-screen-r, 32px);
+}
+.df-device[data-kind="browser"] .df-screen { border-radius: 0 0 7px 7px; }
+.df-screen iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+/* ── Hardware overlays ───────────────────────────────────────────────────── */
+.df-cut {
+  position: absolute;
+  background: #05070a;
+  z-index: 3;
+  pointer-events: none;
+}
+.df-cut[data-cut="island"]   { top: 11px;  left: 50%; transform: translateX(-50%); width: 118px; height: 34px; border-radius: 20px; }
+.df-cut[data-cut="notch"]    { top: 0;     left: 50%; transform: translateX(-50%); width: 158px; height: 30px; border-radius: 0 0 18px 18px; }
+.df-cut[data-cut="punch"]    { top: 12px;  left: 50%; transform: translateX(-50%); width: 12px;  height: 12px; border-radius: 50%; }
+.df-cut[data-cut="home"] {
+  bottom: 8px; left: 50%; transform: translateX(-50%);
+  width: 134px; height: 5px; border-radius: 99px;
+  background: rgba(0,0,0,0.42);
+}
+.df-device[data-orient="landscape"] .df-cut[data-cut="island"],
+.df-device[data-orient="landscape"] .df-cut[data-cut="notch"],
+.df-device[data-orient="landscape"] .df-cut[data-cut="punch"] {
+  top: 50%; left: 11px; transform: translateY(-50%) rotate(90deg);
+}
+
+/* The safe-area bands. Drawn only when asked for; the probe measures against
+   these exact rectangles, which is why they are positioned from the same
+   numbers the device preset carries. */
+.df-safe {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: none;
+}
+.df-screen[data-safe="on"] .df-safe { display: block; }
+.df-safe span {
+  position: absolute;
+  background: repeating-linear-gradient(
+    45deg, var(--accent-glow) 0 6px, var(--accent-bg) 6px 12px);
+  border: 1px dashed var(--accent);
+}
+.df-safe .df-safe-t { top: 0; left: 0; right: 0; height: var(--df-sat, 0px); }
+.df-safe .df-safe-b { bottom: 0; left: 0; right: 0; height: var(--df-sab, 0px); }
+.df-safe .df-safe-l { top: 0; bottom: 0; left: 0; width: var(--df-sal, 0px); }
+.df-safe .df-safe-r { top: 0; bottom: 0; right: 0; width: var(--df-sar, 0px); }
+
+/* ── Resize handles ──────────────────────────────────────────────────────── */
+.df-grip {
+  position: absolute;
+  z-index: 6;
+  background: transparent;
+  touch-action: none;
+}
+.df-grip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: var(--accent);
+  border-radius: 99px;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+.df-grip:hover::after, .df-grip[data-dragging="true"]::after { opacity: 0.85; }
+.df-grip[data-grip="e"] { top: 0; bottom: 0; right: -14px; width: 20px; cursor: ew-resize; }
+.df-grip[data-grip="e"]::after { width: 4px; height: 46px; }
+.df-grip[data-grip="s"] { left: 0; right: 0; bottom: -14px; height: 20px; cursor: ns-resize; }
+.df-grip[data-grip="s"]::after { width: 46px; height: 4px; }
+.df-grip[data-grip="se"] { right: -14px; bottom: -14px; width: 22px; height: 22px; cursor: nwse-resize; }
+.df-grip[data-grip="se"]::after { width: 10px; height: 10px; border-radius: 3px; }
+
+.df-size-tip {
+  position: absolute;
+  top: -30px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--brand);
+  color: #fff;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+.df-device[data-resizing="true"] .df-size-tip { opacity: 1; }
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.df-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.df-body[data-panel="closed"] .df-panel { display: none; }
+
+.df-panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.df-panel-head h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.df-verdict {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.df-verdict[data-state="clean"]   { background: var(--green-bg); color: var(--green-text); }
+.df-verdict[data-state="issues"]  { background: var(--red-bg);   color: var(--red-text); }
+.df-verdict[data-state="warn"]    { background: var(--amber-bg); color: var(--amber-text); }
+.df-verdict[data-state="unknown"] { background: var(--surface-2); color: var(--muted); }
+
+.df-check {
+  border-bottom: 1px solid var(--border);
+}
+.df-check > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+}
+.df-check > summary::-webkit-details-marker { display: none; }
+.df-check > summary:hover { background: var(--surface-2); }
+.df-check-name { flex: 1 1 auto; min-width: 0; }
+.df-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+  flex: none;
+}
+.df-pill[data-tone="pass"] { background: var(--green-bg); color: var(--green-text); }
+.df-pill[data-tone="fail"] { background: var(--red-bg);   color: var(--red-text); }
+.df-pill[data-tone="warn"] { background: var(--amber-bg); color: var(--amber-text); }
+.df-pill[data-tone="skip"] { background: var(--surface-2); color: var(--muted); }
+
+.df-check-body {
+  padding: 0 14px 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.df-why {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.df-hits { margin: 0; padding: 0; list-style: none; }
+.df-hits li {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  margin-bottom: 4px;
+  cursor: pointer;
+  word-break: break-word;
+  border: 1px solid transparent;
+}
+.df-hits li:hover { border-color: var(--accent); }
+.df-hits li b { color: var(--red-text); font-weight: 600; }
+
+.df-note {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+}
+.df-note b { color: var(--text-2); }
+
+/* ── Sweep table ─────────────────────────────────────────────────────────── */
+.df-sweep { padding: 10px 14px 16px; }
+.df-sweep table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  table-layout: fixed;
+}
+.df-sweep th, .df-sweep td {
+  text-align: left;
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.df-sweep th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.df-sweep td.df-num { font-family: var(--font-mono); text-align: right; }
+.df-sweep tr[data-state="fail"] td:first-child { color: var(--red-text); font-weight: 600; }
+.df-sweep tr { cursor: pointer; }
+.df-sweep tr:hover td { background: var(--surface-2); }
+.df-sweep progress { width: 100%; height: 6px; }
+
+/* ── The harness itself on a phone ───────────────────────────────────────── */
+@media (max-width: 900px) {
+  .df-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .df-body[data-panel="closed"] { grid-template-rows: minmax(0, 1fr) 0; }
+  .df-panel { border-left: 0; border-top: 1px solid var(--border); max-height: 45vh; }
+  .df-bar select { max-width: 150px; }
+  .df-stage { padding: 14px; }
+  /* The touch floor, on the one viewport where these are touch targets. */
+  .df-bar { flex-wrap: wrap; }
+  .df-btn { min-height: 44px; }
+  .df-btn.df-icon { width: 44px; }
+  .df-readout { display: none; }
+}
+</style>
+</head>
+
+<body>
+
+<header class="df-bar">
+  <span class="df-brand"><span class="df-dot"></span>Device Frame</span>
+
+  <span class="df-group">
+    <label class="df-label" for="df-page">Page</label>
+    <select id="df-page"></select>
+  </span>
+
+  <span class="df-group">
+    <label class="df-label" for="df-device">Device</label>
+    <select id="df-device"></select>
+  </span>
+
+  <span class="df-group">
+    <input id="df-w" type="number" min="240" max="3840" step="1" aria-label="Frame width in CSS pixels">
+    <span class="df-label">×</span>
+    <input id="df-h" type="number" min="320" max="2400" step="1" aria-label="Frame height in CSS pixels">
+  </span>
+
+  <button class="df-btn df-icon" id="df-rotate" title="Rotate (r)">⟳</button>
+  <button class="df-btn df-icon" id="df-theme" title="Toggle the framed page's theme (t)">◐</button>
+  <button class="df-btn df-icon" id="df-safe" aria-pressed="false" title="Show the safe-area bands">▣</button>
+  <button class="df-btn df-icon" id="df-outline" aria-pressed="false" title="Outline what the checks flagged (o)">◻</button>
+  <button class="df-btn df-icon" id="df-reload" title="Reload the frame (shift+r)">↻</button>
+
+  <span class="df-spacer"></span>
+
+  <span class="df-readout" id="df-readout">—</span>
+  <button class="df-btn df-icon" id="df-zoomout" title="Zoom out (−)">−</button>
+  <button class="df-btn" id="df-fit" title="Fit to stage (f)">Fit</button>
+  <button class="df-btn df-icon" id="df-zoomin" title="Zoom in (+)">+</button>
+  <button class="df-btn df-primary" id="df-sweep-btn" title="Run every page at this size">Scan all</button>
+  <button class="df-btn" id="df-panel-btn" aria-pressed="true" title="Toggle the report panel">Report</button>
+</header>
+
+<div class="df-body" id="df-body" data-panel="open">
+
+  <main class="df-stage" id="df-stage">
+    <div class="df-scaler" id="df-scaler">
+      <div class="df-device" id="df-device-el" data-kind="phone" data-orient="portrait">
+        <span class="df-size-tip" id="df-tip">390 × 844</span>
+
+        <div class="df-chrome" id="df-chrome" hidden>
+          <span class="df-lights"><i></i><i></i><i></i></span>
+          <span class="df-url" id="df-url">/app</span>
+        </div>
+
+        <div class="df-screen" id="df-screen" data-safe="off">
+          <iframe id="df-frame" title="Framed page" src="about:blank"></iframe>
+          <div class="df-safe" aria-hidden="true">
+            <span class="df-safe-t"></span><span class="df-safe-b"></span>
+            <span class="df-safe-l"></span><span class="df-safe-r"></span>
+          </div>
+          <span class="df-cut" id="df-cut" data-cut="none" aria-hidden="true"></span>
+          <span class="df-cut" id="df-home" data-cut="home" aria-hidden="true" hidden></span>
+        </div>
+
+        <span class="df-grip" data-grip="e" title="Drag to resize width"></span>
+        <span class="df-grip" data-grip="s" title="Drag to resize height"></span>
+        <span class="df-grip" data-grip="se" title="Drag to resize"></span>
+      </div>
+    </div>
+  </main>
+
+  <aside class="df-panel" id="df-panel">
+    <div class="df-panel-head">
+      <h2 id="df-panel-title">Framing report</h2>
+      <span class="df-verdict" id="df-verdict" data-state="unknown">waiting</span>
+    </div>
+    <div id="df-checks"></div>
+    <div class="df-sweep" id="df-sweep" hidden></div>
+    <p class="df-note">
+      <b>Measured here:</b> layout at a real viewport width — overflow, clipping,
+      wrapping, computed tap-target size, fixed-element stacking.
+      <b>Not measured here:</b> devicePixelRatio (this render always uses your own
+      screen's), real <code>env(safe-area-inset-*)</code> (the bands above are an
+      overlay this page draws, and the collision check measures against that
+      rectangle), and touch/hover media features.
+    </p>
+  </aside>
+</div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. DEVICE PRESETS
+   ───────────────────────────────────────────────────────────────────────────
+   `w`/`h` are CSS pixels in PORTRAIT, which is the number that decides which
+   media query fires — not the hardware pixel count. `dpr` is carried for the
+   readout only and is labelled as metadata in the panel, because an iframe
+   inherits the host window's device pixel ratio and nothing on this page can
+   change that.
+
+   `safe` is portrait {t,r,b,l}. In landscape the top inset largely moves to
+   whichever edge the sensor housing lands on and the home indicator stays at
+   the bottom; `rotateSafe()` below encodes that rather than transposing the
+   object blindly, because a transposed home indicator would put the collision
+   band on the wrong edge and the check would measure nothing.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const DEVICES = [
+  { id: 'iphone-se',    name: 'iPhone SE',            kind: 'phone',   w: 375,  h: 667,  dpr: 2,   bezel: 14, bezelR: 34, screenR: 22, cut: 'none',   safe: { t: 20, r: 0, b: 0,  l: 0 } },
+  { id: 'iphone-13m',   name: 'iPhone 13 mini',       kind: 'phone',   w: 375,  h: 812,  dpr: 3,   bezel: 12, bezelR: 44, screenR: 34, cut: 'notch',  safe: { t: 44, r: 0, b: 34, l: 0 } },
+  { id: 'iphone-15',    name: 'iPhone 15',            kind: 'phone',   w: 393,  h: 852,  dpr: 3,   bezel: 12, bezelR: 48, screenR: 38, cut: 'island', safe: { t: 59, r: 0, b: 34, l: 0 } },
+  { id: 'iphone-15-pm', name: 'iPhone 15 Pro Max',    kind: 'phone',   w: 430,  h: 932,  dpr: 3,   bezel: 12, bezelR: 52, screenR: 42, cut: 'island', safe: { t: 59, r: 0, b: 34, l: 0 } },
+  { id: 'galaxy-s24',   name: 'Galaxy S24',           kind: 'phone',   w: 360,  h: 780,  dpr: 3,   bezel: 10, bezelR: 36, screenR: 28, cut: 'punch',  safe: { t: 24, r: 0, b: 16, l: 0 } },
+  { id: 'pixel-8',      name: 'Pixel 8',              kind: 'phone',   w: 412,  h: 915,  dpr: 2.6, bezel: 11, bezelR: 38, screenR: 28, cut: 'punch',  safe: { t: 24, r: 0, b: 16, l: 0 } },
+  { id: 'fold-closed',  name: 'Galaxy Fold (closed)', kind: 'phone',   w: 344,  h: 882,  dpr: 3,   bezel: 10, bezelR: 32, screenR: 24, cut: 'punch',  safe: { t: 24, r: 0, b: 16, l: 0 } },
+  { id: 'ipad-mini',    name: 'iPad mini',            kind: 'tablet',  w: 744,  h: 1133, dpr: 2,   bezel: 18, bezelR: 40, screenR: 24, cut: 'none',   safe: { t: 24, r: 0, b: 20, l: 0 } },
+  { id: 'ipad-pro-11',  name: 'iPad Pro 11"',         kind: 'tablet',  w: 834,  h: 1194, dpr: 2,   bezel: 18, bezelR: 42, screenR: 26, cut: 'none',   safe: { t: 24, r: 0, b: 20, l: 0 } },
+  { id: 'surface-pro',  name: 'Surface Pro',          kind: 'tablet',  w: 912,  h: 1368, dpr: 2,   bezel: 16, bezelR: 20, screenR: 8,  cut: 'none',   safe: { t: 0,  r: 0, b: 0,  l: 0 } },
+  { id: 'laptop',       name: 'Laptop  1280',         kind: 'browser', w: 1280, h: 800,  dpr: 2,   safe: { t: 0, r: 0, b: 0, l: 0 } },
+  { id: 'laptop-l',     name: 'Laptop  1440',         kind: 'browser', w: 1440, h: 900,  dpr: 2,   safe: { t: 0, r: 0, b: 0, l: 0 } },
+  { id: 'desktop',      name: 'Desktop 1920',         kind: 'browser', w: 1920, h: 1080, dpr: 1,   safe: { t: 0, r: 0, b: 0, l: 0 } },
+  { id: 'desktop-2560', name: 'Desktop 2560',         kind: 'browser', w: 2560, h: 1440, dpr: 1,   safe: { t: 0, r: 0, b: 0, l: 0 } },
+];
+
+/* The breakpoint the platform's mobile layer is written against. Named once so
+   the readout and the checks cannot disagree about which side of it we are on. */
+const MOBILE_MAX = 768;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. THE PAGE LIST
+   ───────────────────────────────────────────────────────────────────────────
+   These are ROUTES, not filenames, and the difference is load-bearing on this
+   platform. server.js puts a landing gate in front of every subsystem URL:
+   `GET /content` renders a generated marketing page, and `GET /content?enter=1`
+   renders the tool. Framing only the filename would never exercise the gate,
+   and framing only the bare route would never exercise the tool — so both are
+   listed, and the sweep runs both.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const PAGES = [
+  { group: 'Shell & hub', items: [
+    { url: '/app',            name: 'App hub' },
+    { url: '/gao?enter=1',    name: 'GAO suite' },
+    { url: '/settings',       name: 'Settings' },
+    { url: '/billing',        name: 'Billing' },
+  ]},
+  { group: 'Tools', items: [
+    { url: '/content?enter=1',   name: 'Content' },
+    { url: '/social?enter=1',    name: 'Social' },
+    { url: '/mail?enter=1',      name: 'Mail' },
+    { url: '/ads?enter=1',       name: 'Ads' },
+    { url: '/seo?enter=1',       name: 'SEO' },
+    { url: '/commerce?enter=1',  name: 'Commerce' },
+    { url: '/sales?enter=1',     name: 'Sales' },
+    { url: '/aichat?enter=1',    name: 'AI chat' },
+    { url: '/audiobook?enter=1', name: 'Audiobook' },
+    { url: '/pr-demo.html',      name: 'PR demo' },
+  ]},
+  { group: 'Landing gate', items: [
+    { url: '/',          name: 'Home' },
+    { url: '/content',   name: 'Content landing' },
+    { url: '/social',    name: 'Social landing' },
+    { url: '/mail',      name: 'Mail landing' },
+    { url: '/ads',       name: 'Ads landing' },
+    { url: '/seo',       name: 'SEO landing' },
+    { url: '/commerce',  name: 'Commerce landing' },
+    { url: '/sales',     name: 'Sales landing' },
+    { url: '/aichat',    name: 'AI chat landing' },
+    { url: '/gao',       name: 'GAO landing' },
+    { url: '/audiobook', name: 'Audiobook landing' },
+  ]},
+  { group: 'Account & legal', items: [
+    { url: '/login',    name: 'Sign in portal' },
+    { url: '/privacy',  name: 'Privacy' },
+    { url: '/terms',    name: 'Terms' },
+    { url: '/module-unavailable.html', name: 'Module unavailable' },
+  ]},
+  { group: 'Staff (needs a session)', items: [
+    { url: '/seller',    name: 'Seller console' },
+    { url: '/mai',       name: 'M-Ai registry' },
+    { url: '/docintel',  name: 'Document intelligence' },
+    { url: '/audit.html',name: 'Audit' },
+    { url: '/api-docs.html', name: 'API docs' },
+  ]},
+];
+
+const ALL_PAGES = PAGES.flatMap((g) => g.items);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. STATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+const state = {
+  page: '/app',
+  device: 'iphone-15',
+  orient: 'portrait',
+  w: 393,
+  h: 852,
+  zoom: 'fit',
+  theme: null,          // null = leave whatever the framed page chose
+  safe: false,
+  outline: false,
+  panel: true,
+};
+
+const $ = (id) => document.getElementById(id);
+const el = {
+  page: $('df-page'), device: $('df-device'), w: $('df-w'), h: $('df-h'),
+  stage: $('df-stage'), scaler: $('df-scaler'), dev: $('df-device-el'),
+  screen: $('df-screen'), frame: $('df-frame'), chrome: $('df-chrome'),
+  url: $('df-url'), cut: $('df-cut'), home: $('df-home'), tip: $('df-tip'),
+  readout: $('df-readout'), checks: $('df-checks'), verdict: $('df-verdict'),
+  body: $('df-body'), panel: $('df-panel'), sweep: $('df-sweep'),
+  title: $('df-panel-title'),
+};
+
+const preset = (id) => DEVICES.find((d) => d.id === id) || null;
+
+/* Landscape is not a transpose. The sensor housing moves to a side edge, the
+   home indicator stays on the bottom. Transposing {t,r,b,l} would put the
+   bottom band on the right and every collision check would then measure an
+   edge no content ever reaches. */
+function rotateSafe(s, orient) {
+  if (orient === 'portrait') return { ...s };
+  return { t: 0, r: s.t, b: s.b, l: s.t ? 21 : 0 };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. RENDER
+   ═══════════════════════════════════════════════════════════════════════════ */
+function currentSafe() {
+  const d = preset(state.device);
+  if (!d) return { t: 0, r: 0, b: 0, l: 0 };
+  return rotateSafe(d.safe, state.orient);
+}
+
+function applyDevice() {
+  const d = preset(state.device);
+  const kind = d ? d.kind : (state.w >= 1100 ? 'browser' : state.w >= 700 ? 'tablet' : 'phone');
+
+  el.dev.dataset.kind = kind;
+  el.dev.dataset.orient = state.orient;
+  el.dev.style.setProperty('--df-bezel',   (d ? d.bezel   : 12) + 'px');
+  el.dev.style.setProperty('--df-bezel-r', (d ? d.bezelR  : 40) + 'px');
+  el.screen.style.setProperty('--df-screen-r', (d && kind !== 'browser' ? d.screenR : 0) + 'px');
+
+  el.chrome.hidden = kind !== 'browser';
+  el.url.textContent = location.origin + state.page;
+
+  const cut = d && kind !== 'browser' && state.orient === 'portrait' ? (d.cut || 'none')
+            : d && kind !== 'browser' ? (d.cut || 'none') : 'none';
+  el.cut.dataset.cut = cut;
+  el.cut.hidden = cut === 'none';
+
+  const safe = currentSafe();
+  el.home.hidden = !(kind === 'phone' && safe.b >= 20);
+  el.screen.dataset.safe = state.safe ? 'on' : 'off';
+  el.screen.style.setProperty('--df-sat', safe.t + 'px');
+  el.screen.style.setProperty('--df-sab', safe.b + 'px');
+  el.screen.style.setProperty('--df-sal', safe.l + 'px');
+  el.screen.style.setProperty('--df-sar', safe.r + 'px');
+
+  /* THE ONE LINE THAT DECIDES WHETHER ANY OF THIS IS REAL. The screen box is
+     given the device's CSS-pixel size, so the iframe's own viewport is that
+     size and its media queries resolve against it. The scale below is applied
+     to an ancestor and never reaches the iframe's layout. */
+  el.screen.style.width  = state.w + 'px';
+  el.screen.style.height = state.h + 'px';
+
+  el.tip.textContent = state.w + ' × ' + state.h;
+  el.w.value = state.w;
+  el.h.value = state.h;
+
+  const zoomPct = Math.round(currentScale() * 100);
+  /* Which side of the breakpoint, not "mobile" or "desktop". A landscape
+     iPhone is 852px wide and lands on the desktop side of a 768px query while
+     being, obviously, a phone — labelling it "desktop" reads as the harness
+     having picked the wrong device. What the number actually decides is which
+     rules fire, so that is what it says. */
+  const side = state.w <= MOBILE_MAX ? '≤' + MOBILE_MAX + 'px rules' : '>' + MOBILE_MAX + 'px rules';
+  el.readout.textContent = state.w + '×' + state.h + '  ·  ' + side +
+    (d ? '  ·  @' + d.dpr + 'x' : '') + '  ·  ' + zoomPct + '%';
+}
+
+let _scale = 1;
+function currentScale() { return _scale; }
+
+function applyScale() {
+  /* Measure the UNSCALED box. getBoundingClientRect returns the scaled one, so
+     read the layout box from offsetWidth/offsetHeight instead — reading the
+     scaled rect here makes the fit calculation converge on whatever scale it
+     last applied, which looks like a working fit that slowly shrinks. */
+  const ow = el.dev.offsetWidth;
+  const oh = el.dev.offsetHeight;
+  const availW = el.stage.clientWidth  - 56;
+  const availH = el.stage.clientHeight - 56;
+
+  if (state.zoom === 'fit') {
+    _scale = Math.min(1, availW / ow, availH / oh);
+    if (!isFinite(_scale) || _scale <= 0) _scale = 1;
+  } else {
+    _scale = state.zoom;
+  }
+  el.dev.style.transform = 'scale(' + _scale + ')';
+  /* A scaled element keeps its layout box, so the stage would scroll as if the
+     frame were full size. The wrapper reserves the SCALED footprint instead. */
+  el.scaler.style.width  = (ow * _scale) + 'px';
+  el.scaler.style.height = (oh * _scale) + 'px';
+  const zoomPct = Math.round(_scale * 100);
+  el.readout.textContent = el.readout.textContent.replace(/\d+%$/, zoomPct + '%');
+}
+
+function render() {
+  applyDevice();
+  applyScale();
+  writeHash();
+}
+
+function loadFrame() {
+  const url = state.page + (state.page.includes('?') ? '&' : '?') + '_df=' + Date.now();
+  el.frame.src = url;
+  setVerdict('unknown', 'loading');
+  el.checks.innerHTML = '';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. THE PROBE
+   ───────────────────────────────────────────────────────────────────────────
+   Runs inside the framed document, same-origin, reading computed layout. Every
+   check returns { tone, count, summary, hits }. A check that cannot run says
+   so — `skip` — instead of returning zero, because a zero and an unmeasured
+   thing render identically in a list and mean opposite things.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── THE INSETS, APPLIED FOR REAL ────────────────────────────────────────────
+   Nothing in a page can set `env(safe-area-inset-*)`, so a harness that only
+   DRAWS a notch can never tell a page that compensates from one that does not
+   — both lay out identically under it. css/tools-mobile.css §10 therefore
+   routes every inset through `--tmob-sa*`, and this writes the chosen device's
+   real numbers onto those four properties as an inline style on the root
+   element, which
+   outranks every stylesheet. From that point the framed page lays out exactly
+   as it would on the device, and the check below measures the outcome instead
+   of guessing at it.
+
+   ONLY ON A PAGE THAT ASKED FOR IT. Without `viewport-fit=cover` the browser
+   insets the viewport itself and `env()` is 0 on the real device, so pushing
+   numbers in here would move content the hardware never would and invent a
+   layout the product does not have. */
+function applyInsets(doc, safe) {
+  if (!doc || !doc.documentElement) return false;
+  const vp = doc.querySelector('meta[name="viewport"]');
+  const cover = /viewport-fit\s*=\s*cover/i.test(vp ? (vp.getAttribute('content') || '') : '');
+  const de = doc.documentElement;
+  const put = (prop, px) => {
+    if (cover && px) de.style.setProperty(prop, px + 'px');
+    else de.style.removeProperty(prop);
+  };
+  put('--tmob-sat', safe.t);
+  put('--tmob-sar', safe.r);
+  put('--tmob-sab', safe.b);
+  put('--tmob-sal', safe.l);
+  return cover;
+}
+
+function selectorFor(node) {
+  if (!node || node.nodeType !== 1) return '?';
+  let s = node.tagName.toLowerCase();
+  if (node.id) return s + '#' + node.id;
+  const cls = (node.getAttribute('class') || '').trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  if (cls.length) s += '.' + cls.join('.');
+  const txt = (node.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28);
+  return txt ? s + ' “' + txt + '”' : s;
+}
+
+const INTERACTIVE = 'a[href], button, input:not([type=hidden]), select, textarea, ' +
+                    '[role=button], [role=link], [role=tab], [onclick], [tabindex]:not([tabindex="-1"])';
+
+function runChecks(doc, win, safe) {
+  const out = [];
+  const de = doc.documentElement;
+  const body = doc.body;
+  const vw = de.clientWidth;
+  const vh = de.clientHeight;
+
+  if (!body) {
+    return [{ id: 'load', name: 'Document', tone: 'skip', count: 0,
+              summary: 'no <body> — the frame has not finished loading', hits: [] }];
+  }
+
+  /* VISIBILITY IS INHERITED FROM ANCESTORS, AND READING ONLY THE ELEMENT'S OWN
+     COMPUTED STYLE MISSES IT.
+
+     index.html's chat widget is closed by `opacity:0; pointer-events:none` on
+     `.chat-window`, while the close button inside it keeps `opacity:1` and a
+     perfectly ordinary computed style of its own. A check that asked the
+     button whether it was visible was told yes, measured a control nobody can
+     see or tap, and reported it as an undersized tap target — on every route
+     that carries the widget. The button also carries an ancestor
+     `transform: scale(0.85)`, so the size it reported was not even the size
+     the control has when it IS open: 37px for a 44px button.
+
+     `checkVisibility` answers the inherited question in one call. The manual
+     walk behind it is the fallback for engines that do not have it yet, and it
+     climbs, because that is the whole point. */
+  const visible = (n) => {
+    if (typeof n.checkVisibility === 'function') {
+      return n.checkVisibility({
+        opacityProperty: true,
+        visibilityProperty: true,
+        contentVisibilityAuto: true,
+      });
+    }
+    for (let p = n; p && p.nodeType === 1; p = p.parentElement) {
+      const cs = win.getComputedStyle(p);
+      if (cs.display === 'none') return false;
+      if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+      if (parseFloat(cs.opacity) === 0) return false;
+    }
+    return true;
+  };
+
+  const all = Array.from(body.querySelectorAll('*'));
+
+  /* ── A. HORIZONTAL OVERFLOW ──────────────────────────────────────────────
+     The headline defect on this platform: a sidebar or a fixed-px grid track
+     wider than the viewport pushes the document sideways, and on a phone the
+     user simply cannot reach the right-hand column. Reported in pixels, then
+     attributed to the elements whose own right edge is past the viewport and
+     whose parent's is not — the outermost offender, not the hundred children
+     it drags with it. */
+  {
+    const over = Math.max(0, de.scrollWidth - vw, body.scrollWidth - vw);
+    const hits = [];
+    if (over > 1) {
+      for (const n of all) {
+        if (!visible(n)) continue;
+        const r = n.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        if (r.right <= vw + 1 && r.left >= -1) continue;
+        const p = n.parentElement;
+        if (p && p !== body) {
+          const pr = p.getBoundingClientRect();
+          if (pr.right > vw + 1 || pr.left < -1) continue;   // parent already listed
+        }
+        hits.push({
+          sel: selectorFor(n),
+          detail: Math.round(r.width) + 'px wide, right edge at ' + Math.round(r.right) + ' (viewport ' + vw + ')',
+          node: n,
+        });
+        if (hits.length >= 12) break;
+      }
+    }
+    out.push({
+      id: 'overflow',
+      name: 'Horizontal overflow',
+      tone: over > 1 ? 'fail' : 'pass',
+      count: over > 1 ? Math.round(over) : 0,
+      unit: 'px',
+      summary: over > 1
+        ? 'the document is ' + Math.round(over) + 'px wider than the ' + vw + 'px viewport'
+        : 'nothing extends past ' + vw + 'px',
+      why: 'A page wider than the viewport scrolls sideways. Content in the overflowing strip is reachable only by panning, and fixed-position chrome does not pan with it.',
+      hits,
+    });
+  }
+
+  /* ── B. CONTENT THAT CANNOT BE SCROLLED TO ───────────────────────────────
+     app.html shipped `html { overflow: hidden }`, which is correct for an app
+     shell whose inner pane scrolls and catastrophic for one whose pane is not
+     tall enough. Distinguish them: hidden overflow is only a defect when the
+     content really is taller AND no descendant is itself a live scroller. */
+  {
+    const hidden = [];
+    for (const n of [de, body]) {
+      const cs = win.getComputedStyle(n);
+      if (cs.overflowY === 'hidden' && n.scrollHeight > n.clientHeight + 2) hidden.push(n);
+    }
+    let rescued = false;
+    if (hidden.length) {
+      rescued = all.some((n) => {
+        if (!visible(n)) return false;
+        const cs = win.getComputedStyle(n);
+        const scrolls = /auto|scroll/.test(cs.overflowY);
+        return scrolls && n.scrollHeight > n.clientHeight + 2;
+      });
+    }
+    const bad = hidden.length > 0 && !rescued;
+    out.push({
+      id: 'unreachable',
+      name: 'Unreachable content',
+      tone: bad ? 'fail' : 'pass',
+      count: bad ? hidden.length : 0,
+      summary: bad
+        ? hidden.map((n) => n.tagName.toLowerCase()).join(' + ') + ' clips ' +
+          Math.max(...hidden.map((n) => n.scrollHeight - n.clientHeight)) + 'px with no inner scroller'
+        : hidden.length
+          ? 'overflow is hidden on the shell, but an inner pane scrolls — correct'
+          : 'nothing is clipped',
+      why: 'overflow:hidden on html/body with taller content means the tail of the page cannot be reached by any gesture. It is legitimate ONLY when an inner pane is the scroller.',
+      hits: bad ? hidden.map((n) => ({ sel: selectorFor(n), detail: 'scrollHeight ' + n.scrollHeight + ' vs client ' + n.clientHeight, node: n })) : [],
+    });
+  }
+
+  /* ── C. TAP TARGETS ──────────────────────────────────────────────────────
+     44px is the WCAG 2.5.5 / platform HIG floor. Only checked at mobile
+     widths: the same control at 1440px is a mouse target and the rule does not
+     apply, and reporting it there would bury the real hits. */
+  {
+    if (vw > MOBILE_MAX) {
+      out.push({ id: 'tap', name: 'Tap targets', tone: 'skip', count: 0,
+                 summary: 'not checked above ' + MOBILE_MAX + 'px — these are pointer targets, not touch targets',
+                 why: 'The 44px floor is a touch rule. Applying it to a desktop viewport produces noise that hides the mobile hits.',
+                 hits: [] });
+    } else {
+      const hits = [];
+      for (const n of body.querySelectorAll(INTERACTIVE)) {
+        if (!visible(n)) continue;
+        const r = n.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        /* An inline link inside a paragraph is text, not a control, and sizing
+           it to 44px would be wrong. Only count it when it is laid out as a
+           box of its own. */
+        const cs = win.getComputedStyle(n);
+        if (n.tagName === 'A' && cs.display === 'inline') continue;
+
+        /* A CONTROL INSIDE A LABEL IS NOT THE TARGET — THE LABEL IS.
+
+           The sign-in portal's "Keep me signed in" checkbox measures 24×24 and
+           a thumb has the whole label row to land on, because the input is
+           wrapped in one. Measuring the input reported a 24px target on a
+           control nobody has ever had trouble tapping. Where a label owns the
+           control, its box is what gets measured. */
+        let lab = n.closest ? n.closest('label') : null;
+        if (!lab && n.id) {
+          const esc = win.CSS && win.CSS.escape ? win.CSS.escape(n.id) : n.id;
+          const forLab = body.querySelector('label[for="' + esc + '"]');
+          if (forLab && visible(forLab)) lab = forLab;
+        }
+
+        /* THE UNION, NOT THE LABEL. Taking the label's box on its own was
+           wrong in the other direction: `label[for]` usually sits ABOVE its
+           field as a 324x18 caption, so measuring it turned a comfortable
+           324x44 input into an 18px-tall "failure". Both boxes are live tap
+           targets, so what a thumb actually gets is the two together. */
+        let tr = r, via = '';
+        if (lab && lab !== n) {
+          const lr = lab.getBoundingClientRect();
+          if (lr.width && lr.height) {
+            tr = {
+              width: Math.max(r.right, lr.right) - Math.min(r.left, lr.left),
+              height: Math.max(r.bottom, lr.bottom) - Math.min(r.top, lr.top),
+            };
+            via = ' — measured with its label';
+          }
+        }
+        const short = Math.min(tr.width, tr.height);
+        if (short < 44) {
+          hits.push({
+            sel: selectorFor(n),
+            detail: Math.round(tr.width) + '×' + Math.round(tr.height) + ' (floor 44×44)' + via,
+            node: lab && lab !== n ? lab : n,
+          });
+        }
+        if (hits.length >= 40) break;
+      }
+      out.push({
+        id: 'tap', name: 'Tap targets', tone: hits.length ? 'warn' : 'pass', count: hits.length,
+        summary: hits.length ? hits.length + ' control' + (hits.length === 1 ? '' : 's') + ' below 44×44' : 'every control is at least 44×44',
+        why: 'WCAG 2.5.5. Below 44px a control is hit-or-miss with a thumb, and the miss usually lands on the control beside it.',
+        hits,
+      });
+    }
+  }
+
+  /* ── D. SAFE-AREA COLLISION ──────────────────────────────────────────────
+     THE BAND ONLY EXISTS IF THE PAGE ASKED FOR IT.
+
+     This check was wrong in its first form and the wrongness is worth keeping
+     written down, because it is the intuitive version. Without
+     `viewport-fit=cover` the user agent insets the viewport ITSELF: the page
+     is laid out below the notch and above the home indicator, `env(...)`
+     resolves to 0, and no element can collide with hardware however it is
+     positioned. Flagging those pages produced a warning on 31 of 34 routes and
+     every one of them was a false alarm.
+
+     `viewport-fit=cover` is the opt-in. It hands the page the full screen
+     INCLUDING the hardware area, and from that moment the page owes every
+     pinned element an `env(safe-area-inset-*)` of its own. Three pages here
+     opt in. So the check is: did you opt in, and if so did you compensate?
+
+     Compensation is read from the stylesheets rather than from computed
+     values, and that is not laziness — it is the only honest reading
+     available. This harness has no real insets, so `env()` resolves to 0 here
+     and a correctly written page computes a padding of 0 exactly like a broken
+     one. The declaration is the evidence; the computed number is not.
+     ──────────────────────────────────────────────────────────────────────── */
+  {
+    const vp = doc.querySelector('meta[name="viewport"]');
+    const cover = /viewport-fit\s*=\s*cover/i.test(vp ? (vp.getAttribute('content') || '') : '');
+
+    /* Reported as context only. It is NOT part of the verdict, and an earlier
+       version that used it as one was wrong twice over: the insets are really
+       applied above, so the layout being measured already reflects whatever
+       compensation the page has, and hedging a measured hit down to a warning
+       on the strength of a declaration existing SOMEWHERE would have hidden a
+       regression the mutation test plants on purpose.
+
+       Test cssText BEFORE recursing. Chromium implements CSS nesting, which
+       gave every CSSStyleRule a `cssRules` list of its own — almost always
+       empty — so a `if (rule.cssRules) { recurse; continue; }` written the
+       obvious way walks into an empty list for every ordinary rule and reaches
+       the `cssText` test for none of them. That version reported "no stylesheet
+       declares env(safe-area-inset-*)" for a stylesheet with four such
+       declarations in it, and reported it as part of a failure message, which
+       is the worst place for a sentence that is not true. */
+    let declaresInsets = false;
+    let sheetsReadable = true;
+    const scan = (list) => {
+      for (let i = 0; i < list.length; i++) {
+        const rule = list[i];
+        if (rule.cssText && rule.cssText.indexOf('safe-area-inset') !== -1) return true;
+        if (rule.cssRules && rule.cssRules.length && scan(rule.cssRules)) return true;
+      }
+      return false;
+    };
+    try {
+      for (const sheet of doc.styleSheets) {
+        let rules;
+        try { rules = sheet.cssRules; } catch (e) { sheetsReadable = false; continue; }
+        if (rules && scan(rules)) { declaresInsets = true; break; }
+      }
+    } catch (e) { sheetsReadable = false; }
+
+    if (!cover) {
+      out.push({
+        id: 'safe', name: 'Safe area', tone: 'skip', count: 0,
+        summary: 'no viewport-fit=cover — the browser insets the viewport itself, so nothing can reach the notch or the home bar',
+        why: 'Only a page that opts into the full screen owes the hardware an inset. The overlay above is drawn for reference and is not a finding on this page.',
+        hits: [],
+      });
+    } else {
+
+    const bands = [];
+    if (safe.t) bands.push({ name: 'top inset',    x0: 0, y0: 0, x1: vw, y1: safe.t });
+    if (safe.b) bands.push({ name: 'home bar',     x0: 0, y0: vh - safe.b, x1: vw, y1: vh });
+    if (safe.l) bands.push({ name: 'left inset',   x0: 0, y0: 0, x1: safe.l, y1: vh });
+    if (safe.r) bands.push({ name: 'right inset',  x0: vw - safe.r, y0: 0, x1: vw, y1: vh });
+
+    if (!bands.length) {
+      out.push({ id: 'safe', name: 'Safe area', tone: 'skip', count: 0,
+                 summary: 'this device preset has no insets', why: '', hits: [] });
+    } else {
+      /* ONLY PINNED ELEMENTS COUNT, and this is the difference between a
+         useful check and 114 lines of noise.
+
+         A paragraph that happens to be sitting in the bottom 34px right now
+         scrolls out from under the home indicator the moment the user moves a
+         finger — on a real phone that is not a defect, it is how every page
+         works. What never moves is a fixed or sticky element: a topbar pinned
+         at y=0 sits under the notch forever, and a bottom nav pinned at the
+         base sits under the home indicator forever.
+
+         The first version of this check counted every intersecting element and
+         reported 114 hits across the platform, of which the ~10 that mattered
+         were indistinguishable from the ~104 that did not. A list nobody can
+         act on is the same as no list. */
+      /* PINNED MEANS "CANNOT BE MOVED OUT FROM UNDER THE HARDWARE", and there
+         are two ways to be pinned, not one.
+
+         The obvious way is `position: fixed` or `sticky`. The other is to sit
+         in a region that does not scroll at all — and the first version of
+         this check tested that by asking whether the DOCUMENT scrolls, which
+         is wrong on every app shell here. `.app-layout` is `height:100vh;
+         overflow:hidden` with `.app-main` as the real scroller, so the
+         document never scrolls and that test declared every element on
+         /billing pinned, including the feature list the user scrolls past
+         every day. Five false findings on one page.
+
+         So the question is per-element: walking up from the node, is there any
+         ancestor that both CAN scroll and HAS somewhere to scroll to? If yes,
+         the user can move this content out of the band themselves. */
+      const canScroll = (n) => {
+        const cs = win.getComputedStyle(n);
+        const vertical = /auto|scroll/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 2;
+        const horizontal = /auto|scroll/.test(cs.overflowX) && n.scrollWidth > n.clientWidth + 2;
+        return vertical || horizontal;
+      };
+      const docScrolls = de.scrollHeight > de.clientHeight + 2 || body.scrollHeight > body.clientHeight + 2;
+
+      const pinned = (n) => {
+        for (let p = n; p && p !== de; p = p.parentElement) {
+          const pos = win.getComputedStyle(p).position;
+          if (pos === 'fixed' || pos === 'sticky') return true;
+          if (p !== n && canScroll(p)) return false;
+        }
+        return !docScrolls;
+      };
+
+      const hits = [];
+      const seen = new Set();
+      const candidates = body.querySelectorAll(INTERACTIVE + ', h1, h2, h3, p, span, td, th, li');
+      for (const n of candidates) {
+        if (!visible(n)) continue;
+        const txt = (n.textContent || '').trim();
+        const isCtl = n.matches(INTERACTIVE);
+        if (!isCtl && !txt) continue;
+        if (!pinned(n)) continue;
+        const r = n.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        if (r.bottom < 0 || r.top > vh) continue;
+        for (const b of bands) {
+          const ix = Math.min(r.right, b.x1) - Math.max(r.left, b.x0);
+          const iy = Math.min(r.bottom, b.y1) - Math.max(r.top, b.y0);
+          if (ix > 2 && iy > 2) {
+            /* Report the pinned CONTAINER once, not every label inside it. A
+               bottom nav with three items and two spans each is one defect
+               with nine rows otherwise. */
+            let owner = n;
+            for (let p = n.parentElement; p && p !== body; p = p.parentElement) {
+              const pos = win.getComputedStyle(p).position;
+              if (pos === 'fixed' || pos === 'sticky') { owner = p; break; }
+            }
+            const key = selectorFor(owner) + '|' + b.name;
+            if (!seen.has(key)) {
+              seen.add(key);
+              hits.push({ sel: selectorFor(owner), detail: 'pinned under the ' + b.name, node: owner });
+            }
+            break;
+          }
+        }
+        if (hits.length >= 20) break;
+      }
+      /* A hit here is a hit AFTER the device's real insets were written onto
+         the page, so whatever compensation the page has is already in the
+         layout being measured. There is nothing left to hedge against: the
+         element is in the band. */
+      const context = declaresInsets
+        ? ' (the page does declare env(safe-area-inset-*), so the compensation exists but does not reach this element)'
+        : ' (no stylesheet on this page declares env(safe-area-inset-*) at all)' +
+          (sheetsReadable ? '' : ' — note some stylesheets could not be read');
+      out.push({
+        id: 'safe', name: 'Safe area', tone: hits.length ? 'fail' : 'pass', count: hits.length,
+        summary: !hits.length
+          ? 'viewport-fit=cover, insets applied, and no pinned element reaches the notch or home bar'
+          : hits.length + ' pinned element' + (hits.length === 1 ? '' : 's') +
+            ' still in the hardware band with the device’s insets applied' + context,
+        why: 'This page set viewport-fit=cover, so it owns the area behind the notch and the home indicator. The device’s insets are written onto --tmob-sa* before measuring, so this is the layout the phone would produce. Only fixed and sticky elements, and content in a region that cannot scroll, are counted.',
+        hits,
+      });
+    }
+    }
+  }
+
+  /* ── E. TINY TEXT ────────────────────────────────────────────────────────
+     Below ~12px a phone user zooms, and on a page that blocks zoom they simply
+     cannot read it. Counted by element, not by character. */
+  {
+    if (vw > MOBILE_MAX) {
+      out.push({ id: 'type', name: 'Type size', tone: 'skip', count: 0,
+                 summary: 'not checked above ' + MOBILE_MAX + 'px', why: '', hits: [] });
+    } else {
+      const hits = [];
+      for (const n of all) {
+        if (!visible(n)) continue;
+        const own = Array.from(n.childNodes).some((c) => c.nodeType === 3 && c.nodeValue.trim());
+        if (!own) continue;
+        const px = parseFloat(win.getComputedStyle(n).fontSize);
+        if (px && px < 12) {
+          hits.push({ sel: selectorFor(n), detail: px.toFixed(1) + 'px', node: n });
+        }
+        if (hits.length >= 25) break;
+      }
+      out.push({
+        id: 'type', name: 'Type size', tone: hits.length ? 'warn' : 'pass', count: hits.length,
+        summary: hits.length ? hits.length + ' text node' + (hits.length === 1 ? '' : 's') + ' under 12px' : 'no text under 12px',
+        why: 'Under 12px a phone user pinches to read. Combined with a blocked viewport it is unreadable, which is why the two checks belong together.',
+        hits,
+      });
+    }
+  }
+
+  /* ── F. PINCH-ZOOM ───────────────────────────────────────────────────────
+     Static in the source, but read here from the LIVE document, because a
+     script can rewrite the tag after load and the static guard in
+     test/mobile-contract.js cannot see that. */
+  {
+    const m = doc.querySelector('meta[name="viewport"]');
+    const content = m ? (m.getAttribute('content') || '') : '';
+    const blocked = /user-scalable\s*=\s*(no|0)/i.test(content) || /maximum-scale\s*=\s*1(?!\d)/i.test(content);
+    out.push({
+      id: 'zoom', name: 'Pinch-zoom', tone: !m ? 'warn' : blocked ? 'fail' : 'pass',
+      count: blocked ? 1 : 0,
+      summary: !m ? 'no viewport meta — the page will render at a 980px desktop width'
+                  : blocked ? 'zoom is disabled: ' + content
+                  : 'zoom is allowed',
+      why: 'WCAG 1.4.4. Read from the live DOM, so a tag rewritten by script after load is caught here and not by the static scan.',
+      hits: [],
+    });
+  }
+
+  /* ── G. FIXED ELEMENTS COVERING THE VIEWPORT ─────────────────────────────
+     An overlay left visible by a CSS animation with fill-mode:both, or a modal
+     backdrop that never got its `display:none`, reads as a blank page. The
+     signal is a fixed element covering most of the screen with real opacity. */
+  {
+    const hits = [];
+    for (const n of all) {
+      const cs = win.getComputedStyle(n);
+      if (cs.position !== 'fixed') continue;
+      if (!visible(n)) continue;
+      if (parseFloat(cs.opacity) < 0.05) continue;
+      if (cs.pointerEvents === 'none') continue;
+      const r = n.getBoundingClientRect();
+      const cover = (Math.min(r.width, vw) * Math.min(r.height, vh)) / (vw * vh);
+      if (cover > 0.6) {
+        hits.push({ sel: selectorFor(n), detail: Math.round(cover * 100) + '% of the viewport, z-index ' + cs.zIndex, node: n });
+      }
+      if (hits.length >= 8) break;
+    }
+    out.push({
+      id: 'overlay', name: 'Blocking overlay', tone: hits.length ? 'warn' : 'pass', count: hits.length,
+      summary: hits.length ? hits.length + ' fixed element' + (hits.length === 1 ? '' : 's') + ' covering the screen' : 'nothing is covering the screen',
+      why: 'A fixed layer over 60% of the viewport that still takes pointer events is either an open modal or an overlay that failed to close.',
+      hits,
+    });
+  }
+
+  /* ── H. INLINE STYLE ATTRIBUTES A MEDIA QUERY CANNOT REACH ───────────────
+     Documented in tools-mobile.css as the one defect class a stylesheet is
+     structurally unable to fix: an inline `style=` outranks every rule at
+     every specificity, so no breakpoint can collapse it. Reported live because
+     a script that WRITES an inline width at runtime is invisible to the static
+     scan that covers the authored HTML. */
+  {
+    const hits = [];
+    const re = /(grid-template-columns|width|min-width)\s*:\s*[^;]*?\d+\s*px/i;
+    for (const n of all) {
+      const s = n.getAttribute('style');
+      if (!s || !re.test(s)) continue;
+      const cs = win.getComputedStyle(n);
+      const w = parseFloat(cs.width) || 0;
+      /* Only a problem if it is actually too wide for this viewport. A 40px
+         inline width is inline styling, not a framing defect, and listing it
+         would drown the one that matters. */
+      if (w <= vw * 0.92) continue;
+      hits.push({ sel: selectorFor(n), detail: s.trim().slice(0, 70), node: n });
+      if (hits.length >= 12) break;
+    }
+    out.push({
+      id: 'inline', name: 'Unreachable inline style', tone: hits.length ? 'fail' : 'pass', count: hits.length,
+      summary: hits.length ? hits.length + ' inline px rule wider than the viewport' : 'no inline px rule exceeds the viewport',
+      why: 'An inline style attribute outranks every stylesheet rule at every specificity. No media query at any breakpoint can collapse it — the value has to move into a class or a custom property.',
+      hits,
+    });
+  }
+
+  /* ── J. CONTENT RUNNING UNDER FIXED CHROME ───────────────────────────────
+     A bar docked to an edge covers the scrolling pane behind it, and the only
+     thing that keeps the last row of content reachable is padding on that pane
+     big enough to clear the bar. The two numbers live in different rules, in
+     different files, and nothing connects them: the design system pads
+     `.app-main` by 72px to clear a 60px `.app-bottom-nav`, and the moment the
+     bar grows — a taller nav, a second row of items, a safe-area inset added
+     to it — the padding does not follow and the tail of every page slides
+     underneath.
+
+     This check exists because a mutation survived without it. Removing the
+     inset from `.app-main`'s bottom padding left the bar correctly clear of
+     the home indicator and the content correctly hidden behind the bar, and
+     every other check went green. A fix with no check behind it is a fix that
+     is one refactor from being deleted by someone who has no way to know what
+     it was for.
+     ──────────────────────────────────────────────────────────────────────── */
+  {
+    /* BOTTOM-DOCKED BARS ONLY, AND MEASURED AT FULL SCROLL.
+
+       The first version of this check compared the pane's padding against the
+       bar's height, and that proxy is wrong at the top edge: a landing page
+       clears its fixed header with the hero section's own padding, not with
+       padding on the scroller, so every marketing page in the repo failed a
+       check that was describing nothing. Eleven false findings.
+
+       A bottom-docked bar has no such ambiguity, and it does not need a proxy
+       at all — scroll the pane to its end and look. If the last piece of
+       content is still behind the bar when there is nowhere left to scroll,
+       it is unreachable, whatever any padding says. The scroll position is put
+       back afterwards. */
+    const bars = [];
+    for (const n of all) {
+      const cs = win.getComputedStyle(n);
+      if (cs.position !== 'fixed') continue;
+      if (!visible(n)) continue;
+      if (cs.pointerEvents === 'none') continue;
+      const r = n.getBoundingClientRect();
+      if (r.width < vw * 0.6 || r.height < 8) continue;
+      if (r.height > vh * 0.5) continue;                 // that is an overlay, not a bar
+      if (Math.abs(r.bottom - vh) <= 2) bars.push({ n, r });
+    }
+
+    const scrollers = all.filter((n) => {
+      const cs = win.getComputedStyle(n);
+      return /auto|scroll/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 2 && visible(n);
+    });
+
+    const hits = [];
+    const thin = [];
+    for (const bar of bars) {
+      const panes = scrollers.filter((s) => {
+        if (s.contains(bar.n)) return false;
+        const sr = s.getBoundingClientRect();
+        const ix = Math.min(sr.right, bar.r.right) - Math.max(sr.left, bar.r.left);
+        return ix > 4 && sr.bottom > bar.r.top - 4;       // the pane runs under the bar
+      });
+      const targets = panes.length ? panes
+                    : (de.scrollHeight > de.clientHeight + 2 ? [de] : []);
+
+      for (const pane of targets) {
+        const was = pane.scrollTop;
+        pane.scrollTop = pane.scrollHeight;               // as far down as it goes
+        let lowest = null, lowestBottom = -Infinity;
+        for (const c of pane.querySelectorAll(INTERACTIVE + ', h1, h2, h3, h4, p, td, th, li, img')) {
+          if (bar.n.contains(c) || c.contains(bar.n)) continue;
+          if (!visible(c)) continue;
+          const cr = c.getBoundingClientRect();
+          if (cr.height === 0 || cr.width === 0) continue;
+          if (cr.top > vh) continue;                      // still below the fold, not our concern
+          if (cr.bottom > lowestBottom) { lowestBottom = cr.bottom; lowest = c; }
+        }
+        const buried = lowest && lowestBottom > bar.r.top + 1;
+        if (buried) {
+          hits.push({
+            sel: selectorFor(lowest),
+            detail: 'at full scroll its bottom is ' + Math.round(lowestBottom) + ', ' +
+                    Math.round(lowestBottom - bar.r.top) + 'px behind ' + selectorFor(bar.n) +
+                    ' — nothing scrolls it clear',
+            node: lowest,
+          });
+        }
+        pane.scrollTop = was;
+
+        /* THE SECOND HALF, AND WHY BOTH ARE HERE.
+
+           The measurement above only fires when today's content happens to
+           reach the bar. Removing the safe-area term from `.app-main`'s bottom
+           padding is a genuine defect — it leaves 72px of clearance under a
+           79px bar — and the measurement did NOT catch it, because the last
+           section on the settings page carries ~44px of its own margin and
+           absorbed the whole shortfall. A page whose last element has no
+           margin would have been buried, and nothing would have said so.
+
+           So the reserved clearance is compared as well. That comparison is a
+           prediction rather than an observation, and it is reported as one: a
+           warning, kept apart from the measured burial above, which is a
+           failure. Only bottom-docked bars are compared — the same arithmetic
+           at the top edge is ambiguous, because a landing page clears its
+           fixed header with the hero's own padding and not with the
+           scroller's. */
+        const reserved = parseFloat(win.getComputedStyle(pane).paddingBottom) || 0;
+        const need = Math.round(bar.r.height);
+        if (!buried && reserved + 1 < need) {
+          thin.push({
+            sel: selectorFor(pane),
+            detail: 'reserves ' + Math.round(reserved) + 'px for a ' + need + 'px ' +
+                    selectorFor(bar.n) + ' — ' + Math.round(need - reserved) +
+                    'px short; today’s last element clears it only on its own margin',
+            node: pane,
+          });
+        }
+      }
+      if (hits.length >= 8) break;
+    }
+
+    out.push({
+      id: 'underbar', name: 'Content under fixed chrome',
+      tone: hits.length ? 'fail' : thin.length ? 'warn' : bars.length ? 'pass' : 'skip',
+      count: hits.length || thin.length,
+      summary: !bars.length
+        ? 'no bottom-docked fixed bar on this page'
+        : hits.length
+          ? hits.length + ' pane' + (hits.length === 1 ? '' : 's') + ' whose last content stays behind the bar at full scroll'
+          : thin.length
+            ? thin.length + ' pane' + (thin.length === 1 ? '' : 's') + ' reserving less room than the bar is tall — nothing is buried today, but only by margin'
+            : 'scrolled to the end: the last content clears the ' + Math.round(bars[0].r.height) + 'px bar, and the pane reserves room for it',
+      why: 'The bar’s height and the pane’s bottom padding are declared in different rules with nothing linking them. When the bar grows the padding does not, and the tail of the page stops being reachable — which no screenshot taken at the top of the page will ever show.',
+      hits: hits.length ? hits : thin,
+    });
+  }
+
+  /* ── I. THE MOBILE LAYER ACTUALLY FIRED ──────────────────────────────────
+     A page can pass every check above by being empty. This asserts the
+     platform's mobile contract took effect: below the breakpoint, either the
+     drawer is armed (.mnav-ready on the root element) or a bottom nav is on
+     screen, and
+     no sidebar is sitting in the viewport eating half the width. */
+  {
+    if (vw > MOBILE_MAX) {
+      out.push({ id: 'layer', name: 'Mobile layer', tone: 'skip', count: 0,
+                 summary: 'desktop width — the layer is not supposed to apply', why: '', hits: [] });
+    } else {
+      /* Only pages that HAVE an app shell are in scope. A marketing landing
+         page, the sign-in portal and the legal pages have no sidebar to fold
+         away and were never part of the design system's mobile contract —
+         asking them for a drawer produced a warning on 27 of 34 routes, which
+         is a check that has stopped discriminating. */
+      const shells = Array.from(body.querySelectorAll('.app-sidebar, .sidebar'));
+      if (!shells.length) {
+        out.push({ id: 'layer', name: 'Mobile layer', tone: 'skip', count: 0,
+                   summary: 'no app sidebar on this page — nothing for the mobile layer to fold away',
+                   why: '', hits: [] });
+      } else {
+        /* A FULL-WIDTH SIDEBAR STACKED ABOVE THE CONTENT IS THE CORRECT MOBILE
+           LAYOUT, not a defect — api-docs.html reaches it through its own
+           @media rule and the first version of this check called it a failure
+           at 93% of the viewport, which is exactly the number that proves it
+           is stacked. What is broken is a sidebar sitting BESIDE the content
+           and squeezing it, so the test is adjacency, not width. */
+        const mains = Array.from(body.querySelectorAll(
+          '.main-area, .app-main, .content-area, main, .shell > *:not(.sidebar)'));
+        const besideContent = (n) => {
+          const r = n.getBoundingClientRect();
+          for (const m of mains) {
+            if (m === n || n.contains(m) || m.contains(n)) continue;
+            if (!visible(m)) continue;
+            const mr = m.getBoundingClientRect();
+            if (mr.width < 40 || mr.height < 40) continue;
+            const vOverlap = Math.min(r.bottom, mr.bottom) - Math.max(r.top, mr.top);
+            const shorter = Math.min(r.height, mr.height);
+            if (vOverlap > shorter * 0.5 && mr.left >= r.right - 4) return true;
+          }
+          return false;
+        };
+
+        const squeezing = shells.filter((n) => {
+          if (!visible(n)) return false;
+          const r = n.getBoundingClientRect();
+          /* The drawer IS a sidebar; it is simply off-screen. Judge by where it
+             is, never by `display` — a probe that reads display reports the
+             drawer as a 300px sidebar and calls a working fix a failure. */
+          const onScreen = r.width > 0 && r.right > 8 && r.left < vw - 8;
+          if (!onScreen) return false;
+          return besideContent(n);
+        });
+
+        const armed = de.classList.contains('mnav-ready');
+        const bottomNav = Array.from(body.querySelectorAll('.app-bottom-nav'))
+          .some((n) => visible(n) && n.getBoundingClientRect().height > 0);
+        const onScreenNav = shells.some((n) => {
+          if (!visible(n)) return false;
+          const r = n.getBoundingClientRect();
+          return r.width > 0 && r.right > 8 && r.left < vw - 8;
+        });
+        const hasNav = armed || bottomNav || onScreenNav;
+
+        const tone = squeezing.length ? 'fail' : hasNav ? 'pass' : 'fail';
+        out.push({
+          id: 'layer', name: 'Mobile layer',
+          tone,
+          count: squeezing.length || (hasNav ? 0 : 1),
+          summary: squeezing.length
+            ? squeezing.length + ' sidebar sitting beside the content and squeezing it'
+            : hasNav
+              ? (armed ? 'drawer armed (.mnav-ready)'
+                       : bottomNav ? 'bottom nav on screen'
+                                   : 'sidebar stacked above the content — the correct mobile layout')
+              : 'the sidebar is hidden and nothing replaced it — this page has no mobile navigation',
+          why: 'The design system hides .app-sidebar at ≤768px and expects .app-bottom-nav or the drawer to take over. Shipping only the first half leaves a page with no navigation at all, which looks fine in every screenshot of the page itself.',
+          hits: squeezing.map((n) => {
+            const r = n.getBoundingClientRect();
+            return { sel: selectorFor(n), detail: Math.round(r.width) + 'px = ' + Math.round(r.width / vw * 100) + '% of the viewport, content starts at ' + Math.round(r.right), node: n };
+          }),
+        });
+      }
+    }
+  }
+
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. REPORTING
+   ═══════════════════════════════════════════════════════════════════════════ */
+const OUTLINE_ID = 'df-outline-style';
+
+function setOutline(doc, on, nodes) {
+  if (!doc) return;
+  for (const n of doc.querySelectorAll('[data-df-flag]')) n.removeAttribute('data-df-flag');
+  let st = doc.getElementById(OUTLINE_ID);
+  if (!on) { if (st) st.remove(); return; }
+  if (!st) {
+    st = doc.createElement('style');
+    st.id = OUTLINE_ID;
+    doc.head.appendChild(st);
+  }
+  /* THE ONE PLACE A LITERAL IS CORRECT AND A TOKEN IS NOT. This rule is
+     injected into the FRAMED document, which is not always one that defines
+     `--accent`: the generated subsystem landing pages carry their own
+     stylesheet and express the accent as separate --r/--g/--b channels. A
+     `var(--accent)` here would resolve to nothing on exactly the pages this
+     harness most needs to outline, and an outline that renders as no outline
+     is a highlighter that quietly stops highlighting.
+
+     `!important` for the same reason: the outline has to beat whatever the
+     framed page says about the element it is marking, including that page's
+     own inline styles. Nothing about this rule is part of the product's
+     visual system — it is instrumentation drawn on top of it. */
+  st.textContent = '[data-df-flag]{outline:2px solid #E8622A!important;outline-offset:-2px!important;' +
+                   'background:rgba(232,98,42,.14)!important}';
+  /* A node measured before a reload belongs to a document that no longer
+     exists, and marking it would outline nothing. Tested rather than caught:
+     `isConnected` answers the question directly, and a try/catch here would
+     have turned "these outlines are not the ones you are looking at" into
+     silence. */
+  let stale = 0;
+  for (const n of nodes) {
+    if (!n || !n.isConnected || n.ownerDocument !== doc) { stale++; continue; }
+    n.setAttribute('data-df-flag', '');
+  }
+  return stale;
+}
+
+function setVerdict(stateName, text) {
+  el.verdict.dataset.state = stateName;
+  el.verdict.textContent = text;
+}
+
+let lastChecks = [];
+
+function renderChecks(checks, note) {
+  lastChecks = checks;
+  el.checks.innerHTML = '';
+
+  if (note) {
+    const p = document.createElement('p');
+    p.className = 'df-note';
+    p.innerHTML = note;
+    el.checks.appendChild(p);
+  }
+
+  for (const c of checks) {
+    const d = document.createElement('details');
+    d.className = 'df-check';
+    if (c.tone === 'fail') d.open = true;
+
+    const s = document.createElement('summary');
+    const name = document.createElement('span');
+    name.className = 'df-check-name';
+    name.textContent = c.name;
+    const pill = document.createElement('span');
+    pill.className = 'df-pill';
+    pill.dataset.tone = c.tone;
+    pill.textContent = c.tone === 'skip' ? 'n/a'
+      : c.tone === 'pass' ? 'ok'
+      : (c.count || 0) + (c.unit || '');
+    s.append(name, pill);
+    d.appendChild(s);
+
+    const b = document.createElement('div');
+    b.className = 'df-check-body';
+    const sum = document.createElement('div');
+    sum.textContent = c.summary;
+    b.appendChild(sum);
+    if (c.why) {
+      const w = document.createElement('p');
+      w.className = 'df-why';
+      w.textContent = c.why;
+      b.appendChild(w);
+    }
+    if (c.hits && c.hits.length) {
+      const ul = document.createElement('ul');
+      ul.className = 'df-hits';
+      for (const h of c.hits) {
+        const li = document.createElement('li');
+        const strong = document.createElement('b');
+        strong.textContent = h.sel;
+        li.append(strong, document.createTextNode(' — ' + h.detail));
+        li.addEventListener('click', () => {
+          /* The row points at a node from the measurement that produced it. A
+             reload since then leaves that node in a document that is gone, and
+             a click would scroll nothing — say so on the row rather than
+             looking broken. */
+          if (!h.node || !h.node.isConnected) {
+            li.textContent = h.sel + ' — the frame reloaded since this was measured; re-run the checks';
+            li.style.opacity = '0.6';
+            return;
+          }
+          h.node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          setOutline(h.node.ownerDocument, true, [h.node]);
+        });
+        ul.appendChild(li);
+      }
+      b.appendChild(ul);
+    }
+    d.appendChild(b);
+    el.checks.appendChild(d);
+  }
+
+  const fails = checks.filter((c) => c.tone === 'fail').length;
+  const warns = checks.filter((c) => c.tone === 'warn').length;
+  if (fails) setVerdict('issues', fails + ' failing');
+  else if (warns) setVerdict('warn', warns + ' to review');
+  else setVerdict('clean', 'clean');
+}
+
+function probe() {
+  let doc, win;
+  try {
+    win = el.frame.contentWindow;
+    doc = el.frame.contentDocument;
+  } catch (e) {
+    renderChecks([], '<b>Cannot inspect this frame.</b> It is not same-origin, so no measurement was taken. This is not a clean result.');
+    setVerdict('unknown', 'not measured');
+    return;
+  }
+  if (!doc || !win) {
+    setVerdict('unknown', 'no document');
+    return;
+  }
+
+  /* A page that redirected to the sign-in portal is a real answer about a
+     guard and a useless one about framing — say which, rather than reporting
+     the login page's layout under the requested page's name. */
+  let note = '';
+  /* If the landed URL cannot be read, that is NOT "no redirect". It is the one
+     fact that decides whether every number below is about the page you asked
+     for, so a failure to read it is reported as loudly as a redirect would be.
+     Swallowing it is how /app first came back clean with /login's layout. */
+  try {
+    const here = win.location.pathname;
+    const want = state.page.split('?')[0];
+    if (here !== want && !(want === '/' && here === '/')) {
+      note = 'This frame ended up at <b>' + here + '</b>, not <b>' + want +
+             '</b> — the route redirected (usually the sign-in guard, or the ' +
+             'landing gate). The measurements below describe <b>' + here + '</b>.';
+    }
+  } catch (err) {
+    renderChecks([], '<b>Cannot read where this frame landed</b> (' + (err.message || err) +
+      '). Without that, nothing below can be attributed to <b>' + state.page +
+      '</b> — treat this as unmeasured, not as clean.');
+    setVerdict('unknown', 'not measured');
+    return;
+  }
+
+  const safe = currentSafe();
+  const cover = applyInsets(doc, safe);
+  if (!cover && (safe.t || safe.b) && !note) {
+    note = 'This page does not set <b>viewport-fit=cover</b>, so the browser keeps ' +
+           'the viewport clear of the hardware itself. The bands are drawn for ' +
+           'reference; no inset was applied and none is owed.';
+  }
+  const checks = runChecks(doc, win, safe);
+  renderChecks(checks, note);
+  el.title.textContent = 'Framing report — ' + state.page;
+
+  if (state.outline) {
+    const nodes = checks.filter((c) => c.tone === 'fail' || c.tone === 'warn')
+                        .flatMap((c) => (c.hits || []).map((h) => h.node));
+    setOutline(doc, true, nodes);
+  } else {
+    setOutline(doc, false, []);
+  }
+
+  /* The theme choice has to be re-applied after every load: the framed page
+     reads localStorage at boot and this harness is a different document in the
+     same origin, so writing the key is enough — but only before the read. */
+  applyThemeToFrame();
+}
+
+/* Returns why it did nothing, or null when it applied. The caller shows the
+   reason on the Theme button: a toggle that silently does nothing reads as a
+   broken button, and the two reasons it can do nothing — the page locked its
+   theme, or the frame is not readable — mean completely different things. */
+function applyThemeToFrame() {
+  if (!state.theme) return null;
+  let doc;
+  try {
+    doc = el.frame.contentDocument;
+  } catch (err) {
+    return 'the framed document is not readable (' + (err.message || err) + ')';
+  }
+  if (!doc || !doc.documentElement) return 'the frame has not loaded a document yet';
+  /* `data-theme-lock` is the landing page opting out of the toggle. Respect
+     it — overriding it here would show a theme the product never shows. */
+  if (doc.documentElement.hasAttribute('data-theme-lock')) {
+    return 'this page sets data-theme-lock — it ships one theme on purpose';
+  }
+  doc.documentElement.setAttribute('data-theme', state.theme);
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. THE SWEEP — every page, one size, one table
+   ═══════════════════════════════════════════════════════════════════════════ */
+let sweeping = false;
+
+/* ONE measurement path, used by the panel, by the sweep and by the automated
+   driver. A second copy of these checks written for the driver would be the
+   copy that silently stops matching the product — and it would be the one
+   producing the numbers nobody re-derives. */
+function measureInFrame(frame, url, safe, settleMs) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      let doc, win, landed = '', err = null;
+      try {
+        doc = frame.contentDocument;
+        win = frame.contentWindow;
+        landed = win.location.pathname + (win.location.search || '');
+      } catch (e) { err = String(e.message || e); }
+      if (err || !doc || !win) {
+        resolve({ url, landed, error: err || 'no document', checks: [] });
+        return;
+      }
+      /* If the insets cannot be written, every check below measures an
+         UNCOMPENSATED layout — which on a viewport-fit=cover page produces
+         confident findings about a rendering no device produces. That is not a
+         degraded result, it is a wrong one, so it stops here. */
+      let checks;
+      try {
+        applyInsets(doc, safe);
+      } catch (e) {
+        resolve({ url, landed, error: 'could not apply the device insets: ' + (e.message || e), checks: [] });
+        return;
+      }
+      try { checks = runChecks(doc, win, safe); }
+      catch (e) { resolve({ url, landed, error: String(e.message || e), checks: [] }); return; }
+      resolve({ url, landed, error: null, checks });
+    };
+    frame.onload = () => setTimeout(finish, settleMs === undefined ? 350 : settleMs);
+    frame.onerror = finish;
+    /* Never let one hung route stall a 41-route sweep. A timeout produces a
+       measurement of whatever HAS rendered, which is reported with the landed
+       URL beside it, rather than an absent row that reads as "no problems". */
+    setTimeout(finish, 8000);
+    frame.src = url + (url.includes('?') ? '&' : '?') + '_df=' + Date.now();
+  });
+}
+
+function makeProbeFrame(w, h) {
+  const f = document.createElement('iframe');
+  f.setAttribute('title', 'device-frame probe');
+  f.style.cssText = 'position:fixed;left:-10000px;top:0;border:0;';
+  f.style.width = w + 'px';
+  f.style.height = h + 'px';
+  document.body.appendChild(f);
+  return f;
+}
+
+async function runSweep() {
+  if (sweeping) return;
+  sweeping = true;
+  const btn = $('df-sweep-btn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+  el.sweep.hidden = false;
+  el.checks.innerHTML = '';
+
+  const rows = [];
+  el.sweep.innerHTML = '<progress id="df-prog" max="' + ALL_PAGES.length + '" value="0"></progress>';
+  const prog = $('df-prog');
+
+  /* One hidden frame, reused, sized exactly like the visible one so the sweep
+     and the single-page view cannot disagree about which breakpoint fired. */
+  const probeFrame = makeProbeFrame(state.w, state.h);
+  const safe = currentSafe();
+
+  for (let i = 0; i < ALL_PAGES.length; i++) {
+    const p = ALL_PAGES[i];
+    prog.value = i;
+    const r = await measureInFrame(probeFrame, p.url, safe);
+    const want = p.url.split('?')[0];
+    rows.push({
+      page: p.name,
+      url: p.url,
+      landed: r.landed && r.landed.split('?')[0] !== want ? r.landed.split('?')[0] : '',
+      fails: r.error ? -1 : r.checks.filter((c) => c.tone === 'fail').length,
+      warns: r.error ? 0 : r.checks.filter((c) => c.tone === 'warn').length,
+      over: (r.checks.find((c) => c.id === 'overflow') || {}).count || 0,
+      err: r.error,
+    });
+  }
+  probeFrame.remove();
+  prog.value = ALL_PAGES.length;
+
+  rows.sort((a, b) => (b.fails - a.fails) || (b.over - a.over));
+  const d = preset(state.device);
+  let html = '<table><thead><tr><th style="width:44%">Page</th><th style="width:18%">Fail</th>' +
+             '<th style="width:18%">Warn</th><th style="width:20%">Overflow</th></tr></thead><tbody>';
+  for (const r of rows) {
+    html += '<tr data-state="' + (r.fails > 0 ? 'fail' : 'ok') + '" data-url="' + r.url + '">' +
+            '<td title="' + r.url + (r.landed ? ' → ' + r.landed : '') + '">' + r.page +
+            (r.landed ? ' <span style="opacity:.6">→' + r.landed + '</span>' : '') + '</td>' +
+            '<td class="df-num">' + (r.fails < 0 ? 'err' : r.fails) + '</td>' +
+            '<td class="df-num">' + r.warns + '</td>' +
+            '<td class="df-num">' + (r.over ? r.over + 'px' : '–') + '</td></tr>';
+  }
+  html += '</tbody></table>';
+
+  const totalFail = rows.filter((r) => r.fails > 0).length;
+  el.sweep.innerHTML =
+    '<p class="df-why">' + ALL_PAGES.length + ' routes at <b>' + state.w + '×' + state.h + '</b>' +
+    (d ? ' (' + d.name + ')' : '') + ' — <b>' + totalFail + '</b> with a failing check. ' +
+    'Click a row to frame it.</p>' + html;
+
+  for (const tr of el.sweep.querySelectorAll('tr[data-url]')) {
+    tr.addEventListener('click', () => {
+      state.page = tr.dataset.url;
+      el.page.value = state.page;
+      el.sweep.hidden = true;
+      render();
+      loadFrame();
+    });
+  }
+
+  setVerdict(totalFail ? 'issues' : 'clean', totalFail ? totalFail + ' pages' : 'all clean');
+  el.title.textContent = 'Sweep — ' + state.w + 'px';
+  btn.disabled = false;
+  btn.textContent = 'Scan all pages';
+  sweeping = false;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. RESIZE GRIPS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function initGrips() {
+  for (const grip of document.querySelectorAll('.df-grip')) {
+    grip.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      grip.setPointerCapture(ev.pointerId);
+      grip.dataset.dragging = 'true';
+      el.dev.dataset.resizing = 'true';
+      const dir = grip.dataset.grip;
+      const x0 = ev.clientX, y0 = ev.clientY;
+      const w0 = state.w, h0 = state.h;
+      const s = currentScale() || 1;
+
+      const move = (e) => {
+        /* The frame is visually scaled, so a 10px pointer move is 10/scale CSS
+           pixels of frame. Without this division the frame resizes at the wrong
+           rate and the number under the cursor never matches the drag. */
+        if (dir === 'e' || dir === 'se') state.w = clamp(Math.round(w0 + (e.clientX - x0) / s), 240, 3840);
+        if (dir === 's' || dir === 'se') state.h = clamp(Math.round(h0 + (e.clientY - y0) / s), 320, 2400);
+        state.device = matchPreset();
+        el.device.value = state.device;
+        applyDevice();
+      };
+      const up = () => {
+        grip.removeAttribute('data-dragging');
+        el.dev.removeAttribute('data-resizing');
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        render();
+        probe();
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    });
+  }
+}
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/* A hand-dragged size that happens to land on a preset should say so rather
+   than reading "custom" at exactly 393×852. */
+function matchPreset() {
+  for (const d of DEVICES) {
+    const w = state.orient === 'portrait' ? d.w : d.h;
+    const h = state.orient === 'portrait' ? d.h : d.w;
+    if (w === state.w && h === state.h) return d.id;
+  }
+  return 'custom';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. URL STATE — a frame view is a link
+   ═══════════════════════════════════════════════════════════════════════════ */
+function writeHash() {
+  const q = new URLSearchParams();
+  q.set('page', state.page);
+  q.set('d', state.device);
+  q.set('o', state.orient);
+  if (state.device === 'custom') { q.set('w', state.w); q.set('h', state.h); }
+  if (state.theme) q.set('t', state.theme);
+  const h = '#' + q.toString();
+  if (location.hash !== h) history.replaceState(null, '', h);
+}
+
+function readHash() {
+  if (!location.hash) return;
+  const q = new URLSearchParams(location.hash.slice(1));
+  const page = q.get('page');
+  if (page && ALL_PAGES.some((p) => p.url === page)) state.page = page;
+  const d = q.get('d');
+  if (d && (d === 'custom' || preset(d))) state.device = d;
+  const o = q.get('o');
+  if (o === 'landscape' || o === 'portrait') state.orient = o;
+  const t = q.get('t');
+  if (t === 'dark' || t === 'light') state.theme = t;
+  if (state.device === 'custom') {
+    state.w = clamp(parseInt(q.get('w'), 10) || 393, 240, 3840);
+    state.h = clamp(parseInt(q.get('h'), 10) || 852, 320, 2400);
+  } else {
+    sizeFromPreset();
+  }
+}
+
+function sizeFromPreset() {
+  const d = preset(state.device);
+  if (!d) return;
+  state.w = state.orient === 'portrait' ? d.w : d.h;
+  state.h = state.orient === 'portrait' ? d.h : d.w;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. WIRING
+   ═══════════════════════════════════════════════════════════════════════════ */
+function buildSelects() {
+  for (const g of PAGES) {
+    const og = document.createElement('optgroup');
+    og.label = g.group;
+    for (const p of g.items) {
+      const o = document.createElement('option');
+      o.value = p.url;
+      o.textContent = p.name + '  ·  ' + p.url;
+      og.appendChild(o);
+    }
+    el.page.appendChild(og);
+  }
+
+  const groups = { phone: 'Phones', tablet: 'Tablets', browser: 'Desktop' };
+  for (const kind of Object.keys(groups)) {
+    const og = document.createElement('optgroup');
+    og.label = groups[kind];
+    for (const d of DEVICES.filter((x) => x.kind === kind)) {
+      const o = document.createElement('option');
+      o.value = d.id;
+      o.textContent = d.name + '  ' + d.w + '×' + d.h;
+      og.appendChild(o);
+    }
+    el.device.appendChild(og);
+  }
+  const custom = document.createElement('option');
+  custom.value = 'custom';
+  custom.textContent = 'Custom';
+  el.device.appendChild(custom);
+}
+
+function wire() {
+  el.page.addEventListener('change', () => {
+    state.page = el.page.value;
+    el.sweep.hidden = true;
+    render();
+    loadFrame();
+  });
+
+  el.device.addEventListener('change', () => {
+    state.device = el.device.value;
+    if (state.device !== 'custom') sizeFromPreset();
+    render();
+    probe();
+  });
+
+  const manual = () => {
+    state.w = clamp(parseInt(el.w.value, 10) || state.w, 240, 3840);
+    state.h = clamp(parseInt(el.h.value, 10) || state.h, 320, 2400);
+    state.device = matchPreset();
+    el.device.value = state.device;
+    render();
+    probe();
+  };
+  el.w.addEventListener('change', manual);
+  el.h.addEventListener('change', manual);
+
+  $('df-rotate').addEventListener('click', () => {
+    state.orient = state.orient === 'portrait' ? 'landscape' : 'portrait';
+    const w = state.w; state.w = state.h; state.h = w;
+    state.device = matchPreset();
+    el.device.value = state.device;
+    render();
+    probe();
+  });
+
+  $('df-theme').addEventListener('click', (e) => {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    const why = applyThemeToFrame();
+    /* A toggle that does nothing and says nothing reads as a broken button.
+       The two reasons it can do nothing are not the same problem. */
+    e.currentTarget.title = why ? 'Theme not applied — ' + why
+                                : 'Framed page set to ' + state.theme;
+    e.currentTarget.setAttribute('aria-disabled', why ? 'true' : 'false');
+    writeHash();
+  });
+
+  $('df-safe').addEventListener('click', (e) => {
+    state.safe = !state.safe;
+    e.currentTarget.setAttribute('aria-pressed', String(state.safe));
+    applyDevice();
+  });
+
+  $('df-outline').addEventListener('click', (e) => {
+    state.outline = !state.outline;
+    e.currentTarget.setAttribute('aria-pressed', String(state.outline));
+    probe();
+  });
+
+  $('df-fit').addEventListener('click', () => { state.zoom = 'fit'; applyScale(); });
+  $('df-zoomin').addEventListener('click', () => {
+    state.zoom = clamp((state.zoom === 'fit' ? currentScale() : state.zoom) + 0.1, 0.2, 2);
+    applyScale();
+  });
+  $('df-zoomout').addEventListener('click', () => {
+    state.zoom = clamp((state.zoom === 'fit' ? currentScale() : state.zoom) - 0.1, 0.2, 2);
+    applyScale();
+  });
+  $('df-reload').addEventListener('click', loadFrame);
+  $('df-sweep-btn').addEventListener('click', runSweep);
+  $('df-panel-btn').addEventListener('click', (e) => {
+    state.panel = !state.panel;
+    el.body.dataset.panel = state.panel ? 'open' : 'closed';
+    e.currentTarget.setAttribute('aria-pressed', String(state.panel));
+    applyScale();
+  });
+
+  el.frame.addEventListener('load', () => {
+    applyThemeToFrame();
+    /* Two passes. The first is immediate so the report is never blank; the
+       second runs after fonts and late scripts have settled, because a web font
+       swapping in changes every text box and half these checks measure text
+       boxes. A single early pass reports numbers the user never sees. */
+    probe();
+    setTimeout(probe, 400);
+  });
+
+  /* A ResizeObserver on the stage, not just a window resize listener. The
+     toolbar wraps to a second row at narrow widths, which changes the stage's
+     height without the window changing size at all — and the fit, computed
+     once against the taller stage, then left the frame running off the bottom
+     edge. Anything that resizes the stage has to re-fit it, whatever caused it. */
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(() => applyScale()).observe(el.stage);
+  } else {
+    window.addEventListener('resize', applyScale);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, select, textarea')) return;
+    if (e.key === 'r' && !e.shiftKey) $('df-rotate').click();
+    else if (e.key === 'R' || (e.key === 'r' && e.shiftKey)) loadFrame();
+    else if (e.key === 'f') $('df-fit').click();
+    else if (e.key === 't') $('df-theme').click();
+    else if (e.key === 'o') $('df-outline').click();
+    else if (e.key === '+' || e.key === '=') $('df-zoomin').click();
+    else if (e.key === '-') $('df-zoomout').click();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   11. THE AUTOMATION SURFACE
+   ───────────────────────────────────────────────────────────────────────────
+   An external driver (Playwright, a CI step, a one-off script) opens this page
+   and calls `measure`. It gets the SAME function the panel and the sweep call,
+   over the SAME iframe mechanism, at the SAME sizes — so a number in a report
+   and a number in the panel cannot disagree. Writing a second copy of these
+   checks for the driver is the obvious shortcut and it is the wrong one: the
+   copy that drifts is always the one nobody re-reads, and it is the one
+   producing the figures that get quoted.
+   ═══════════════════════════════════════════════════════════════════════════ */
+window.__DEVICE_FRAME__ = {
+  DEVICES, PAGES, ALL_PAGES, MOBILE_MAX, rotateSafe,
+
+  /* opts: { url, w, h, safe, orient, device, settleMs } */
+  async measure(opts) {
+    const o = opts || {};
+    let safe = o.safe;
+    if (!safe) {
+      const d = preset(o.device || '');
+      safe = d ? rotateSafe(d.safe, o.orient || 'portrait') : { t: 0, r: 0, b: 0, l: 0 };
+    }
+    const f = makeProbeFrame(o.w || 393, o.h || 852);
+    try {
+      const r = await measureInFrame(f, o.url, safe, o.settleMs);
+      /* DOM nodes cannot cross the driver boundary. Strip them here rather than
+         letting the serializer silently turn each one into `{}` — an empty
+         object in a hit list reads as a hit with no detail, which is how a
+         driver ends up reporting findings it cannot point at. */
+      return {
+        url: r.url,
+        landed: r.landed,
+        error: r.error,
+        checks: (r.checks || []).map((c) => ({
+          id: c.id, name: c.name, tone: c.tone, count: c.count || 0,
+          unit: c.unit || '', summary: c.summary,
+          hits: (c.hits || []).map((h) => ({ sel: h.sel, detail: h.detail })),
+        })),
+      };
+    } finally {
+      f.remove();
+    }
+  },
+};
+
+buildSelects();
+readHash();
+el.page.value = state.page;
+el.device.value = state.device;
+wire();
+initGrips();
+render();
+loadFrame();
+</script>
+</body>
+</html>

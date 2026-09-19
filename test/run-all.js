@@ -109,6 +109,23 @@ const LEGACY = [
      One of them passing while the other is missing is not half the answer, it
      is a green run about a mode nobody is in. */
   'subscription-mode-test.js',
+
+  /* ── THE DEVICE FRAME AND THE INSET LAYER IT VERIFIES ───────────────────
+     Named here rather than left to the lane manifest because the thing it
+     guards is a contract BETWEEN TWO FILES that fails silently in the safest-
+     looking direction. css/tools-mobile.css §10 routes every hardware inset
+     through --tmob-sa*, and public/preview.html writes the device's real
+     numbers onto those same four properties before it measures. Rename one of
+     them on either side, or transpose two, and the harness goes on reporting
+     a clean layout — because the layout it measured did not move, not because
+     the layout is right.
+
+     A guard whose failure mode is "everything still passes" must not also be
+     able to go quiet by being deleted. Its mutation harness follows it for the
+     same reason the Groq pair are adjacent: the check that matters most here
+     is the one that passes forever while measuring nothing. */
+  'device-frame-contract.js',
+  'mutate-device-frame.js',
 ];
 
 /* The manifest. Each lane's suite is expected once that lane has landed;
@@ -138,8 +155,13 @@ const ran = [];
    tree there is no excuse and a refusal is a failure. The merge gate requires
    a clean, fully-committed branch, so at the moment that matters these always
    execute. */
+/* Every harness that exits 2 on a dirty tree has to be listed here, or its
+   refusal is counted as a FAILING SUITE instead of a NOT RUN — the loudest
+   possible way to report the quietest possible outcome, and the one that
+   teaches people to ignore a red run. */
 const MUTATION_HARNESSES = new Set(['mutate-fetch.js', 'mutate-gao.js', 'mutate-social-image.js',
-                                    'mutate-image-style.js', 'mutate-groq-model.js']);
+                                    'mutate-image-style.js', 'mutate-groq-model.js',
+                                    'mutate-device-frame.js']);
 const TREE_BEFORE = (() => {
   const r = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' });
   return r.status === 0 ? r.stdout : null;   // null = git unreadable, treated as dirty

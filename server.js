@@ -1755,6 +1755,24 @@ app.use((req, res, next) => {
 
 // Page routes
 app.get('/app',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
+
+/* ── Interactive device frame ────────────────────────────────────────────────
+   public/preview.html frames any route of this app in a real, resizable
+   <iframe> at a chosen device's CSS-pixel size, so `@media (max-width: 768px)`
+   resolves for real inside it and the mobile layer can be measured rather than
+   eyeballed from a shrunken desktop render.
+
+   PUBLIC ON PURPOSE, and it grants nothing. Every frame is a same-origin
+   request the visitor's own browser makes with the visitor's own cookies, so
+   requireAuth, checkSub, checkModule and the PRIVATE_PAGES block above all
+   still answer it exactly as they answer a typed URL — a signed-out visitor
+   framing /settings sees the login page. Nothing here reads a session,
+   forwards a credential or fetches on anyone's behalf; it is a viewer, not a
+   proxy. Gating it would only hide the tool from the people fixing the layout.
+
+   It sits ABOVE the landing gate below so /preview is never mistaken for a
+   subsystem URL, and noindex is set in the page itself. */
+app.get('/preview',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'preview.html')));
 app.get('/admin',    (req, res) => res.redirect('/seller'));
 // ONE login surface (§B2). public/login.html and public/signup.html are
 // deleted; /login serves the canonical portal, which carries all four views.
