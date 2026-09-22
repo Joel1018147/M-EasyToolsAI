@@ -157,6 +157,23 @@ it's answered.
   the complete deterministic suite including every mutation-tested
   negative control, and the Integration Bar across all lanes. Nothing
   merges on a partial or weakened check.
+- **THE SUITE'S VERDICT IS READ FROM ONE FILE, AND FROM NOTHING ELSE.**
+  The gate does not run `npm test`, does not read a wrapper's stdout,
+  does not grep a log, and does not accept a terminal that looked green.
+  The suite runs through `scripts/run-tests.js`, which owns the exit code
+  and writes `.gate/npm-exit.json`; the gate runs
+  `node scripts/gate-verdict.js` and merges only on its exit 0.
+  **A missing verdict is a FAIL, never an unknown and never a pass** — a
+  crashed run and a passing run must not look the same, which is the
+  whole reason the file exists. So is a verdict whose recorded commit is
+  not the commit being merged: that is a stale file, and it is the
+  failure mode this design introduces, so the gate checks it by default.
+  Run 145 found the echoed-exit-code defect, Run 146's brief carried it
+  as a claim, and Run 157 still shipped a "green" run that was
+  `NPMEXIT=1`. The rule is in `skills/test-harness-integrity-audit.md`
+  as a MUST and in `test/npm-exit-integrity.js` as a guard that fails the
+  build; it is restated here because this is the one place that acts on
+  it.
 - **The ecosystem's existing gates are part of that merge gate, not a
   parallel process.** Run `Modus-Agent-OS/skills/three-stage-deploy-gate.md`
   in full. **Gate 0 — the pre-deploy env-var diff in
@@ -189,13 +206,13 @@ it's answered.
 - **Auto-rollback:** any post-deploy check failing triggers immediate
   rollback to the prior commit, with a notification naming the specific
   failure.
-- **Notification:** send Joel an email via Resend on both outcomes —
-  clean deploy, or a rollback with specifics. Never a request to approve.
-  The email states what was actually observed, per RULE 1 — the checks
-  that ran, the ones that could not, and the commit deployed. If Resend
-  is unreachable, the run says so in its final report rather than
-  finishing silently; a notification that was never sent is never
-  reported as sent.
+- **Notification:** the run's own final report is the
+  notification, and `Modus-Agent-OS/RUN_LOG.md` is its durable copy. It
+  states what was actually observed, per RULE 1 — the checks that ran, the
+  ones that could not, and the commit deployed. Never a request to approve.
+  **The Resend email this step used to require was removed 2026-09-22 on
+  Joel's instruction.** The honesty rule it carried survives the deletion and
+  is general: a notification that was never sent is never reported as sent.
 - None of this authorizes touching another repo, weakening a Bar to pass
   the gate, or skipping any platform-specific verification requirement
   because the suite is green.
