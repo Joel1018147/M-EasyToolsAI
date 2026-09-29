@@ -89,6 +89,68 @@
      rings and rails all keep --accent; only FOREGROUND text moves. */
   --accent-text: var(--accent);
 
+  /* TWO PLATFORM HOOKS, Run 194, each inert at its default so a platform that
+     does not declare it renders exactly as before (the --app-bg-gradient
+     pattern, MODUS_UI_CONTRACT "a background treatment").
+       --sidebar-icon      the sidebar's icon colour; currentColor = the item's
+                           own text colour, as it always was.
+       --app-bg-surface    the surface a platform puts under text its gradient
+       --app-bg-surface-pad  cannot carry (painted under .auth-card, §48).    */
+  --sidebar-icon: currentColor;
+  --app-bg-surface: transparent;
+  --app-bg-surface-pad: 0px;
+  /* Run 225: the gradient hook's own inert default, DECLARED rather than left
+     to the `var(--app-bg-gradient, none)` fallback at each use. Until then
+     every platform but furniture/furnboss resolved it ONLY through that
+     fallback, and M-EasyPOS's css-token-test (fallback-only references, floor
+     0) went red on 19 pages the day it received the Run 194+ master. */
+  --app-bg-gradient: none;
+
+  /* THE FRAME'S TEXT — Run 197, inert at its default like the two above. A
+     platform whose gradient is DARK in LIGHT mode (furnboss, 2026-09-27)
+     declares the colours of text drawn DIRECTLY on --app-bg-gradient; every
+     other platform keeps --text / --text-2 there, exactly as before.
+       --on-app-bg     a heading or caption on the frame
+       --on-app-bg-2   its secondary line                                    */
+  --on-app-bg: var(--text);
+  --on-app-bg-2: var(--text-2);
+
+  /* FIELDS AND CHIPS — Run 201, inert at their defaults like the hooks above:
+     each resolves to exactly the token its component read before, so a
+     platform that declares none of them renders byte-for-byte as it did. A
+     platform whose cards are tinted (furniture's cream, 2026-09-27) sets its
+     fields and chips one step deeper than the card they sit on.
+       --field-bg / --field-border   .form-group input, select, textarea
+       --chip-bg / --chip-bg-hover   .chip                                   */
+  --field-bg: var(--surface);
+  --field-border: var(--border);
+  --chip-bg: var(--surface);
+  --chip-bg-hover: var(--surface-2);
+
+  /* FROSTED CARDS AND THE HEADER BAR — Run 202, inert at their defaults like
+     the hooks above. --frost-bg is the card surface and --frost-blur its
+     backdrop filter (none = no filter, exactly as before); a platform on a
+     gradient may make its cards translucent so the gradient shows through.
+     The --topbar-* trio lets a platform paint the header bar as part of its
+     sidebar's frame instead of as a card.
+       --frost-bg / --frost-blur              .card .panel .table-wrap .table-card
+                                              .settings-section .bg-surface
+       --topbar-bg / --topbar-text / --topbar-border   .app-topbar, its title
+       --topbar-ring                          a focus ring inside the bar    */
+  --frost-bg: var(--surface);
+  --frost-blur: none;
+  --topbar-bg: var(--surface);
+  --topbar-text: var(--text);
+  --topbar-border: var(--border);
+  --topbar-ring: var(--accent);
+
+  /* THE PRESS — Run 223, inert at its default like the hooks above. A pressed
+     .btn scales to this value; 1 = no change, exactly as before. It uses the
+     individual `scale` property, which composes with the transform the hover
+     rules already set, so no platform's hover changes while it is pressed.
+       --btn-press-scale   .btn:active                                       */
+  --btn-press-scale: 1;
+
   /* Brand — sidebar background */
   --brand: #0f172a;
   --brand-2: #1e293b;
@@ -363,7 +425,15 @@
      Rejected: #DB2777 (4.60:1 on white — clears AA by 0.1 and would be the
      ecosystem's most fragile accent), and #A21CAF fuchsia (better hue
      separation from campus, but sits 33° from member's violet and the two
-     are harder to tell apart on a dashboard than rose and red are).       */
+     are harder to tell apart on a dashboard than rose and red are).
+
+     THE #A21CAF REJECTION WAS PARTIALLY REVERSED IN RUN 164, and the reversal
+     rested on LIGHTNESS, not hue: `furniture` then took a deep plum of the same
+     hue whose white-on-fill ratio (8.24:1) set it apart from member's violet,
+     where #A21CAF's 6.32:1 against member's 5.70:1 had blurred. Run 194
+     replaced that plum with Joel's woody orange (see the furniture block), so
+     nothing in this file now sits at this hue — and the hue judgement recorded
+     above is still correct and still the reason #A21CAF is not in this file. */
   --accent: #BE185D;
   --accent-2: #9D174D;
   --accent-bg: rgba(190,24,93,0.08);
@@ -431,6 +501,256 @@
   --accent-light: #FBE4D0;
   --accent-text: #A34F07;       /* 5.7:1 on white — WCAG AA */
   --accent-contrast: #ffffff;   /* 4.7:1 on #B85908 — WCAG AA */
+}
+
+[data-platform="furniture"] {
+  /* M-EasyFurniture Design AI+ — the furniture vertical for the Muar Furniture
+     Association. Added Run 164. RE-THEMED Run 194, 2026-09-27.
+
+     WOODY ORANGE, RULED BY JOEL, 2026-09-27: "change the furniture design
+     theme to woody orange furniture theme instead of the dark and purple
+     interface." Then, overriding a first draft that borrowed another
+     platform's gradient: "dont reuse the other platform's gradient, use the
+     one I gave and it doesnt matter that it sits close with the other
+     platform's colour, the gradient I showed you for the light and dark theme
+     is the colour I want. optimize the text readability and the icon to the
+     gradient's colour."
+
+     So these are Joel's two gradients, EXACTLY, and nothing here is read from
+     or depends on any other platform's block:
+       light "amber brown"    #FFD78A -> #F4762D, 90deg
+       dark  "fire in the dark" #010101 -> #E95D3C, 90deg
+     written as the hex equivalents he gave beside the hsla (the verifier reads
+     hex stops). The -moz-/-webkit- prefixes and the progid filter he pasted
+     serve retired browsers; leaving them out changes nothing anyone sees.
+
+     CLOSENESS TO ANOTHER PLATFORM'S COLOUR IS RULED IRRELEVANT. The Run 164
+     note that stood here derived a deep plum (hue 295) from the largest
+     empty arc on the hue wheel. That derivation is SUPERSEDED by this ruling,
+     not refuted — do not re-measure the wheel for this platform, report the
+     spacing, or adjust for it.
+
+     EVERYTHING ELSE IS TUNED TO THE GRADIENT, and measured, not eyeballed
+     (reproduce: node design/verify-design-system.js; the browser suite in
+     M-EasyFurniture-AI measures every text node and icon in place):
+       --accent  #6B3309 deep amber-brown. White label 9.99:1. As a fill or a
+                 focus ring beside the gradient: 7.1:1 on #FFD78A, 3.56:1 on
+                 #F4762D.
+       --accent-text #4E2205, 13.5:1 on white and >= 4.81:1 on EVERY stop.
+       --text #2B1608 / --text-2 #4A2610 / --muted #4A2A14 — dark browns that
+                 carry body text on BOTH ends: >= 6.12 / 4.74 / 4.60:1. A
+                 muted grey cannot: the stock #5a6d87 is 2.9:1 on #F4762D.
+       --brand   #2A160A walnut: the sidebar and the auth brand panel are wood,
+                 not the shell's navy ("instead of the dark …").
+       --sidebar-icon #FFD78A — the gradient's own light end, 12:1 on walnut.
+     Only the standard linear-gradient is needed (the master paints it on
+     body, .app-main, .auth-body and .auth-panel).
+
+     THE CALM WASH — Run 223, 2026-09-29. SUPERSEDES the two gradients above
+     (kept as history, checklist #47). Joel asked for "a premium and aesthetic
+     furniture design system … make sure the colors of the interfaces all
+     blend well", was shown that the saturated 90deg sweep was what fought the
+     cards (every card had one edge on yellow and one on bright orange), and
+     chose "Calm the gradient": the SAME woody-orange family, as a soft wash.
+       light  #FBF1E4 -> #F3D9B6, 135deg  (cream into pale amber)
+       dark   #140C08 -> #30180D, 135deg  (walnut-black into deep ember-brown)
+     The wash can now CARRY text, so the neutrals get their hierarchy back:
+     --text-2 and --muted were pinned near --text only because the orange end
+     demanded it. Measured on every stop and on the frost over every stop
+     (node design/verify-design-system.js):
+       --text    #2B1608  >= 12.62:1     --text-2 #53321C  >= 8.37:1
+       --muted   #6B4A32  >= 5.81:1      --accent-text #4E2205 >= 10:1
+     The sidebar icons and the header ring take the wash's own amber end
+     #F3D9B6 (12.66:1 on the walnut), so the chrome and the page share one
+     colour instead of three. Shadows are tinted walnut, never grey. */
+  --accent: #6B3309;
+  --accent-2: #552806;
+  --accent-bg: rgba(107,51,9,0.08);
+  --accent-glow: rgba(107,51,9,0.22);
+  --accent-light: #F6E3CF;
+  --accent-text: #4E2205;       /* 13.5:1 on white; >= 10:1 on every stop */
+  --accent-contrast: #ffffff;   /* 9.99:1 on #6B3309 — WCAG AAA */
+  --app-bg-gradient: linear-gradient(135deg, #FBF1E4 0%, #F3D9B6 100%);
+  --text: #2B1608;
+  --text-2: #53321C;
+  --muted: #6B4A32;
+  /* Settings' Danger Zone heading sits on the wash. Deeper than the stock red
+     since Run 194 (the stock red was 3.54:1 on the old orange end); kept one
+     step deeper so it reads as the same serious red on cream. */
+  --red-text: #650808;
+  --brand: #2A160A;
+  --brand-2: #3A2112;
+  --brand-3: #4A2C18;
+  --sidebar-icon: #F3D9B6;
+  --shadow-sm: 0 1px 3px rgba(74,38,16,0.08), 0 1px 2px rgba(74,38,16,0.05);
+  --shadow: 0 6px 20px rgba(74,38,16,0.10), 0 2px 6px rgba(74,38,16,0.05);
+  --shadow-lg: 0 16px 44px rgba(74,38,16,0.14), 0 4px 12px rgba(74,38,16,0.06);
+  /* The press hook (Run 223): a pressed button settles to 97%. */
+  --btn-press-scale: 0.97;
+
+  /* WARM CREAM SURFACES, NOT WHITE — Run 201. Joel, 2026-09-27: "the white
+     interfaces does not mix well with the gradient background change the
+     white interface to a compatible color with the background". Until this
+     run the block declared no surface at all, so every card, the header bar,
+     the fields and the chips were the shell's #ffffff and the table header
+     its cool slate #f5f7fa. The dark theme was already warm (below).
+     Measured on RUN 201's values (Run 223 lightened each one step, below, and
+     the verifier re-measures them), reproduce with node design/verify-design-system.js:
+       --surface   #FFF6E9  cards, panels, composer (frosted at 90% since Run 202)
+                   --text 16.06  --text-2 12.44  --muted 12.01  --accent-text 12.61
+       --surface-2 #FCEBD3  fields, chips, table header — one step deeper
+                   --text 14.71  --text-2 11.40  --muted 11.00  --accent-text 11.55
+       --bg-soft   #FAE6CB  the mode toggle's track, grey badges   --muted 10.56
+       --border    #EBCFA6  card edges — decorative, 1.40:1, as the shell's is
+       --border-2  #A57545  a CONTROL's edge (fields, the switch track): >= 3.30:1
+                   on all three surfaces, WCAG 1.4.11; white knob on it 3.79
+     THE STATUS TEXTS GO ONE STEP DEEPER, SAME HUE, SAME MEANING. On the shell's
+     values the green "Stored" / amber "billed" words on their own 8% tint
+     measured 4.59 over --surface but 4.23 over --surface-2. Deepened until the
+     worst of text-on-tint and text-on-surface clears 4.8 on all three:
+       --green-text #0F6D32 4.88   --amber-text #904F04 4.83   --blue-text #125BBA 4.87 */
+  /* Run 223: one step lighter than Run 201's cream, so a card lifts off the
+     calmer wash instead of dissolving into it. */
+  --bg: #FBF1E4;
+  --bg-soft: #F4E4CC;
+  --surface: #FFFAF3;
+  --surface-2: #F8EBD8;
+  --border: #EAD6BA;
+  --border-2: #A57545;
+  --green-text: #0F6D32;
+  --amber-text: #904F04;
+  --blue-text: #125BBA;
+  /* Run 201's hooks: fields and chips one step deeper than the card, a
+     field's edge at control contrast. Declared here once for both themes —
+     the dark block below redefines --surface-2 / --border on the same
+     element, so these resolve to the dark values there. */
+  --field-bg: var(--surface-2);
+  --field-border: var(--border-2);
+  --chip-bg: var(--surface-2);
+  --chip-bg-hover: var(--border);
+
+  /* FROSTED CARDS AND A WALNUT HEADER BAR — Run 202. Joel, on Run 201's
+     screenshots, 2026-09-27: "ship the frosted cards and the walnut header".
+     FROSTED: the card cream at 90% with a 10px blur, so the gradient glows
+     faintly through. The worst backdrop is the cream composited over the
+     gradient's orange end #F4762D = rgb(254,233,214): --text 14.61, --text-2
+     11.32, --muted 10.93, --accent-text 11.47; the status words on their 8%
+     tint there >= 4.5 (verify-design-system measures every stop, both
+     themes). Only the four card-like components frost; fields, chips and
+     buttons stay solid, and --surface itself stays opaque because
+     --app-bg-surface (dark) must be.
+     WALNUT HEADER: the header bar takes the sidebar's --brand, so the two
+     form one frame around the page. Its title is the warm off-white
+     #FFF3E6: 15.78:1 on #2A160A, 18.2:1 on the dark #0E0805 (measured by
+     verify-design-system; the worst frost pair, both themes, is 5.01:1). */
+  --frost-bg: rgba(255,250,243,0.86);
+  --frost-blur: blur(10px);
+  --topbar-bg: var(--brand);
+  --topbar-text: #FFF3E6;
+  --topbar-border: var(--brand-2);
+  /* The accent ring is 1.73:1 on the walnut (found by the in-place meter on
+     settings' theme toggle); the wash's own amber end, as the sidebar icons. */
+  --topbar-ring: #F3D9B6;
+}
+
+[data-platform="furnboss"] {
+  /* M-EasyFurniture Boss AI+ — the furniture OWNER's product, a separate
+     platform from M-EasyFurniture Design AI+. Added Run 181 (P0).
+
+     THE MOLICC PALETTE — ruled by Joel 2026-09-26 (Run 189, P3.5): "the whole
+     product takes MOLICC's colours — every tenant, not just theirs". Measured
+     from molicc.com's own Elementor globals the same day, not copied from a
+     document: --e-global-color-primary #224635 (deep forest green), secondary
+     #E8E3CB (cream — their call-to-action button), accent #61CE70 and #74C018
+     (greens), text #000000.
+     HISTORY (superseded, kept so the reversal is findable, checklist #47):
+     Run 181 shipped the `furniture` block's six accent values plus a gradient
+     in the same hue; the 2026-09-26 ruling replaced both.
+
+     --accent IS THE BRAND GREEN ITSELF. White on it is 10.52:1, so the fill
+     needs no darkening. --accent-text is derived at the same hue by
+     measure-accent.js (P2 #377156 5.72:1 on white; P3 dark #5EB189 6.88 on
+     --bg, 5.64 on --surface, 4.91 on --surface-2 — the tightest).
+     HUE: 10 deg from commerce #16A34A — under measure-accent's 15-deg floor,
+     accepted on the eko precedent (brand fidelity for a client-named build,
+     ruled 2026-09-26). Lightness carries the separation: white-on-fill 10.52
+     here against 3.30 for commerce. Do not drift the hue to "fix" it.
+
+     --app-secondary is the cream, as a SURFACE for --text (light #E8E3CB:
+     --text 11.34:1; dark #34372A: --text 9.87:1). Never a text colour.
+
+     THE JUNGLE FRAME — Joel, 2026-09-27 (Run 197, from a screenshot of the
+     live home): "linear-gradient(90deg, #224635 0%, hsla(101, 46%, 8%, 1)
+     100%)" — MOLICC's moss green into hsla(101,46%,8%) = #111E0B, the SAME
+     dark green in light AND dark mode. The start is #224635, NOT #46B83D.
+     Only the standard linear-gradient ships (no -moz-/-webkit-/progid forms:
+     the design system targets evergreen browsers).
+     FIGURES STILL SIT ON SOLID CARDS. The frame is dark in light mode, so the
+     text drawn ON it is its own pair, declared here (the :root hooks
+     --on-app-bg / --on-app-bg-2, inert elsewhere) and measured on both stops:
+                     #224635   #111E0B
+       --on-app-bg    #FFFFFF    10.52     17.29
+       --on-app-bg-2  #E8E3CB     8.16     13.41   (MOLICC's cream)
+     --text is 1.39 / 1.18 and --text-2 1.39 / 2.28 on those stops in light
+     mode (Run 197 first wrote 1.70 / 1.03 — the sidebar's #0F172A measured by
+     mistake; the blind critic caught it), so NOTHING in --text
+     may be drawn on the frame: a band or card over it is SOLID (--surface).
+     The sign-in form sits on the frame too, so this block declares
+     --app-bg-surface (the master paints it under .auth-card, §48) and its
+     labels keep --text on --surface. verify-design-system.js holds the
+     on-frame pair to 4.5:1 on every stop, and --text / --text-2 to 4.5:1 on
+     the declared surface; the Boss repo's browser suite finds every text
+     node whose first opaque background is the frame and measures it there.
+     HISTORY (superseded 2026-09-27, kept for checklist #47): Run 189 ran
+     light #F6F3E6 / #E4ECE2 / #CFE1D5 (cream into sage, 160deg) and dark
+     #1B3A2B / #10261B / #08130E, with --text / --text-2 on the frame.
+
+     NINE CATEGORY COLOURS (ruling 3) — --cat-<key>, the category's FILL, and
+     --cat-ink, the text drawn ON any of them. Light fills are dark enough to
+     carry white; dark fills are tints that carry a near-black ink and still
+     read as marks on the dark card. Searched in OKLCH, then measured:
+                  light fill  #fff on   |  dark fill  ink on  on --surface / -2
+       sales      #145A3E     8.20      |  #0ADF8B   10.19    8.32 / 7.24
+       product    #803702     8.52      |  #F96501    5.88    4.80 / 4.18
+       inventory  #1F8188     4.61      |  #5CB0BC    7.16    5.85 / 5.09
+       clients    #516BD0     4.81      |  #7184F7    5.42    4.42 / 3.85
+       operations #756C00     5.38      |  #C9C236    9.61    7.84 / 6.82
+       production #AA605A     4.64      |  #D38F8F    6.91    5.64 / 4.91
+       purchasing #452CA8     9.64      |  #B6AEFA    8.90    7.26 / 6.32
+       people     #780973    10.07      |  #C75FCA    5.05    4.12 / 3.59
+       alerts     #B00051     7.08      |  #E84978    4.83    3.94 / 3.43
+     A light fill on the white card equals its white-on figure (contrast is
+     symmetric); every dark fill clears 3:1 on both dark surfaces as a mark.
+     TELLING NINE APART IS NOT A COLOUR PROMISE. The worst full-colour pair is
+     production/alerts at OKLab dE 13.9 and the worst deuteranope pair 7.4
+     (dataviz validator: 15 and 8 are its targets for series IN ONE CHART).
+     No chart carries two category colours — each page uses its own — and
+     every tile and band carries its icon AND its name, so identity is never
+     colour alone. verify-design-system.js asserts --cat-ink on every
+     --cat-<key> at 4.5:1 in both themes, derived from the rules. */
+  --accent: #224635;
+  --accent-2: #183125;
+  --accent-bg: rgba(34,70,53,0.08);
+  --accent-glow: rgba(34,70,53,0.20);
+  --accent-light: #DDEEE6;
+  --accent-text: #377156;       /* 5.72:1 on white — WCAG AA */
+  --accent-contrast: #ffffff;   /* 10.52:1 on #224635 — WCAG AAA */
+  --app-secondary: #E8E3CB;
+  --app-bg-gradient: linear-gradient(90deg, #224635 0%, #111E0B 100%);
+  --on-app-bg: #FFFFFF;         /* 10.52 / 17.29 on the two stops */
+  --on-app-bg-2: #E8E3CB;       /*  8.16 / 13.41 */
+  --app-bg-surface: var(--surface);
+  --app-bg-surface-pad: 28px;
+  --cat-ink: #ffffff;
+  --cat-sales: #145A3E;
+  --cat-product: #803702;
+  --cat-inventory: #1F8188;
+  --cat-clients: #516BD0;
+  --cat-operations: #756C00;
+  --cat-production: #AA605A;
+  --cat-purchasing: #452CA8;
+  --cat-people: #780973;
+  --cat-alerts: #B00051;
 }
 
 /* ── 4. DARK MODE ────────────────────────────────────────────────────── */
@@ -501,6 +821,65 @@
 [data-theme="dark"][data-platform="migs"]     { --accent-light: rgba(52,72,137,0.22); --accent-text: #899ad2; }
 [data-theme="dark"][data-platform="pos"]      { --accent-light: rgba(190,24,93,0.22); --accent-text: #f082b3; }
 [data-theme="dark"][data-platform="eko"]      { --accent-light: rgba(184,89,8,0.22); --accent-text: #F58220; }
+[data-theme="dark"][data-platform="furniture"] {
+  /* Run 194 — "fire in the dark", Joel 2026-09-27. Warm near-black surfaces,
+     not the shell's navy slate, and an EMBER accent: #C2410C carries the
+     master's white .btn-primary label at 5.18:1 and still rings a control at
+     >= 3.3:1 on every surface below.
+
+     NO TEXT COLOUR CAN CLEAR 4.5:1 ACROSS THIS GRADIENT, measured: against
+     #010101 a colour needs luminance >= 0.176, against #E95D3C <= 0.018. White
+     manages 3.45:1 at the ember end — enough for large text and icons, never
+     for body text. So this theme declares --app-bg-surface: small text sits
+     on --surface where the gradient cannot carry it (Joel: "sit that element
+     on a surface that makes it pass"). The master paints it under .auth-card;
+     the platform's own pages put their text regions on surfaces, and its
+     browser suite measures every text node in place.
+
+     RUN 223 — THE CALM WASH (see the light block): #140C08 -> #30180D. The
+     paragraph above is history (#47): this gradient CAN carry text, so the
+     theme no longer declares --app-bg-surface and both themes share one
+     composition — no dark patches behind page titles. Measured on every stop:
+     --text-2 >= 10.53, --muted >= 7.50, --accent-text #F08A55 >= 6.71 (the
+     ember, softened from #FF9A6B so it sits in the brown instead of glowing
+     on it). The --accent FILL stays #C2410C: five components hardcode white
+     on it, 5.18:1. THE DEEP END IS #30180D, NOT THE #3A1C10 FIRST SHOWN TO
+     JOEL: the ember FOCUS RING around a button parked on the wash measured
+     3.00:1 there (browser-test 23g, floor 3:1); it is 3.21:1 on #30180D. */
+  --accent: #C2410C;
+  --accent-2: #A3360A;
+  --accent-bg: rgba(194,65,12,0.16);
+  --accent-glow: rgba(194,65,12,0.30);
+  --accent-light: rgba(194,65,12,0.22);
+  --accent-text: #F08A55;
+  --app-bg-gradient: linear-gradient(135deg, #140C08 0%, #30180D 100%);
+  --bg: #140C08;
+  --bg-soft: #1E140E;
+  --surface: #1E140E;
+  --surface-2: #2A1C14;
+  --border: #3A2718;
+  --border-2: #54392A;
+  --text: #FFF6EF;
+  --text-2: #E3C9B6;
+  --muted: #C8A892;
+  --brand: #0E0805;
+  --brand-2: #1E140E;
+  --brand-3: #2A1C14;
+  --surface-deep: #0E0805;
+  /* Run 201: --border-2 here is 1.75:1 on --surface, too faint for a field's
+     edge. #8C6A50 is 3.76 on --surface and 3.52 on --surface-2 (WCAG 1.4.11). */
+  --field-border: #8C6A50;
+  /* Run 202: the walnut card at 90%, over #010101 to #E95D3C. Worst stop
+     (ember) rgb(48,25,17): --text 15.46, --muted 7.44. Run 223: 88% over the
+     calm wash; the verifier measures every stop. */
+  --frost-bg: rgba(30,20,14,0.88);
+}
+[data-theme="dark"][data-platform="furnboss"]  { --accent-light: rgba(34,70,53,0.22); --accent-text: #5EB189;
+  --app-secondary: #34372A;
+  --app-bg-gradient: linear-gradient(90deg, #224635 0%, #111E0B 100%);
+  --cat-ink: #0B1A13; --cat-sales: #0ADF8B; --cat-product: #F96501; --cat-inventory: #5CB0BC;
+  --cat-clients: #7184F7; --cat-operations: #C9C236; --cat-production: #D38F8F; --cat-purchasing: #B6AEFA;
+  --cat-people: #C75FCA; --cat-alerts: #E84978; }
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
 *, *::before, *::after {
@@ -515,6 +894,9 @@ body {
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
+  /* A platform's background treatment, if it declares one (§3, furnboss).
+     `none` for every platform that does not — unchanged rendering. */
+  background-image: var(--app-bg-gradient, none);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -535,8 +917,8 @@ input, textarea, select { font-family: var(--font); }
   grid-column: 2;
   grid-row: 1;
   height: var(--topbar-h);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
   display: flex;
   align-items: center;
   padding: 0 24px;
@@ -571,6 +953,7 @@ input, textarea, select { font-family: var(--font); }
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg);
+  background-image: var(--app-bg-gradient, none);
   padding: 24px;
 }
 
@@ -581,7 +964,7 @@ input, textarea, select { font-family: var(--font); }
   gap: 9px;
   font-size: 16px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--topbar-text);
   letter-spacing: -0.3px;
   flex-shrink: 0;
   text-decoration: none;
@@ -602,7 +985,7 @@ input, textarea, select { font-family: var(--font); }
 .topbar-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--topbar-text);
   flex: 1;
   letter-spacing: -0.2px;
 }
@@ -721,6 +1104,7 @@ input, textarea, select { font-family: var(--font); }
 .sidebar-item-icon {
   width: 18px;
   flex-shrink: 0;
+  color: var(--sidebar-icon);
   opacity: 0.7;
   font-size: 15px;
   display: flex;
@@ -846,7 +1230,9 @@ input, textarea, select { font-family: var(--font); }
 
 /* ── 10. CARD ─────────────────────────────────────────────────────────── */
 .card {
-  background: var(--surface);
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
   border: 1px solid var(--border);
   border-radius: var(--r);
   box-shadow: var(--shadow-sm);
@@ -924,7 +1310,9 @@ input, textarea, select { font-family: var(--font); }
 
 /* ── 12. TABLE ────────────────────────────────────────────────────────── */
 .table-wrap {
-  background: var(--surface);
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
   border: 1px solid var(--border);
   border-radius: var(--r);
   box-shadow: var(--shadow-sm);
@@ -1016,6 +1404,9 @@ tr:hover td { background: var(--bg-soft); }
 .btn-gold:hover { opacity: 0.9; }
 .btn-sm { padding: 5px 12px; font-size: 12px; }
 .btn-lg { padding: 11px 24px; font-size: 14px; }
+/* Run 223 — the press hook (see :root). `scale`, not `transform`, so it adds to
+   a hover's translateY instead of replacing it; at the default 1 it is a no-op. */
+.btn:active:not(:disabled) { scale: var(--btn-press-scale); }
 
 /* ── 14. BADGES ──────────────────────────────────────────────────────── */
 .badge {
@@ -1057,9 +1448,9 @@ tr:hover td { background: var(--bg-soft); }
 .form-group select,
 .form-group textarea {
   padding: 9px 12px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--field-border);
   border-radius: var(--r-sm);
-  background: var(--surface);
+  background: var(--field-bg);
   color: var(--text);
   font-size: 13px;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -1320,7 +1711,9 @@ tr:hover td { background: var(--bg-soft); }
   border: 1px solid var(--accent-glow);
 }
 .table-card { /* old name → use .table-wrap */
-  background: var(--surface);
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
   border: 1px solid var(--border);
   border-radius: var(--r);
   box-shadow: var(--shadow-sm);
@@ -2443,6 +2836,15 @@ tr:hover td { background: var(--bg-soft); }
   outline-offset: 2px;
 }
 :focus:not(:focus-visible) { outline: none; }
+/* Run 202: a ring inside the header bar is drawn on the BAR, which a platform
+   may paint dark (furniture's walnut). --topbar-ring defaults to --accent, so
+   everywhere else this repeats the rule above. */
+.app-topbar :focus-visible { outline-color: var(--topbar-ring); }
+/* ...except where a control draws its own track inside the bar: the language
+   switch is a --surface-2 pill, so a ring there is drawn on the pill, and the
+   accent is what carries on it (8.54:1 on furniture's #FCEBD3). Found by the
+   in-place meter once it read rings instead of assuming them. */
+.app-topbar .lang-switch :focus-visible { outline-color: var(--accent); }
 
 /* Skip-to-content link */
 .skip-link {
@@ -2643,7 +3045,13 @@ tr:hover td { background: var(--bg-soft); }
 .rounded-full { border-radius: 99px; }
 
 /* Background / Surface */
-.bg-surface  { background: var(--surface); }
+.bg-surface  { background: var(--frost-bg); -webkit-backdrop-filter: var(--frost-blur); backdrop-filter: var(--frost-blur); }
+/* A TEXT REGION ON THE PAGE BACKGROUND (Run 194). Paints the platform's
+   declared --app-bg-surface — transparent with no padding for every platform
+   and theme that does not declare one, so it renders exactly as the markup
+   did before. Furniture's dark gradient declares it: no text colour can cross
+   #010101 -> #E95D3C, so page headings and the welcome card sit on it. */
+.on-app-bg { background: var(--app-bg-surface); padding: calc(var(--app-bg-surface-pad) / 2); border-radius: var(--r-lg); }
 .bg-soft     { background: var(--bg-soft); }
 .bg-accent   { background: var(--accent); }
 .border      { border: 1px solid var(--border); }
@@ -2895,6 +3303,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--bg);
+  background-image: var(--app-bg-gradient, none);
   color: var(--text);
 }
 
@@ -3003,6 +3412,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   justify-content: center;
   padding: 40px 24px;
   background: var(--bg);
+  background-image: var(--app-bg-gradient, none);
   overflow-y: auto;
 }
 .auth-panel-top {
@@ -3012,11 +3422,23 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   display: flex;
   align-items: center;
   gap: 8px;
+  /* The language and theme controls sit on the gradient too; on a declared
+     --app-bg-surface their focus ring needs a surface to show on (Run 194).
+     Transparent, unpadded otherwise. */
+  background: var(--app-bg-surface);
+  padding: calc(var(--app-bg-surface-pad) / 4);
+  border-radius: 999px;
 }
 
 .auth-card {
   width: 100%;
   max-width: 400px;
+  /* Transparent with no padding unless a platform declares --app-bg-surface
+     (Run 194): the form's labels then sit on a surface its gradient cannot
+     otherwise carry them on. */
+  background: var(--app-bg-surface);
+  padding: var(--app-bg-surface-pad);
+  border-radius: var(--r-lg);
 }
 .auth-card-boxed {
   background: var(--surface);
@@ -3183,7 +3605,11 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 
 /* --- 48.7 password field ------------------------------------------- */
 .pw-wrap { position: relative; }
-.pw-wrap input { padding-right: 44px; }
+/* Run 223: width 100%. The email field stretches as a flex item of .form-group;
+   the password field sits one level down in this block wrapper, where an input
+   with no width keeps its intrinsic ~227px — a short field under a full one on
+   every platform's sign-in and register forms. */
+.pw-wrap input { width: 100%; padding-right: 44px; }
 .pw-toggle {
   position: absolute;
   top: 50%;
@@ -3383,7 +3809,9 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
 }
 
 .settings-section {
-  background: var(--surface);
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
   border: 1px solid var(--border);
   border-radius: var(--r);
   box-shadow: var(--shadow-sm);
@@ -4031,7 +4459,9 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
    sequence, use .card. The step rail across a panel header is the EXISTING
    .stepper — it is not restated here. */
 .panel {
-  background: var(--surface);
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
   border: 1px solid var(--border);
   border-radius: var(--r);
   box-shadow: var(--shadow-sm);
@@ -4111,7 +4541,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
   padding: 5px 12px;
   border-radius: var(--r-xl);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--chip-bg);
   color: var(--text-2);
   font-family: var(--font);
   font-size: 12px;
@@ -4122,7 +4552,7 @@ tr.row-loading td  { opacity: 0.5; pointer-events: none; }
               border-color var(--motion-fast) var(--ease-out),
               color var(--motion-fast) var(--ease-out);
 }
-.chip:hover { background: var(--surface-2); }
+.chip:hover { background: var(--chip-bg-hover); }
 .chip.is-active {
   background: var(--accent-bg);
   border-color: var(--accent);

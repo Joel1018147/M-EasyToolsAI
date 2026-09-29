@@ -59,9 +59,9 @@
 <div class="app-layout">
 <!-- ══ SIDEBAR — identical shell on every platform ══════════════════ -->
 <aside class="app-sidebar">
-<div class="sidebar-brand">
-<span class="sidebar-brand-dot"></span>
-<span class="sidebar-logo" data-bind="platformName">M-EasyTools AI+</span>
+<div class="sidebar-logo">
+<div class="sidebar-brand-dot" aria-hidden="true">M</div>
+<div class="sidebar-brand" data-bind="platformName">M-EasyTools AI+</div>
 </div>
 <nav class="sidebar-nav">
 <div class="sidebar-section-label" data-i18n="nav.group.workspace">Workspace</div>
@@ -82,7 +82,6 @@
 </div>
 </aside>
 <!-- ══ MAIN ═════════════════════════════════════════════════════════ -->
-<main class="app-main" id="settingsMain">
 <header class="app-topbar">
 <div class="topbar-title" data-i18n="nav.sidebar.settings">Settings</div>
 <div class="topbar-right">
@@ -95,7 +94,8 @@
 <div class="topbar-avatar">—</div>
 </div>
 </header>
-<div class="p-5">
+<main class="app-main" id="settingsMain">
+<div>
 <h1 class="page-title" data-i18n="nav.sidebar.settings">Settings</h1>
 <p class="page-subtitle" data-i18n="page.settings.subtitle">Manage your profile, security, and how this platform behaves.</p>
 <div class="settings-layout">
