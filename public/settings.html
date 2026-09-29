@@ -126,7 +126,7 @@
 </div>
 <div class="settings-section-body">
 <div class="settings-avatar-row">
-<div class="avatar avatar-xl">JT</div>
+<div class="avatar avatar-xl" data-me="initials">—</div>
 <div class="settings-row-main">
 <div class="settings-row-label" data-i18n="settings.profile.profilePhoto.label">Profile photo</div>
 <div class="settings-row-desc" data-i18n="settings.profile.profilePhoto.desc">JPG or PNG, up to 2 MB. Square images look best.</div>
@@ -149,7 +149,7 @@
 <div class="settings-row-desc" data-i18n="settings.profile.email.desc">Used for sign-in and system notifications.</div>
 </div>
 <div class="settings-row-control">
-<input name="email" placeholder="Loading…" type="email" value=""/>
+<input name="email" placeholder="Loading…" readonly type="email" value=""/>
 <span class="badge badge-green" data-i18n="settings.profile.verified">Verified</span>
 </div>
 </div>
@@ -726,10 +726,66 @@
       document.querySelectorAll('[data-src]').forEach(el => {
         if (el.textContent === '—' || el.textContent === 'Loading…') el.textContent = '—';
       });
+      if (data.profile && typeof data.profile === 'object') {
+        hideUnstoredProfileRows(data.profile);
+        fillIdentity(data.profile);
+      }
+      settleLoading(true);
       dirty = false; saveBar.hidden = true;
     } catch (_) {
+      settleLoading(false);
       window.toast('error', 'Could not load your settings.');
     }
+  }
+
+  /* --- Run 227. Three things the loader never did, each a field that LIED. ---
+     1. "Loading…" was the PLACEHOLDER and nothing replaced it, so an empty field
+        read as loading forever and a failed load looked like a slow one. It is
+        cleared once the load answers; a failed load shows a dash in every field
+        it could not fill (the toast says why). Language-neutral on purpose: this
+        page is served in EN, BM and 中文 and neither state needs words.        */
+  function settleLoading(loaded) {
+    document.querySelectorAll('input[placeholder="Loading…"], textarea[placeholder="Loading…"]')
+      .forEach(el => { el.placeholder = loaded ? '' : '—'; });
+    document.querySelectorAll('td[data-empty]').forEach(td => {
+      if (td.textContent.trim() === 'Loading…') td.textContent = '—';
+    });
+  }
+  /* 2. A profile field the platform does not STORE is hidden, not offered. Before,
+        Mall, Tools and Furniture showed a phone field and threw away what was
+        typed ("accepted and ignored"), and Furniture did the same with the time
+        zone. The GET is the contract: a field absent from its `profile` is a field
+        this platform has nowhere to keep. Email is exempt: it is the sign-in
+        identity, always returned, and read-only (no platform's save writes it). */
+  function hideUnstoredProfileRows(profile) {
+    const panel = document.querySelector('[data-panel="profile"]');
+    if (!panel) return;
+    ['name', 'phone', 'timezone'].forEach(field => {
+      if (Object.prototype.hasOwnProperty.call(profile, field)) return;
+      panel.querySelectorAll('[name="' + field + '"]').forEach(el => {
+        el.disabled = true;                            // §4.3c: saveSection never posts it
+        const row = el.closest('.settings-row');
+        if (row) row.hidden = true;
+      });
+    });
+  }
+  /* 3. The shell never said who you are: the sidebar user, the topbar avatar and
+        the profile photo read "—" (the photo read "JT", someone else's initials,
+        on every account). Filled from the profile, and only where a platform's own
+        script has not already filled them. */
+  function fillIdentity(profile) {
+    const who = String(profile.name || profile.email || '').trim();
+    if (!who) return;
+    const initials = who.split(/[\s@._-]+/).filter(Boolean).slice(0, 2)
+      .map(s => s[0].toUpperCase()).join('');
+    const put = (sel, text) => document.querySelectorAll(sel).forEach(el => {
+      if (text && el.textContent.trim() === '—') el.textContent = text;
+    });
+    put('.sidebar-user-name', who);
+    put('.sidebar-user-plan', profile.role || profile.email || '');
+    put('.sidebar-user-avatar', initials);
+    put('.topbar-avatar', initials);
+    put('[data-me="initials"]', initials);
   }
 
   /* --- dirty tracking + save bar --- */
