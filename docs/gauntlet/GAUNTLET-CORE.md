@@ -1,18 +1,34 @@
 # GAUNTLET-CORE — SHARED PROCESS (all Modus platforms)
 
+> **THE GATE BELOW IS NO LONGER RUN — ruled by Joel 2026-09-27 (Run 196).** No run, Gauntlet or
+> ordinary, runs `npm run gate`, the full mutation run or Gates 0–3 before merging. Merge and
+> deploy straight away once the change's own tests pass, then confirm the deploy is live
+> (Modus-Agent-OS BUILD_PROTOCOL RULE 4a, Phase 6 SHIP). Where this file says otherwise, that
+> rule wins; the text below is kept as the loop's reference.
+
 This file is the mechanism. It has no opinion on what any specific
 platform's Bars, lanes, or reference set are — that's each platform's own
 `GAUNTLET.md`, which extends this file rather than duplicating it. Copy
 this file into `docs/gauntlet/GAUNTLET-CORE.md` in every repo running a
 Gauntlet loop.
 
+**Which runs are Gauntlet runs — ruled 2026-09-24.** Only the build of a
+NEW PLATFORM from nothing: a new repo and a new Railway project, the
+`skills/new-super-app-build.md` path. A change, an edit or a new module on
+a platform that is already live is an ORDINARY run — Gates 0–3, mutation
+tests and the suite verdict all still run, but lanes and the blind critic
+are optional and **Joel decides what ships**; nothing in this file merges
+or deploys it. This copy sitting in a repo does not make that repo's next
+run a Gauntlet run. Canonical:
+`Modus-Agent-OS/BUILD_PROTOCOL.md` RULE 4a and §7.6.
+
 **Where this sits.** `Modus-Agent-OS/BUILD_PROTOCOL.md` is canonical for
 how the ecosystem builds; this file is canonical for how a Gauntlet run
 executes inside it. Where the two touch, BUILD_PROTOCOL wins — with one
 ruled exception, recorded in its §7: **RULE 4a's "Joel decides what
-ships" is carved out for Gauntlet runs**, which merge and deploy
-automatically on a fully passing gate (see PRODUCTION SAFETY / GIT
-SAFETY). Nothing else in RULE 4a is relaxed: real secrets, 2FA, payment
+ships" is carved out for Gauntlet runs** (new platforms only, see above),
+which merge and deploy automatically on a fully passing gate (see
+PRODUCTION SAFETY / GIT SAFETY). Nothing else in RULE 4a is relaxed: real secrets, 2FA, payment
 methods and admin-only actions remain Joel's, because no agent can do
 them.
 

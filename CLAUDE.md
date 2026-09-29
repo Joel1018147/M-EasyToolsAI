@@ -8,7 +8,7 @@
 | Auth portal | `public/auth.html`, the **canonical** master from `Modus-Agent-OS/design` (md5 `cbd92280`). `/login` serves it. `public/login.html` and `public/signup.html` are **DELETED** — this repo had THREE login surfaces. |
 | Settings | `public/settings.html` from the master (`4ecc6cd5`) + `routes/settings.js`. `user_settings` is created by `initDB()`, so there is no unapplied-migration state to degrade through. |
 | Export | `POST /api/settings/export` → **501**, honestly. There is no job runner in this repo — only a bare `setInterval` for subscription expiry, which is not a queue. Mall and Dragon Ginseng answer 202 because they *have* a runner; Campus answers 501 for the same reason this does. Do not "make it consistent" by copying the 202. |
-| Design system | `public/css/modus-design-system.css`, byte-identical to the master (md5 `8425f456`). **A per-repo edit to this file is a defect** (§1) — the change goes in the master and is re-copied to all twelve repos in the same commit (§1b). |
+| Design system | `public/css/modus-design-system.css`, byte-identical to the master (md5 `a84f9f46`). **A per-repo edit to this file is a defect** (§1) — the change goes in the master and is re-copied to all twelve repos in the same commit (§1b). |
 | Guards | `requireAuth` negotiates (302 for pages, 401 for `/api/`); `requireAuthJSON` **never** redirects and exists for `GET /auth/me`, which §4.1 puts outside `/api/`. Correctness is call-site assignment — `test/auth-guard-test.js` asserts the wiring, not just the functions. |
 | Subscriptions | **NOT ENFORCED.** Joel's call, 2026-09-04: every signed-in account reaches every feature. `helpers/subscriptionMode.js` is the one definition; the variable is UNSET on production and unset means open, which is the opposite of the `PREVIEW_LOCK` direction and the helper says why. `SUBSCRIPTION_ENFORCEMENT=on` restores the whole paywall with no code change. Do not "tidy up" `checkSub`, the trial/grace/expired branches or `/billing` — they are switched off, not dead, and `test/billing-reachable-test.js` pins them to the enforced mode. **The image cap is a SECOND gate in another file** (`lib/image/caps.js`): status `open` maps to the top tier, 60/day and 600/30 days. That ceiling is a spend and storage limit, not a price — ~1.9MB of BYTEA per image and no retention policy in this repo. |
 | `wantsJson` | ONE definition, `helpers/wantsJson.js`. `server.js` and `middleware/checkSub.js` both import it. Never re-derive it locally. |
@@ -161,12 +161,12 @@ external integration hardcodes. Two consequences:
    elsewhere in this platform. Extract genuine duplication; leave business policy
    in the route. See Modus-Agent-OS/skills/code-structure-cleanup.md.
 
-4. "DONE" MEANS THE THREE-STAGE GATE, NOT JUST ACTIVE ON RAILWAY. Compile (ACTIVE)
-   is a floor, not a finish line. A prompt isn't complete until Verify (live smoke
-   test against real-shaped data) and Structure (audit against
-   Modus-Agent-OS/skills/recurring-bugs-checklist.md, which is canonical) both
-   pass. Gate 0, the pre-deploy env-var diff, runs before all three. See
-   Modus-Agent-OS/skills/three-stage-deploy-gate.md.
+4. "DONE" MEANS THE CHANGE'S TESTS PASS AND THE DEPLOY IS SEEN LIVE — THERE IS NO
+   GATE. Ruled by Joel 2026-09-27: no run is gated. Once the change's own tests
+   pass, merge to main and push; then confirm the deploy is live (/health and one
+   served artefact the change altered) and say in RUN_LOG.md that no gate ran. Set
+   any NEW environment variable on Railway before the push — the one thing Gate 0
+   used to catch. See Modus-Agent-OS/BUILD_PROTOCOL.md RULE 4a.
 
 ## The device frame — `/preview`
 
