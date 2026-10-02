@@ -28,7 +28,7 @@ const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
 const PLATFORM = 'tools';
 const ACCENT = '#E8622A';                       // §2 platform registry
-const MASTER_CSS_MD5 = 'a84f9f465676f352ad47ae8b941d22b2';
+const MASTER_CSS_MD5 = '84a935b2ac7b27bb5ad353e2611ee39e';
 // Moves in the SAME commit as a master sync. This constant is the tripwire
 // that fires when the shared stylesheet drifts, so it firing is correct — it
 // only becomes noise when a sync updates the ten copies and leaves it behind,

@@ -13,7 +13,7 @@ msm-ai/
 │   │                     The canonical Modus portal, served at /login.
 │   │                     login.html and signup.html are gone; one surface.
 │   ├── settings.html   ← The canonical Modus settings page, served at /settings
-│   ├── css/            ← modus-design-system.css (one copy, md5 a84f9f46)
+│   ├── css/            ← modus-design-system.css (one copy, md5 84a935b2)
 │   └── app.html        ← Main dashboard (after login)
 ├── helpers/            ← capabilities.js, wantsJson.js
 ├── server.js           ← Express backend + all API routes

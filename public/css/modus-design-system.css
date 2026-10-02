@@ -753,6 +753,56 @@
   --cat-alerts: #B00051;
 }
 
+[data-platform="food"] {
+  /* M-EasyFood Design AI+ — Platform 17, the food formula studio. Added to
+     the master in Run 239 (2026-10-02); Runs 233-238 carried these exact
+     tokens in the repo's public/css/food-theme.css so the master hash could
+     stay shared until this fan-out.
+
+     AUBERGINE, chosen by Joel 2026-10-02 (hue ~309°, clear of member 262°
+     and pos 330°). Measured (WCAG luminance) in Run 233 and re-measured here
+     by node design/verify-design-system.js on every text pair:
+       white label on #6B2160 10.44 · --accent-text on surface 12.28 / bg
+       11.16 · --text 16.17 · --muted 6.91 on bg, 7.61 on surface · accent
+       as a ring on bg 9.49 · --sidebar-icon on --brand 11.97.
+     --accent-2 IS SET ON PURPOSE: .btn-primary:hover reads it, and unset it
+     falls back to :root's BLUE under the cursor (Run 233's screenshots).
+     White on #561A4D 12.72:1. */
+  --accent: #6B2160;
+  --accent-2: #561A4D;
+  --accent-bg: rgba(107,33,96,0.08);
+  --accent-glow: rgba(107,33,96,0.22);
+  --accent-light: #F1E2EE;
+  --accent-text: #5A1B51;
+  --accent-contrast: #ffffff;
+  --app-bg-gradient: linear-gradient(160deg, #F6F3F7 0%, #EFE7F0 100%);
+  --bg: #F6F3F7;
+  --bg-soft: #EFE9F1;
+  --surface: #FFFFFF;
+  --surface-2: #FAF7FB;
+  --border: #E7E0EA;
+  --border-2: #D3C8D7;
+  /* A FIELD'S EDGE IS A CONTROL BOUNDARY (WCAG 1.4.11, >= 3:1). Unset, light
+     fields fell back to --border-2 at 1.29:1 on white — live on the platform
+     from Run 233 until this run's verifier read it. 4.24:1 on --surface,
+     3.99:1 on --surface-2 (the field fill). */
+  --field-border: #857689;
+  --text: #1D1520;
+  --text-2: #3E3343;
+  --muted: #5B5060;
+  --brand: #241626;
+  --brand-2: #33203A;
+  --sidebar-icon: #EBCFE4;
+  --shadow-sm: 0 1px 3px rgba(36,22,38,0.07), 0 1px 2px rgba(36,22,38,0.04);
+  --shadow: 0 6px 20px rgba(36,22,38,0.09), 0 2px 6px rgba(36,22,38,0.04);
+  --shadow-lg: 0 18px 48px rgba(36,22,38,0.14), 0 4px 12px rgba(36,22,38,0.06);
+  --frost-bg: rgba(255,255,255,0.86);
+  --topbar-bg: var(--brand);
+  --topbar-text: #FBF4FA;
+  --topbar-border: var(--brand-2);
+  --topbar-ring: #EBCFE4;
+}
+
 /* ── 4. DARK MODE ────────────────────────────────────────────────────── */
 [data-theme="dark"] {
   --bg: #0f172a;
@@ -880,6 +930,31 @@
   --cat-ink: #0B1A13; --cat-sales: #0ADF8B; --cat-product: #F96501; --cat-inventory: #5CB0BC;
   --cat-clients: #7184F7; --cat-operations: #C9C236; --cat-production: #D38F8F; --cat-purchasing: #B6AEFA;
   --cat-people: #C75FCA; --cat-alerts: #E84978; }
+[data-theme="dark"][data-platform="food"] {
+  /* Run 239 (from food-theme.css, Run 233). White on #A3398F 5.93, ring on
+     --bg 3.17, --accent-text 9.73 / 8.99, --text 16.74, --muted 8.57 / 7.92.
+     Hover --accent-2 #8E2F7D, white 7.36. */
+  --accent: #A3398F;
+  --accent-2: #8E2F7D;
+  --accent-bg: rgba(163,57,143,0.16);
+  --accent-glow: rgba(163,57,143,0.30);
+  --accent-light: rgba(163,57,143,0.22);
+  --accent-text: #E7A6D9;
+  --app-bg-gradient: linear-gradient(160deg, #141016 0%, #1F1422 100%);
+  --bg: #141016;
+  --bg-soft: #1A151C;
+  --surface: #1E1820;
+  --surface-2: #241D27;
+  --surface-deep: #0F0C11;
+  --border: #352B38;
+  --border-2: #4A3D4E;
+  --field-border: #7A6A80;
+  --text: #F5F0F6;
+  --text-2: #DCD2DF;
+  --muted: #B7ABBB;
+  --brand: #0F0C11;
+  --frost-bg: rgba(30,24,32,0.88);
+}
 
 /* ── 5. RESET & BASE ─────────────────────────────────────────────────── */
 *, *::before, *::after {

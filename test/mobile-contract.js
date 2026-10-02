@@ -45,8 +45,8 @@ const read = (f) => fs.readFileSync(path.join(PUB, f), 'utf8');
   const md5 = crypto.createHash('md5')
     .update(fs.readFileSync(path.join(PUB, 'css/modus-design-system.css')))
     .digest('hex');
-  ok('design system is byte-identical to the master (md5 a84f9f46…)',
-     md5.startsWith('a84f9f46'), 'got ' + md5.slice(0, 16));
+  ok('design system is byte-identical to the master (md5 84a935b2…)',
+     md5.startsWith('84a935b2'), 'got ' + md5.slice(0, 16));
 }
 
 /* ── 2. EVERY PAGE THAT HAS THE DESIGN SYSTEM HAS THE MOBILE LAYER ──────────
