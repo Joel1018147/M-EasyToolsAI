@@ -14,3 +14,7 @@ msm-ai.db
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+
+# Fast-gate verdict (Modus-Agent-OS/test/fast-gate.js): a per-run artefact, never a source.
+# Untracked, it makes the nightly gate SKIP this repo as "uncommitted changes" (Run 284/285).
+test/.gate-verdict.json
